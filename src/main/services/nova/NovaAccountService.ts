@@ -97,7 +97,7 @@ export class NovaAccountService {
 
   constructor(deps: Partial<NovaAccountDeps> = {}) {
     this.deps = {
-      fetch: deps.fetch ?? ((...args) => globalThis.fetch(...args)),
+      fetch: deps.fetch ?? ((input, init) => globalThis.fetch(input, init)),
       storagePath: deps.storagePath ?? (() => application.getPath('app.userdata', 'nova-account.bin')),
       secretBox: deps.secretBox ?? electronSecretBox,
       hostname: deps.hostname ?? (() => os.hostname()),

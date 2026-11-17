@@ -35,7 +35,7 @@ describe('Cherry Studio service blocklist', () => {
   })
 
   it('refuses blocked requests without sending them and passes others through', async () => {
-    const send = vi.fn(async () => new Response('ok'))
+    const send = vi.fn(async (_input: string | URL | Request, _init?: RequestInit) => new Response('ok'))
     const guarded = blockCherryServices(send)
 
     await expect(guarded('https://api.cherry-ai.com/diagnostics/')).rejects.toBeInstanceOf(CherryServiceBlockedError)
@@ -48,7 +48,7 @@ describe('Cherry Studio service blocklist', () => {
   })
 
   it('installs the guard on net.fetch', async () => {
-    const net = { fetch: vi.fn(async () => new Response('ok')) }
+    const net = { fetch: vi.fn(async (_input: string | URL | Request, _init?: RequestInit) => new Response('ok')) }
     installCherryServiceBlock(net)
     await expect(net.fetch('https://cherryai.com/download')).rejects.toBeInstanceOf(CherryServiceBlockedError)
     await expect(net.fetch('https://cdkai.cc/')).resolves.toBeInstanceOf(Response)

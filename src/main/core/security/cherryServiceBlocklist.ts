@@ -36,22 +36,30 @@ export class CherryServiceBlockedError extends Error {
   }
 }
 
-type FetchLike = (input: string | URL | Request, init?: RequestInit) => Promise<Response>
+/** Any `fetch`-shaped function, such as global `fetch` or Electron's `net.fetch`. */
+type FetchLike = (input: never, init?: never) => Promise<unknown>
+
+function urlOf(input: unknown): string {
+  if (typeof input === 'string') return input
+  if (input instanceof URL) return input.href
+  return (input as { url?: string } | null)?.url ?? ''
+}
 
 /** Wraps a `fetch`-shaped function so requests to Cherry Studio services fail without being sent. */
 export function blockCherryServices<F extends FetchLike>(fetchImpl: F): F {
-  const guarded = (input: string | URL | Request, init?: RequestInit) => {
-    const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
+  const send = fetchImpl as unknown as (input: unknown, init?: unknown) => Promise<unknown>
+  const guarded = (input: unknown, init?: unknown) => {
+    const url = urlOf(input)
     if (isCherryServiceUrl(url)) return Promise.reject(new CherryServiceBlockedError(url))
-    return fetchImpl(input, init)
+    return send(input, init)
   }
-  return guarded as F
+  return guarded as unknown as F
 }
 
 /** Installs the guard on Electron's `net.fetch`, which the main process uses for its own HTTP calls. */
-export function installCherryServiceBlock(netModule: { fetch: FetchLike }): void {
+export function installCherryServiceBlock<N extends { fetch: FetchLike }>(netModule: N): void {
   try {
-    netModule.fetch = blockCherryServices(netModule.fetch.bind(netModule))
+    netModule.fetch = blockCherryServices(netModule.fetch.bind(netModule) as N['fetch'])
   } catch {
     // A frozen module object: the default-session webRequest filter still applies.
   }
