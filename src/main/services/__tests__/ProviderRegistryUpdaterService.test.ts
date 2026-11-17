@@ -136,10 +136,10 @@ describe('ProviderRegistryUpdaterService.check', () => {
   it('NOVA Studio never schedules upstream registry downloads in a packaged app', async () => {
     vi.useFakeTimers()
     try {
-      await service._doInit()
+      // BaseService is mocked in this file, so call the lifecycle hook directly.
+      ;(service as unknown as { onReady(): void }).onReady()
       await vi.advanceTimersByTimeAsync(7 * 24 * 60 * 60 * 1000)
       expect(netFetchMock).not.toHaveBeenCalled()
-      await service._doStop()
     } finally {
       vi.useRealTimers()
     }

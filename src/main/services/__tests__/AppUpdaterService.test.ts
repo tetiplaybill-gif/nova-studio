@@ -135,13 +135,14 @@ import { UpgradeChannel } from '@shared/data/preference/preferenceTypes'
 import { APP_NAME } from '@shared/utils/constants'
 import { shouldReportFailure } from '@shared/utils/errorReporting'
 
-import { AppUpdaterService, classifyUpdateFailure } from '../AppUpdaterService'
+import { AppUpdaterService, classifyUpdateFailure, novaUpdateFeed } from '../AppUpdaterService'
 
 describe('AppUpdaterService', () => {
   let appUpdater: AppUpdaterService
 
   beforeEach(() => {
     vi.clearAllMocks()
+    novaUpdateFeed.ready = true
     MockMainPreferenceServiceUtils.resetMocks()
     MockMainPreferenceServiceUtils.setPreferenceValue('app.dist.test_plan.enabled', false)
     MockMainPreferenceServiceUtils.setPreferenceValue('app.dist.test_plan.channel', UpgradeChannel.LATEST)
@@ -226,6 +227,17 @@ describe('AppUpdaterService', () => {
       releaseNotesCheckMock.mockResolvedValueOnce(null)
       await expect(appUpdater.queryUpdateAvailability()).rejects.toThrow('did not produce a result')
     })
+  })
+
+  it('NOVA Studio reports no update and contacts no server while its feed is not live', async () => {
+    novaUpdateFeed.ready = false
+    vi.mocked(app.getVersion).mockReturnValue('2.2.2')
+
+    const result = await (appUpdater as unknown as { performUpdateCheck(): Promise<unknown> }).performUpdateCheck()
+
+    expect(result).toEqual({ currentVersion: '2.2.2', updateInfo: null })
+    expect(autoUpdater.checkForUpdates).not.toHaveBeenCalled()
+    expect(netFetchMock).not.toHaveBeenCalled()
   })
 
   describe('managed update feed', () => {

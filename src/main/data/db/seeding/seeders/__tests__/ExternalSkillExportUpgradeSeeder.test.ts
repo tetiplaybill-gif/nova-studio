@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest'
 import { appStateTable } from '@data/db/schemas/appState'
 import { preferenceTable } from '@data/db/schemas/preference'
 import { seeders } from '@data/db/seeding/seederRegistry'
-import { CherryAiDefaultModelSeeder } from '@data/db/seeding/seeders/cherryaiDefaultModelSeeder'
+import { NovaDefaultModelSeeder } from '@data/db/seeding/seeders/novaDefaultModelSeeder'
 import { ExternalSkillExportUpgradeSeeder } from '@data/db/seeding/seeders/ExternalSkillExportUpgradeSeeder'
 import { PreferenceSeeder } from '@data/db/seeding/seeders/preferenceSeeder'
 import { SeedRunner } from '@data/db/seeding/SeedRunner'
@@ -17,7 +17,7 @@ describe('ExternalSkillExportUpgradeSeeder', () => {
   const selected = seeders.filter(
     (seeder) =>
       seeder instanceof ExternalSkillExportUpgradeSeeder ||
-      seeder instanceof CherryAiDefaultModelSeeder ||
+      seeder instanceof NovaDefaultModelSeeder ||
       seeder instanceof PreferenceSeeder
   )
   const value = () =>
@@ -30,7 +30,7 @@ describe('ExternalSkillExportUpgradeSeeder', () => {
   it('runs before model and preference defaults', () => {
     expect(selected.map((seeder) => seeder.constructor.name)).toEqual([
       'ExternalSkillExportUpgradeSeeder',
-      'CherryAiDefaultModelSeeder',
+      'NovaDefaultModelSeeder',
       'PreferenceSeeder'
     ])
   })

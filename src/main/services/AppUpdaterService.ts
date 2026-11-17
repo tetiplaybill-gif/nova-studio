@@ -81,7 +81,11 @@ export function classifyUpdateFailure(error: unknown): FailureFacts {
 type ReleaseRegion = 'cn' | 'global'
 
 export const RELEASE_HISTORY_URL = 'https://cdkai.cc/downloads/nova-studio/release-history.json'
-const NOVA_UPDATE_FEED_READY = false
+/**
+ * NOVA Studio's signed update feed is not live yet (macOS updates need a Developer ID-signed build), so
+ * update checks report "no update" without contacting any server. Tests switch it on.
+ */
+export const novaUpdateFeed = { ready: false }
 const RELEASE_HISTORY_TIMEOUT_MS = 10_000
 const RELEASE_HISTORY_MAX_BYTES = 1024 * 1024
 
@@ -454,7 +458,7 @@ export class AppUpdaterService extends BaseService {
     void application.get('AnalyticsService').trackAppUpdate()
 
     // NOVA Studio has no signed update feed yet; never contact the upstream release server.
-    if (this.isPortable() || !NOVA_UPDATE_FEED_READY) {
+    if (this.isPortable() || !novaUpdateFeed.ready) {
       return {
         currentVersion: app.getVersion(),
         updateInfo: null

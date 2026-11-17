@@ -233,7 +233,6 @@ describe('AboutSettings in NOVA Studio', () => {
       if (route === 'app.get_info') return { isPortable: false, version: '2.2.2' }
       return undefined
     })
-    await i18n.changeLanguage('en-US')
     const { cherryServices } = await import('@shared/data/presets/nova')
     cherryServices.enabled = false
   })
@@ -249,13 +248,13 @@ describe('AboutSettings in NOVA Studio', () => {
 
     expect(screen.getByText('NOVA Studio')).toBeVisible()
     expect(screen.queryByText('Cherry Studio')).not.toBeInTheDocument()
-    expect(screen.getByText(enUS['settings.about.nova.source.title'])).toBeVisible()
-    expect(screen.getByText(enUS['settings.about.nova.upstream.title'])).toBeVisible()
-    expect(screen.queryByText(enUS['settings.about.feedback.title'])).not.toBeInTheDocument()
-    expect(screen.queryByText(enUS['settings.about.enterprise.title'])).not.toBeInTheDocument()
-    expect(screen.queryByText(enUS['settings.general.test_plan.title'])).not.toBeInTheDocument()
+    expect(screen.getByText('settings.about.nova.source.title')).toBeVisible()
+    expect(screen.getByText('settings.about.nova.upstream.title')).toBeVisible()
+    expect(screen.queryByText('settings.about.feedback.title')).not.toBeInTheDocument()
+    expect(screen.queryByText('settings.about.enterprise.title')).not.toBeInTheDocument()
+    expect(screen.queryByText('settings.general.test_plan.title')).not.toBeInTheDocument()
 
-    await user.click(screen.getByRole('button', { name: enUS['settings.about.nova.source.button'] }))
+    await user.click(screen.getByRole('button', { name: 'settings.about.nova.source.button' }))
     expect(mocks.request).toHaveBeenCalledWith(
       'system.shell.open_external_website',
       'https://cdkai.cc/downloads/nova-studio/source'

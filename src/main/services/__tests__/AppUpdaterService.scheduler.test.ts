@@ -24,7 +24,7 @@ import { BaseService } from '@main/core/lifecycle/BaseService'
 import { SchedulerService } from '@main/core/scheduler/SchedulerService'
 import { regionService } from '@main/services/RegionService'
 
-import { AppUpdaterService } from '../AppUpdaterService'
+import { AppUpdaterService, novaUpdateFeed } from '../AppUpdaterService'
 
 vi.mock('@logger', () => ({
   loggerService: {
@@ -107,6 +107,7 @@ describe('AppUpdaterService — auto update-check scheduling', () => {
   let prefValues: Record<string, unknown>
 
   beforeEach(async () => {
+    novaUpdateFeed.ready = true
     vi.clearAllMocks()
     BaseService.resetInstances()
     setPackaged(true)
