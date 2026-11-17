@@ -3,25 +3,41 @@ import { and, eq } from 'drizzle-orm'
 import { app } from 'electron'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { ENDPOINT_TYPE } from '@cherrystudio/provider-registry'
+
 import { assistantTable } from '@data/db/schemas/assistant'
 import { messageTable } from '@data/db/schemas/message'
 import { preferenceTable } from '@data/db/schemas/preference'
 import { topicTable } from '@data/db/schemas/topic'
 import { userModelTable } from '@data/db/schemas/userModel'
 import { userProviderTable } from '@data/db/schemas/userProvider'
-import { CherryAiDefaultModelSeeder } from '@data/db/seeding/seeders/cherryaiDefaultModelSeeder'
 import { DefaultAssistantSeeder } from '@data/db/seeding/seeders/defaultAssistantSeeder'
+import { NovaDefaultModelSeeder } from '@data/db/seeding/seeders/novaDefaultModelSeeder'
+import { providerService } from '@data/services/ProviderService'
 import { generateOrderKeyBetween } from '@data/services/utils/orderKey'
-import { CHERRYAI_DEFAULT_UNIQUE_MODEL_ID, CHERRYAI_PROVIDER_ID } from '@shared/data/presets/cherryai'
+import { NOVA_DEFAULT_UNIQUE_MODEL_ID, NOVA_PROVIDER_ID } from '@shared/data/presets/nova'
 import { DEFAULT_ASSISTANT_SETTINGS } from '@shared/data/types/assistant'
 
 describe('DefaultAssistantSeeder', () => {
   const dbh = setupTestDatabase()
   const UUID_V4_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/
 
-  async function runCherryAiModelDependencySeed() {
-    // Provides the CherryAI model row the default assistant's modelId FK requires
-    new CherryAiDefaultModelSeeder().run(dbh.db)
+  async function runNovaModelDependencySeed() {
+    // The NOVA provider row normally comes from PresetProviderSeeder; the NOVA default model seeder then
+    // provides the model row the default assistant's modelId FK requires.
+    providerService.batchUpsert([
+      {
+        providerId: NOVA_PROVIDER_ID,
+        presetProviderId: NOVA_PROVIDER_ID,
+        name: 'NOVA',
+        endpointConfigs: null,
+        defaultChatEndpoint: ENDPOINT_TYPE.OPENAI_CHAT_COMPLETIONS,
+        authConfig: null,
+        providerSettings: null,
+        isEnabled: true
+      }
+    ])
+    new NovaDefaultModelSeeder().run(dbh.db)
   }
 
   beforeEach(() => {
@@ -29,21 +45,17 @@ describe('DefaultAssistantSeeder', () => {
     vi.mocked(app.getPreferredSystemLanguages).mockReturnValue(['en-US'])
   })
 
-  it('seeds the default assistant when only the CherryAI default model dependency seed has run', async () => {
-    await runCherryAiModelDependencySeed()
+  it('seeds the default assistant on the NOVA default model, with no CherryAI provider', async () => {
+    await runNovaModelDependencySeed()
 
     new DefaultAssistantSeeder().run(dbh.db)
 
     const [assistant] = await dbh.db.select().from(assistantTable).limit(1)
-    const [provider] = await dbh.db
-      .select()
-      .from(userProviderTable)
-      .where(eq(userProviderTable.providerId, CHERRYAI_PROVIDER_ID))
-      .limit(1)
+    const providers = await dbh.db.select().from(userProviderTable)
     const [model] = await dbh.db
       .select()
       .from(userModelTable)
-      .where(eq(userModelTable.id, CHERRYAI_DEFAULT_UNIQUE_MODEL_ID))
+      .where(eq(userModelTable.id, NOVA_DEFAULT_UNIQUE_MODEL_ID))
       .limit(1)
     const [preference] = await dbh.db
       .select()
@@ -53,13 +65,11 @@ describe('DefaultAssistantSeeder', () => {
 
     expect(assistant?.id).toMatch(UUID_V4_PATTERN)
     expect(assistant).toMatchObject({
-      modelId: CHERRYAI_DEFAULT_UNIQUE_MODEL_ID
+      modelId: NOVA_DEFAULT_UNIQUE_MODEL_ID
     })
-    expect(provider).toMatchObject({
-      providerId: CHERRYAI_PROVIDER_ID
-    })
-    expect(model?.id).toBe(CHERRYAI_DEFAULT_UNIQUE_MODEL_ID)
-    expect(preference?.value).toBe(CHERRYAI_DEFAULT_UNIQUE_MODEL_ID)
+    expect(providers.map((p) => p.providerId)).toEqual([NOVA_PROVIDER_ID])
+    expect(model?.id).toBe(NOVA_DEFAULT_UNIQUE_MODEL_ID)
+    expect(preference?.value).toBe(NOVA_DEFAULT_UNIQUE_MODEL_ID)
 
     const [topic] = await dbh.db.select().from(topicTable).limit(1)
     expect(topic?.id).toMatch(UUID_V4_PATTERN)
@@ -82,7 +92,7 @@ describe('DefaultAssistantSeeder', () => {
       throw new Error('app.getLocale cannot be called before ready')
     })
     vi.mocked(app.getPreferredSystemLanguages).mockReturnValue(['zh-CN'])
-    await runCherryAiModelDependencySeed()
+    await runNovaModelDependencySeed()
 
     expect(() => new DefaultAssistantSeeder().run(dbh.db)).not.toThrow()
   })
@@ -92,7 +102,7 @@ describe('DefaultAssistantSeeder', () => {
     vi.mocked(app.getPreferredSystemLanguages).mockImplementation(() => {
       throw new Error('preferred languages unavailable')
     })
-    await runCherryAiModelDependencySeed()
+    await runNovaModelDependencySeed()
 
     expect(() => new DefaultAssistantSeeder().run(dbh.db)).not.toThrow()
   })

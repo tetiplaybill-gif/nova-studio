@@ -8,11 +8,8 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import {
-  CHERRY_CLOUD_PROVIDER_ID,
-  CHERRYAI_DEFAULT_UNIQUE_MODEL_ID,
-  CHERRYAI_PROVIDER_ID
-} from '@shared/data/presets/cherryai'
+import { CHERRY_CLOUD_PROVIDER_ID, CHERRYAI_PROVIDER_ID } from '@shared/data/presets/cherryai'
+import { NOVA_DEFAULT_UNIQUE_MODEL_ID } from '@shared/data/presets/nova'
 import { LATEST_PRIVACY_POLICY_VERSION } from '@shared/utils/constants'
 
 const addApiKeyMock = vi.fn()
@@ -463,12 +460,12 @@ describe('OnboardingPage', () => {
 
   it.each([
     ['an unconfigured seeded agent', null],
-    ['a legacy CherryAI-seeded agent', CHERRYAI_DEFAULT_UNIQUE_MODEL_ID]
+    ['an agent seeded with the NOVA default model', NOVA_DEFAULT_UNIQUE_MODEL_ID]
   ])('configures %s after the user selects a default model', async (_description, seededAgentModel) => {
     dataApiMocks.get.mockImplementation(async (path: string) => {
       if (path === '/assistants') {
         return {
-          items: [{ id: 'assistant-1', modelId: CHERRYAI_DEFAULT_UNIQUE_MODEL_ID }],
+          items: [{ id: 'assistant-1', modelId: NOVA_DEFAULT_UNIQUE_MODEL_ID }],
           total: 1
         }
       }
@@ -509,8 +506,8 @@ describe('OnboardingPage', () => {
       if (path === '/assistants') {
         return {
           items: [
-            { id: 'assistant-1', modelId: CHERRYAI_DEFAULT_UNIQUE_MODEL_ID },
-            { id: 'assistant-2', modelId: CHERRYAI_DEFAULT_UNIQUE_MODEL_ID }
+            { id: 'assistant-1', modelId: NOVA_DEFAULT_UNIQUE_MODEL_ID },
+            { id: 'assistant-2', modelId: NOVA_DEFAULT_UNIQUE_MODEL_ID }
           ],
           total: 2
         }

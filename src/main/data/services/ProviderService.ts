@@ -48,6 +48,7 @@ import { ProviderBillingSchema } from '@shared/data/types/providerBilling'
 import { maskApiKey } from '@shared/utils/api'
 import { resolveEndpointDialect } from '@shared/utils/provider'
 
+import { isHiddenInNovaStudio } from '../novaOnlyProviders'
 import { isRetiredProvider } from '../retiredProviders'
 
 const logger = loggerService.withContext('DataApi:ProviderService')
@@ -86,6 +87,7 @@ function getAvailableProviderMetadata(
   db?: Pick<DbType, 'select'>
 ): ProviderDisplayMetadata | null {
   if (isRetiredProvider(row.providerId, row.presetProviderId)) return null
+  if (isHiddenInNovaStudio(row.providerId, row.presetProviderId)) return null
 
   const metadata = getDataService('ProviderRegistryService').getProviderDisplayMetadata(
     row.providerId,
@@ -496,6 +498,9 @@ class ProviderService {
     if (dto.providerSettings?.billing) ProviderBillingSchema.parse(dto.providerSettings.billing)
     if (isRetiredProvider(dto.providerId, dto.presetProviderId)) {
       throw DataApiErrorFactory.invalidOperation(`create provider ${dto.providerId}`, 'provider is retired')
+    }
+    if (isHiddenInNovaStudio(dto.providerId, dto.presetProviderId)) {
+      throw DataApiErrorFactory.invalidOperation(`create provider ${dto.providerId}`, 'NOVA Studio only offers NOVA')
     }
     assertManagedCherryProviderMutationAllowed(dto.providerId, `create provider ${dto.providerId}`)
 

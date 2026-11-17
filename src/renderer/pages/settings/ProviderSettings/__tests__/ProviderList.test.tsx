@@ -1,6 +1,5 @@
 import { MockUseCacheUtils } from '@test-mocks/renderer/useCache'
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import type { ComponentProps } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -208,21 +207,12 @@ describe('ProviderList', () => {
     )
   })
 
-  it('loads the provider editor only when the user opens it', async () => {
-    const user = userEvent.setup()
-
+  it('NOVA Studio offers no way to add another provider', () => {
     render(<ProviderList selectedProviderId="openai" onSelectProvider={vi.fn()} />)
 
+    expect(screen.queryByRole('button', { name: /添加/i })).not.toBeInTheDocument()
+    expect(screen.queryByTestId('provider-editor-drawer')).not.toBeInTheDocument()
     expect(providerEditorModuleState.loaded).toBe(false)
-
-    await user.click(screen.getByRole('button', { name: '添加服务商' }))
-
-    expect(await screen.findByTestId('provider-editor-drawer')).toHaveAttribute('data-open', 'true')
-    expect(providerEditorModuleState.loaded).toBe(true)
-
-    await user.click(screen.getByRole('button', { name: 'close-provider-editor' }))
-
-    expect(screen.getByTestId('provider-editor-drawer')).toHaveAttribute('data-open', 'false')
   })
 
   it('filters providers by search text and forwards selection', () => {
@@ -244,53 +234,7 @@ describe('ProviderList', () => {
     expect(onSelectProvider).toHaveBeenCalledWith('anthropic')
   })
 
-  it('offers only safe canonical preset sources to the custom provider editor', async () => {
-    const user = userEvent.setup()
-    const canonicalOpenAI = {
-      ...providers[0],
-      presetProviderId: 'openai',
-      authType: 'api-key'
-    }
-    const canonicalNewApi = {
-      id: 'new-api',
-      name: 'New API',
-      presetProviderId: 'new-api',
-      authType: 'api-key',
-      endpointConfigs: {
-        [ENDPOINT_TYPE.OPENAI_CHAT_COMPLETIONS]: { baseUrl: 'http://localhost:3000' }
-      }
-    }
-    useProvidersMock.mockReturnValue({
-      providers: [
-        canonicalOpenAI,
-        canonicalNewApi,
-        { ...canonicalOpenAI, id: 'openai-work' },
-        {
-          ...providers[1],
-          id: 'claude-code',
-          presetProviderId: 'claude-code',
-          authType: 'api-key',
-          authMethods: ['external-cli']
-        }
-      ],
-      createProvider: vi.fn()
-    })
-
-    render(<ProviderList selectedProviderId="openai" onSelectProvider={vi.fn()} />)
-
-    await user.click(screen.getByRole('button', { name: '添加服务商' }))
-
-    await waitFor(() => {
-      expect(providerEditorDrawerSpy).toHaveBeenLastCalledWith(
-        expect.objectContaining({
-          presetSources: [canonicalOpenAI, canonicalNewApi],
-          onSelectPreset: expect.any(Function)
-        })
-      )
-    })
-  })
-
-  it('triggers add and reorder actions', async () => {
+  it('triggers reorder actions', async () => {
     const reorderableProviders = [
       { ...providers[0], isEnabled: true },
       { ...providers[1], isEnabled: true }
@@ -303,44 +247,8 @@ describe('ProviderList', () => {
 
     render(<ProviderList selectedProviderId="openai" onSelectProvider={vi.fn()} />)
 
-    expect(screen.queryByTestId('provider-editor-drawer')).not.toBeInTheDocument()
-    fireEvent.click(screen.getAllByRole('button', { name: /添加/i })[0])
-    expect(await screen.findByTestId('provider-editor-drawer')).toHaveAttribute('data-open', 'true')
-
     fireEvent.click(screen.getByRole('button', { name: 'trigger-reorder' }))
     expect(reorderSpy).toHaveBeenCalledWith([reorderableProviders[1], reorderableProviders[0]])
-  })
-
-  it('reports a newly created custom provider so model setup can continue automatically', async () => {
-    const user = userEvent.setup()
-    const createProvider = vi.fn().mockResolvedValue({ id: 'custom-provider', name: 'Custom Provider' })
-    const onSelectProvider = vi.fn()
-    const onCustomProviderCreated = vi.fn()
-    useProvidersMock.mockReturnValue({ providers, createProvider })
-
-    render(
-      <ProviderList
-        selectedProviderId="openai"
-        onSelectProvider={onSelectProvider}
-        onCustomProviderCreated={onCustomProviderCreated}
-      />
-    )
-
-    await user.click(screen.getByRole('button', { name: '添加服务商' }))
-    const submit = providerEditorDrawerSpy.mock.calls.at(-1)?.[0].onSubmit
-
-    await act(async () => {
-      await submit({
-        mode: 'create',
-        name: 'Custom Provider',
-        defaultChatEndpoint: ENDPOINT_TYPE.OPENAI_CHAT_COMPLETIONS,
-        authConfig: { type: 'api-key' },
-        apiKeys: [{ id: 'key-1', key: 'sk-test', isEnabled: true }]
-      })
-    })
-
-    expect(onSelectProvider).toHaveBeenCalledWith('custom-provider')
-    expect(onCustomProviderCreated).toHaveBeenCalledWith('custom-provider', true)
   })
 
   it('does not scroll back to the selected provider after drag reorder changes provider order', () => {

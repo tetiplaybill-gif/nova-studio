@@ -1,13 +1,13 @@
 import { DEFAULT_ASSISTANT_SETTINGS } from '@shared/data/types/assistant'
 
-import { CHERRYAI_DEFAULT_UNIQUE_MODEL_ID } from './cherryai'
+import { NOVA_DEFAULT_UNIQUE_MODEL_ID } from './nova'
 
-export const DEFAULT_ASSISTANT_NAME = 'Cherie' as const
+export const DEFAULT_ASSISTANT_NAME = 'NOVA Assistant' as const
 export const DEFAULT_ASSISTANT_EMOJI = '😀' as const
 export const DEFAULT_ASSISTANT_PROMPT = '' as const
 
 export function getDefaultAssistantNameForLocale(locale?: string | null): string {
-  return locale?.toLowerCase().startsWith('zh') ? 'Cherry 助手' : DEFAULT_ASSISTANT_NAME
+  return locale?.toLowerCase().startsWith('zh') ? 'NOVA 助手' : DEFAULT_ASSISTANT_NAME
 }
 
 export const DEFAULT_ASSISTANT_SEED = {
@@ -15,6 +15,6 @@ export const DEFAULT_ASSISTANT_SEED = {
   emoji: DEFAULT_ASSISTANT_EMOJI,
   prompt: DEFAULT_ASSISTANT_PROMPT,
   description: '',
-  modelId: CHERRYAI_DEFAULT_UNIQUE_MODEL_ID,
+  modelId: NOVA_DEFAULT_UNIQUE_MODEL_ID,
   settings: DEFAULT_ASSISTANT_SETTINGS
 } as const

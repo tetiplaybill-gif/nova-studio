@@ -7,7 +7,7 @@ import { app } from 'electron'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { WindowType } from '@main/core/window/types'
-import { CHERRYAI_DEFAULT_UNIQUE_MODEL_ID } from '@shared/data/presets/cherryai'
+import { NOVA_DEFAULT_UNIQUE_MODEL_ID } from '@shared/data/presets/nova'
 
 const mocks = vi.hoisted(() => ({
   generateText: vi.fn(),
@@ -210,7 +210,7 @@ describe('TopicNamingService', () => {
     expect(mocks.generateText.mock.calls[0][0]).not.toHaveProperty('assistantId')
   })
 
-  it('falls back to the managed CherryAI default when the quick model preference is invalid', async () => {
+  it('falls back to the NOVA default model when the quick model preference is invalid', async () => {
     MockMainPreferenceServiceUtils.setPreferenceValue('feature.quick_assistant.model_id', 'bad-value')
     MockMainPreferenceServiceUtils.setPreferenceValue('chat.default_model_id', 'anthropic::claude-3-haiku')
 
@@ -221,16 +221,16 @@ describe('TopicNamingService', () => {
 
     expect(mocks.generateText).toHaveBeenCalledWith(
       expect.objectContaining({
-        uniqueModelId: CHERRYAI_DEFAULT_UNIQUE_MODEL_ID
+        uniqueModelId: NOVA_DEFAULT_UNIQUE_MODEL_ID
       })
     )
     expect(mockMainLoggerService.warn).toHaveBeenCalledWith(
-      'Quick assistant model is not usable for topic naming; falling back to managed CherryAI default',
+      'Quick assistant model is not usable for topic naming; falling back to the NOVA default model',
       { configured: 'bad-value' }
     )
   })
 
-  it('falls back to the managed CherryAI default when the quick model no longer exists', async () => {
+  it('falls back to the NOVA default model when the quick model no longer exists', async () => {
     MockMainPreferenceServiceUtils.setPreferenceValue('feature.quick_assistant.model_id', 'ghost::missing')
     mocks.getModelByKey.mockImplementation(() => {
       throw new Error('missing model')
@@ -244,11 +244,11 @@ describe('TopicNamingService', () => {
     expect(mocks.getModelByKey).toHaveBeenCalledWith('ghost', 'missing')
     expect(mocks.generateText).toHaveBeenCalledWith(
       expect.objectContaining({
-        uniqueModelId: CHERRYAI_DEFAULT_UNIQUE_MODEL_ID
+        uniqueModelId: NOVA_DEFAULT_UNIQUE_MODEL_ID
       })
     )
     expect(mockMainLoggerService.warn).toHaveBeenCalledWith(
-      'Quick assistant model is not usable for topic naming; falling back to managed CherryAI default',
+      'Quick assistant model is not usable for topic naming; falling back to the NOVA default model',
       { configured: 'ghost::missing' }
     )
   })
@@ -658,11 +658,11 @@ describe('TopicNamingService', () => {
     expect(mocks.getModelByKey).not.toHaveBeenCalledWith('claude-code', 'haiku')
     expect(mocks.generateText).toHaveBeenCalledWith(
       expect.objectContaining({
-        uniqueModelId: CHERRYAI_DEFAULT_UNIQUE_MODEL_ID
+        uniqueModelId: NOVA_DEFAULT_UNIQUE_MODEL_ID
       })
     )
     expect(mockMainLoggerService.warn).toHaveBeenCalledWith(
-      'Quick assistant model is not usable for topic naming; falling back to managed CherryAI default',
+      'Quick assistant model is not usable for topic naming; falling back to the NOVA default model',
       { configured: 'claude-code::haiku' }
     )
   })

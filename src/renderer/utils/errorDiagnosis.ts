@@ -3,7 +3,7 @@ import { loggerService } from '@logger'
 import i18n from '@renderer/i18n/resolver'
 import type { SerializedError } from '@renderer/types/error'
 import { fetchGenerate } from '@renderer/utils/aiGeneration'
-import { CHERRYAI_DEFAULT_UNIQUE_MODEL_ID } from '@shared/data/presets/cherryai'
+import { NOVA_DEFAULT_UNIQUE_MODEL_ID } from '@shared/data/presets/nova'
 import type { Model } from '@shared/data/types/model'
 import type { DiagnosisResult } from '@shared/data/types/uiParts'
 import {
@@ -26,10 +26,10 @@ export interface DiagnosisContext {
   modelId?: string
 }
 
-async function getCherryAiDefaultFreeModel(): Promise<Model> {
-  const model = await dataApiService.get(`/models/${CHERRYAI_DEFAULT_UNIQUE_MODEL_ID}`)
+async function getDiagnosisModel(): Promise<Model> {
+  const model = await dataApiService.get(`/models/${NOVA_DEFAULT_UNIQUE_MODEL_ID}`)
   if (!model) {
-    throw new Error(`Diagnosis model not found: ${CHERRYAI_DEFAULT_UNIQUE_MODEL_ID}`)
+    throw new Error(`Diagnosis model not found: ${NOVA_DEFAULT_UNIQUE_MODEL_ID}`)
   }
   return model
 }
@@ -285,7 +285,7 @@ The examples above demonstrate structure only. Write all four diagnosis fields i
   const content = JSON.stringify(errorInfo)
 
   try {
-    const model = await getCherryAiDefaultFreeModel()
+    const model = await getDiagnosisModel()
     const response = await fetchGenerate({ prompt, content, model, throwOnError: true })
     if (!response) {
       throw new Error(`Empty response from model: ${model.id}`)
@@ -306,7 +306,7 @@ export async function classifyErrorByAI(error: SerializedError, language: string
   const content = `Error: ${error.name}: ${error.message}`
 
   try {
-    const model = await getCherryAiDefaultFreeModel()
+    const model = await getDiagnosisModel()
     const response = await fetchGenerate({ prompt, content, model, throwOnError: true })
     return response?.trim() || ''
   } catch (error) {

@@ -1,5 +1,11 @@
 import { vi } from 'vitest'
 
+import { novaOnlyProviders } from '../src/main/data/novaOnlyProviders'
+
+// NOVA Studio shows only the NOVA provider. Upstream tests exercise the other presets, so the rule is off
+// in tests; src/main/data/__tests__/novaOnlyProviders.test.ts turns it back on.
+novaOnlyProviders.enabled = false
+
 // Electron Vite turns `?nodeWorker` imports into Worker factories in production.
 // Vitest otherwise evaluates the worker entry as a regular Node module, where
 // `parentPort` is unavailable. Tests that invoke the factory must mock it locally.

@@ -38,7 +38,8 @@ import { getAppEdition } from '@renderer/utils/appEdition'
 import { isWin } from '@renderer/utils/platform'
 import { isProtectedBuiltinAgentRole } from '@shared/ai/builtinAgent'
 import type { OnboardingProviderSetupStatus } from '@shared/data/preference/preferenceTypes'
-import { CHERRYAI_DEFAULT_UNIQUE_MODEL_ID, isManagedCherryProviderId } from '@shared/data/presets/cherryai'
+import { isManagedCherryProviderId } from '@shared/data/presets/cherryai'
+import { NOVA_DEFAULT_UNIQUE_MODEL_ID } from '@shared/data/presets/nova'
 import type { Model, UniqueModelId } from '@shared/data/types/model'
 import type { CherryCloudStatus } from '@shared/ipc/schemas/cherryCloud'
 import { LATEST_PRIVACY_POLICY_VERSION } from '@shared/utils/constants'
@@ -148,7 +149,7 @@ export default function OnboardingPage({
       const officialAgents = response.items.filter(
         (agent) =>
           isProtectedBuiltinAgentRole(agent.configuration?.builtin_role) &&
-          (agent.model === null || agent.model === CHERRYAI_DEFAULT_UNIQUE_MODEL_ID)
+          (agent.model === null || agent.model === NOVA_DEFAULT_UNIQUE_MODEL_ID)
       )
       await Promise.all(
         officialAgents.map((agent) => dataApiService.patch(`/agents/${agent.id}`, { body: { model: modelId } }))
@@ -164,7 +165,7 @@ export default function OnboardingPage({
         .get('/assistants', { query: { limit: 2 } })
         .then(async ({ items, total }) => {
           const assistant = total === 1 ? items[0] : undefined
-          if (assistant?.modelId === CHERRYAI_DEFAULT_UNIQUE_MODEL_ID) {
+          if (assistant?.modelId === NOVA_DEFAULT_UNIQUE_MODEL_ID) {
             await dataApiService.patch(`/assistants/${assistant.id}`, { body: { modelId: model.id } })
           }
         })

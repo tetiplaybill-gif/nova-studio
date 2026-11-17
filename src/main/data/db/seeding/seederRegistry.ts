@@ -3,7 +3,6 @@ import { AgentSessionContextSeeder } from './seeders/AgentSessionContextSeeder'
 import { AgentSessionMessageTreeSeeder } from './seeders/AgentSessionMessageTreeSeeder'
 import { BrowserCapabilityUpgradeSeeder } from './seeders/browserCapabilityUpgradeSeeder'
 import { BuiltinMcpServerSeeder } from './seeders/builtinMcpServerSeeder'
-import { CherryAiDefaultModelSeeder } from './seeders/cherryaiDefaultModelSeeder'
 import { CherryAssistantInstructionsUpgradeSeeder } from './seeders/CherryAssistantInstructionsUpgradeSeeder'
 import { CherryAssistantSeeder } from './seeders/cherryAssistantSeeder'
 import { CherrySupportSeeder } from './seeders/cherrySupportSeeder'
@@ -15,6 +14,7 @@ import { LocalModelSeeder } from './seeders/LocalModelSeeder'
 import { LongTextPastePreferenceUpgradeSeeder } from './seeders/longTextPastePreferenceUpgradeSeeder'
 import { MessageNavigationUpgradeSeeder } from './seeders/MessageNavigationUpgradeSeeder'
 import { MiniAppSeeder } from './seeders/miniAppSeeder'
+import { NovaDefaultModelSeeder } from './seeders/novaDefaultModelSeeder'
 import { PoeChatEndpointUpgradeSeeder } from './seeders/PoeChatEndpointUpgradeSeeder'
 import { PreferenceSeeder } from './seeders/preferenceSeeder'
 import { PresetProviderSeeder } from './seeders/presetProviderSeeder'
@@ -28,8 +28,9 @@ import { WebSearchPreferenceUpgradeSeeder } from './seeders/WebSearchPreferenceU
 /**
  * All seeders in execution order.
  *
- * Keep CherryAiDefaultModelSeeder before DefaultAssistantSeeder because the
- * seeded assistant references the CherryAI default model (FK to user_model).
+ * Keep NovaDefaultModelSeeder after PresetProviderSeeder (it needs the NOVA provider row) and before
+ * DefaultAssistantSeeder (the seeded assistant references the NOVA default model, FK to user_model).
+ * NOVA Studio does not seed Cherry Studio's CherryAI provider or its default model.
  *
  * To add a new seeder: create an ISeeder class, add it to this array.
  * No changes to DbService needed.
@@ -44,7 +45,7 @@ export const seeders: ISeeder[] = [
   new LegacyFileCleanupPolicySeeder(),
   new PresetProviderSeeder(),
   new PoeChatEndpointUpgradeSeeder(),
-  new CherryAiDefaultModelSeeder(),
+  new NovaDefaultModelSeeder(),
   new CherryAssistantSeeder(),
   new CherryAssistantInstructionsUpgradeSeeder(),
   new CherrySupportSeeder(),

@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { SerializedError } from '@renderer/types/error'
-import { CHERRYAI_DEFAULT_UNIQUE_MODEL_ID } from '@shared/data/presets/cherryai'
+import { NOVA_DEFAULT_UNIQUE_MODEL_ID } from '@shared/data/presets/nova'
 
 vi.mock('@renderer/utils/aiGeneration', () => ({
   fetchGenerate: vi.fn()
@@ -57,10 +57,10 @@ describe('ErrorDiagnosisService', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockGetDiagnosisModel.mockResolvedValue({
-      id: CHERRYAI_DEFAULT_UNIQUE_MODEL_ID,
-      name: 'Qwen',
-      providerId: 'cherryai',
-      apiModelId: 'qwen'
+      id: NOVA_DEFAULT_UNIQUE_MODEL_ID,
+      name: 'DeepSeek V4 Flash',
+      providerId: 'nova',
+      apiModelId: 'deepseek/deepseek-v4-flash'
     })
   })
 
@@ -148,11 +148,11 @@ required service tier.`,
       mockFetchGenerate.mockResolvedValue(JSON.stringify(mockResult))
 
       await diagnoseError(makeError(), 'en')
-      expect(mockGetDiagnosisModel).toHaveBeenCalledWith(`/models/${CHERRYAI_DEFAULT_UNIQUE_MODEL_ID}`)
+      expect(mockGetDiagnosisModel).toHaveBeenCalledWith(`/models/${NOVA_DEFAULT_UNIQUE_MODEL_ID}`)
       expect(mockFetchGenerate).toHaveBeenCalledTimes(1)
       expect(mockFetchGenerate).toHaveBeenCalledWith(
         expect.objectContaining({
-          model: expect.objectContaining({ id: CHERRYAI_DEFAULT_UNIQUE_MODEL_ID }),
+          model: expect.objectContaining({ id: NOVA_DEFAULT_UNIQUE_MODEL_ID }),
           throwOnError: true
         })
       )
@@ -310,7 +310,7 @@ required service tier.`,
       expect(mockFetchGenerate).toHaveBeenCalledTimes(1)
       expect(mockFetchGenerate).toHaveBeenCalledWith(
         expect.objectContaining({
-          model: expect.objectContaining({ id: CHERRYAI_DEFAULT_UNIQUE_MODEL_ID }),
+          model: expect.objectContaining({ id: NOVA_DEFAULT_UNIQUE_MODEL_ID }),
           throwOnError: true
         })
       )
