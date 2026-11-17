@@ -1,0 +1,91 @@
+# Builds NOVA Studio installers on GitHub's own runners. Run it by hand from the Actions tab
+# ("Run workflow"); nothing is published automatically. Download the installers from the run's
+# artifacts and upload them to cdkai.cc.
+#
+# Signing: without certificates the builds are unsigned (Windows SmartScreen and macOS Gatekeeper
+# warn on first launch). To sign the macOS build, add these repository secrets: CSC_LINK (base64
+# Developer ID .p12), CSC_KEY_PASSWORD, and for notarization APPLE_ID, APPLE_APP_SPECIFIC_PASSWORD,
+# APPLE_TEAM_ID. Windows signing goes through scripts/packaging/win-sign.js (WIN_SIGN plus a
+# certificate available to signtool), which needs a runner that holds the certificate.
+name: NOVA Studio release build
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: windows
+            os: windows-latest
+            arch: x64
+            builder: --win --x64
+          - platform: mac
+            os: macos-latest
+            arch: arm64
+            builder: --mac --arm64
+          - platform: mac
+            os: macos-15-intel
+            arch: x64
+            builder: --mac --x64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Python build tools for native modules (macOS)
+        if: matrix.platform == 'mac'
+        run: python -m pip install setuptools
+
+      - uses: pnpm/action-setup@v5
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Type-check and build
+        run: pnpm run build
+        env:
+          NODE_OPTIONS: --max-old-space-size=8192
+
+      - name: Bundle helper tools
+        run: node scripts/release/prepare-tools.js prepare ${{ matrix.platform }} ${{ matrix.arch }}
+
+      - name: Package
+        shell: bash
+        run: |
+          if [ "${{ matrix.platform }}" = mac ] && [ -z "$CSC_LINK" ]; then
+            # No Developer ID: ad-hoc sign so the app runs on Apple Silicon.
+            extra="-c.mac.identity=-"
+          fi
+          pnpm exec electron-builder ${{ matrix.builder }} --publish never $extra
+        env:
+          ELECTRON_BUILDER_7Z_FILTER: BCJ
+          NODE_OPTIONS: --max-old-space-size=8192
+          CSC_LINK: ${{ matrix.platform == 'mac' && secrets.CSC_LINK || '' }}
+          CSC_KEY_PASSWORD: ${{ matrix.platform == 'mac' && secrets.CSC_KEY_PASSWORD || '' }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+
+      - uses: actions/upload-artifact@v6
+        with:
+          name: NOVA-Studio-${{ matrix.platform }}-${{ matrix.arch }}
+          if-no-files-found: error
+          path: |
+            dist/*.exe
+            dist/*.dmg
+            dist/*.zip
+            dist/*.blockmap
+            dist/latest*.yml
