@@ -34,7 +34,10 @@ export function AuthenticationSectionContent({
         onOpenApiSetup={onOpenApiSetup}
         onContinueApiSetup={onContinueApiSetup}
       />
-      <ApiHost providerId={providerId} onRequestModelPullGuide={onRequestModelPullGuide} />
+      {/* NOVA Studio: the NOVA provider's address is fixed to the cdkai.cc API. */}
+      {providerId === 'nova' ? null : (
+        <ApiHost providerId={providerId} onRequestModelPullGuide={onRequestModelPullGuide} />
+      )}
     </>
   )
 }

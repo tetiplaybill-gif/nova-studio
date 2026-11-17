@@ -177,7 +177,7 @@ describe('ProtocolService', () => {
 
     await (service as any).onInit()
 
-    expect(protocolHandlers.get('cherrystudio')).toEqual({ executable: undefined, args: undefined })
+    expect(protocolHandlers.get('novastudio')).toEqual({ executable: undefined, args: undefined })
   })
 
   it('registers the stable launcher for packaged Windows portable builds', async () => {
@@ -188,7 +188,7 @@ describe('ProtocolService', () => {
 
     await (service as any).onInit()
 
-    expect(protocolHandlers.get('cherrystudio')).toEqual({
+    expect(protocolHandlers.get('novastudio')).toEqual({
       executable: 'D:\\Apps\\Cherry Studio Portable.exe',
       args: []
     })
@@ -200,7 +200,7 @@ describe('ProtocolService', () => {
 
     await (service as any).onInit()
 
-    expect(protocolHandlers.get('cherrystudio')).toEqual({
+    expect(protocolHandlers.get('novastudio')).toEqual({
       executable: process.execPath,
       args: [path.resolve(process.cwd(), '.')]
     })
@@ -210,28 +210,28 @@ describe('ProtocolService', () => {
     'preserves the installed protocol handler in an isolated profile (defaultApp=%s)',
     async (defaultApp) => {
       setDefaultApp(defaultApp)
-      process.argv = ['electron', '.', 'cherrystudio://navigate/agents']
+      process.argv = ['electron', '.', 'novastudio://navigate/agents']
       profileMock.root = '/private/tmp/isolated-cherry-profile'
       const installedHandler = { executable: '/Applications/Cherry Studio.app', args: [] }
-      protocolHandlers.set('cherrystudio', installedHandler)
+      protocolHandlers.set('novastudio', installedHandler)
       const navigations: string[] = []
       handlersMock.handleNavigateProtocolUrl.mockImplementation((url: URL) => navigations.push(url.href))
 
       await (service as any).onInit()
       await markProtocolHandlingReady()
 
-      expect(protocolHandlers.get('cherrystudio')).toBe(installedHandler)
-      expect(navigations).toEqual(['cherrystudio://navigate/agents'])
+      expect(protocolHandlers.get('novastudio')).toBe(installedHandler)
+      expect(navigations).toEqual(['novastudio://navigate/agents'])
     }
   )
 
   it('broadcasts unknown protocol hosts to all windows', async () => {
     await markProtocolHandlingReady()
 
-    ;(service as any).handleProtocolUrl('cherrystudio://unknown/path?foo=bar')
+    ;(service as any).handleProtocolUrl('novastudio://unknown/path?foo=bar')
 
     expect(ipcApiServiceMock.broadcast).toHaveBeenCalledWith('navigation.protocol_data', {
-      url: 'cherrystudio://unknown/path?foo=bar',
+      url: 'novastudio://unknown/path?foo=bar',
       params: { foo: 'bar' }
     })
   })
@@ -249,7 +249,7 @@ describe('ProtocolService', () => {
       const handler = getOpenUrlHandler()
       const event = { preventDefault: vi.fn() }
 
-      handler(event, 'cherrystudio://mcp/install?servers=abc')
+      handler(event, 'novastudio://mcp/install?servers=abc')
 
       expect(event.preventDefault).toHaveBeenCalledTimes(1)
       expect(handlersMock.parseMcpInstallProtocolUrl).not.toHaveBeenCalled()
@@ -264,17 +264,17 @@ describe('ProtocolService', () => {
 
       expect(handlersMock.parseMcpInstallProtocolUrl).toHaveBeenCalledTimes(1)
       expect(handlersMock.parseMcpInstallProtocolUrl.mock.calls[0][0].href).toBe(
-        'cherrystudio://mcp/install?servers=abc'
+        'novastudio://mcp/install?servers=abc'
       )
     })
 
     it('handles a hot-start URL immediately', async () => {
       await markProtocolHandlingReady()
 
-      ;(service as any).handleProtocolUrl('cherrystudio://navigate/agents')
+      ;(service as any).handleProtocolUrl('novastudio://navigate/agents')
 
       expect(handlersMock.handleNavigateProtocolUrl).toHaveBeenCalledTimes(1)
-      expect(handlersMock.handleNavigateProtocolUrl.mock.calls[0][0].href).toBe('cherrystudio://navigate/agents')
+      expect(handlersMock.handleNavigateProtocolUrl.mock.calls[0][0].href).toBe('novastudio://navigate/agents')
     })
 
     it('keeps MCP install payloads in Main until installation succeeds', async () => {
@@ -292,7 +292,7 @@ describe('ProtocolService', () => {
       handlersMock.parseMcpInstallProtocolUrl.mockReturnValueOnce(servers)
       await markProtocolHandlingReady()
 
-      ;(service as any).handleProtocolUrl('cherrystudio://mcp/install?servers=secret')
+      ;(service as any).handleProtocolUrl('novastudio://mcp/install?servers=secret')
 
       const path = openSettingsInMainWindowMock.mock.calls[0][0] as string
       expect(path).toMatch(/^\/settings\/mcp\/servers\?protocolInstallRequestId=[0-9a-f-]+$/)
@@ -324,7 +324,7 @@ describe('ProtocolService', () => {
         throw new Error('duplicate server')
       })
       await markProtocolHandlingReady()
-      ;(service as any).handleProtocolUrl('cherrystudio://mcp/install?servers=duplicate')
+      ;(service as any).handleProtocolUrl('novastudio://mcp/install?servers=duplicate')
       const [request] = service.listPendingMcpInstallRequests('main-1')
 
       expect(() => service.installPendingMcpInstallRequest('main-1', request.requestId)).toThrow('duplicate server')
@@ -351,22 +351,22 @@ describe('ProtocolService', () => {
 
       listeners.emit('did-start-loading')
       listeners.emit('did-start-navigation', {}, 'https://child.test/', false, false)
-      ;(service as any).handleProtocolUrl('cherrystudio://navigate/agents')
+      ;(service as any).handleProtocolUrl('novastudio://navigate/agents')
       expect(handlersMock.handleNavigateProtocolUrl).toHaveBeenCalledOnce()
       handlersMock.handleNavigateProtocolUrl.mockClear()
       listeners.emit('did-start-navigation', {}, 'http://localhost:5173/#route', true, true)
-      ;(service as any).handleProtocolUrl('cherrystudio://navigate/agents')
+      ;(service as any).handleProtocolUrl('novastudio://navigate/agents')
       expect(handlersMock.handleNavigateProtocolUrl).toHaveBeenCalledOnce()
       handlersMock.handleNavigateProtocolUrl.mockClear()
       listeners.emit('did-start-navigation', {}, 'http://localhost:5173/', false, true)
-      ;(service as any).handleProtocolUrl('cherrystudio://navigate/agents')
+      ;(service as any).handleProtocolUrl('novastudio://navigate/agents')
       expect(handlersMock.handleNavigateProtocolUrl).not.toHaveBeenCalled()
 
       service.onMainRendererReady('main-1')
       expect(handlersMock.handleNavigateProtocolUrl).toHaveBeenCalledTimes(1)
 
       listeners.emit('render-process-gone')
-      ;(service as any).handleProtocolUrl('cherrystudio://navigate/knowledge')
+      ;(service as any).handleProtocolUrl('novastudio://navigate/knowledge')
       expect(handlersMock.handleNavigateProtocolUrl).toHaveBeenCalledTimes(1)
 
       service.onMainRendererReady('main-1')
@@ -381,9 +381,9 @@ describe('ProtocolService', () => {
       })
       handlersMock.handleNavigateProtocolUrl.mockImplementation((url: URL) => handledUrls.push(url.href))
 
-      ;(service as any).handleProtocolUrl('cherrystudio://mcp/install?servers=first')
+      ;(service as any).handleProtocolUrl('novastudio://mcp/install?servers=first')
       ;(service as any).handleProtocolUrl('not a url')
-      ;(service as any).handleProtocolUrl('cherrystudio://navigate/agents')
+      ;(service as any).handleProtocolUrl('novastudio://navigate/agents')
 
       await (service as any).onAllReady()
 
@@ -391,11 +391,11 @@ describe('ProtocolService', () => {
 
       service.onMainRendererReady('main-1')
 
-      expect(handledUrls).toEqual(['cherrystudio://mcp/install?servers=first', 'cherrystudio://navigate/agents'])
+      expect(handledUrls).toEqual(['novastudio://mcp/install?servers=first', 'novastudio://navigate/agents'])
     })
 
     it('waits for services when the main renderer becomes ready first', async () => {
-      ;(service as any).handleProtocolUrl('cherrystudio://navigate/agents')
+      ;(service as any).handleProtocolUrl('novastudio://navigate/agents')
 
       service.onMainRendererReady('main-1')
       expect(handlersMock.handleNavigateProtocolUrl).not.toHaveBeenCalled()
@@ -408,7 +408,7 @@ describe('ProtocolService', () => {
     it('ignores readiness notifications from non-main windows', async () => {
       windowManagerMock.getWindowType.mockReturnValueOnce('subWindow')
       await (service as any).onAllReady()
-      ;(service as any).handleProtocolUrl('cherrystudio://navigate/agents')
+      ;(service as any).handleProtocolUrl('novastudio://navigate/agents')
 
       service.onMainRendererReady('subwindow-1')
 
@@ -423,15 +423,15 @@ describe('ProtocolService', () => {
       return call[1] as (event: unknown, argv: string[]) => void
     }
 
-    it('dispatches the URL when argv carries a cherrystudio:// deep link', async () => {
+    it('dispatches the URL when argv carries a novastudio:// deep link', async () => {
       await (service as any).onInit()
       await markProtocolHandlingReady()
       const handler = getSecondInstanceHandler()
 
-      handler({}, ['/path/to/electron', '.', 'cherrystudio://navigate/agents'])
+      handler({}, ['/path/to/electron', '.', 'novastudio://navigate/agents'])
 
       expect(mainWindowServiceMock.showMainWindow).not.toHaveBeenCalled()
-      expect(handlersMock.handleNavigateProtocolUrl).toHaveBeenCalledWith(new URL('cherrystudio://navigate/agents'))
+      expect(handlersMock.handleNavigateProtocolUrl).toHaveBeenCalledWith(new URL('novastudio://navigate/agents'))
       expect(ipcApiServiceMock.broadcast).not.toHaveBeenCalled()
     })
 
@@ -440,7 +440,7 @@ describe('ProtocolService', () => {
       await markProtocolHandlingReady()
       const handler = getSecondInstanceHandler()
 
-      handler({}, ['/path/to/electron', '.', 'cherrystudio://oauth/callback?code=private-code&state=old-state'])
+      handler({}, ['/path/to/electron', '.', 'novastudio://oauth/callback?code=private-code&state=old-state'])
 
       expect(ipcApiServiceMock.broadcast).not.toHaveBeenCalled()
       expect(mainWindowServiceMock.showMainWindow).not.toHaveBeenCalled()

@@ -9,7 +9,7 @@ import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { CHERRY_CLOUD_PROVIDER_ID, CHERRYAI_PROVIDER_ID } from '@shared/data/presets/cherryai'
-import { NOVA_DEFAULT_UNIQUE_MODEL_ID } from '@shared/data/presets/nova'
+import { cherryServices, NOVA_DEFAULT_UNIQUE_MODEL_ID } from '@shared/data/presets/nova'
 import { LATEST_PRIVACY_POLICY_VERSION } from '@shared/utils/constants'
 
 const addApiKeyMock = vi.fn()
@@ -235,6 +235,23 @@ describe('OnboardingPage', () => {
 
   afterEach(() => {
     vi.useRealTimers()
+  })
+
+  it('NOVA Studio offers only the NOVA account sign-in, which opens provider setup', async () => {
+    cherryServices.enabled = false
+    try {
+      render(<OnboardingPage />)
+
+      expect(screen.queryByRole('button', { name: /onboarding\.welcome\.other_provider/ })).not.toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: /login_cherryin|login_cherry_cloud/ })).not.toBeInTheDocument()
+      expect(screen.getByText('onboarding.welcome.nova_hint')).toBeInTheDocument()
+
+      fireEvent.click(screen.getByRole('button', { name: /onboarding\.welcome\.login_nova/ }))
+
+      expect(await screen.findByRole('heading', { name: 'onboarding.provider_setup.title' })).toBeInTheDocument()
+    } finally {
+      cherryServices.enabled = true
+    }
   })
 
   it('shows provider setup when choosing another provider', async () => {

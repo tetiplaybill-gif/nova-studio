@@ -4,7 +4,7 @@ import { application } from '@application'
 import { loggerService } from '@logger'
 import { BaseService, Conditional, Injectable, onPlatform, Phase, ServicePhase } from '@main/core/lifecycle'
 import { WindowType } from '@main/core/window/types'
-import { getAppLanguage, t } from '@main/i18n'
+import { t } from '@main/i18n'
 import { openSettingsInMainWindow } from '@main/services/mainWindowNavigation'
 import type { NativeCommandMenuItem, NativeMenuItem } from '@main/services/menu/adapters/nativeMenuAdapter'
 import { toElectronMenuTemplate } from '@main/services/menu/adapters/nativeMenuAdapter'
@@ -76,7 +76,8 @@ export class AppMenuService extends BaseService {
   }
 
   private setupApplicationMenu(focusedWindow = BrowserWindow.getFocusedWindow() ?? undefined): void {
-    const websiteUrl = getAppLanguage().startsWith('zh') ? 'https://cherryai.com.cn' : 'https://cherryai.com'
+    // NOVA Studio: website, docs, feedback and releases all live on cdkai.cc.
+    const websiteUrl = 'https://cdkai.cc'
     // WindowManager keys its registry by managed UUID, not Electron's numeric window ID.
     const windowManager = application.get('WindowManager')
     const focusedType = focusedWindow
@@ -213,7 +214,7 @@ export class AppMenuService extends BaseService {
             click: () => {
               void application
                 .get('MainWindowService')
-                .openWebsite('https://github.com/CherryHQ/cherry-studio/issues/new/choose')
+                .openWebsite(websiteUrl)
                 .catch((error) => logger.warn('Failed to open website', { error }))
             }
           },
@@ -223,7 +224,7 @@ export class AppMenuService extends BaseService {
             click: () => {
               void application
                 .get('MainWindowService')
-                .openWebsite('https://github.com/CherryHQ/cherry-studio/releases')
+                .openWebsite(`${websiteUrl}/download`)
                 .catch((error) => logger.warn('Failed to open website', { error }))
             }
           }

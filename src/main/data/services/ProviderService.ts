@@ -48,7 +48,7 @@ import { ProviderBillingSchema } from '@shared/data/types/providerBilling'
 import { maskApiKey } from '@shared/utils/api'
 import { resolveEndpointDialect } from '@shared/utils/provider'
 
-import { isHiddenInNovaStudio } from '../novaOnlyProviders'
+import { isHiddenInNovaStudio, withoutNovaAddressOverrides } from '../novaOnlyProviders'
 import { isRetiredProvider } from '../retiredProviders'
 
 const logger = loggerService.withContext('DataApi:ProviderService')
@@ -598,7 +598,7 @@ class ProviderService {
       // shape is persisted — registry-owned fields resolve at read time.
       if (dto.endpointConfigs !== undefined) {
         updates.endpointConfigs = projectEndpointConfigOverrides(
-          dto.endpointConfigs,
+          withoutNovaAddressOverrides(providerId, dto.endpointConfigs),
           providerId,
           current.presetProviderId,
           current.endpointConfigs

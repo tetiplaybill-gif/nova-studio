@@ -17,6 +17,7 @@ import { DoctorPopup } from '@renderer/components/doctor'
 import { useAccountSubmenu } from '@renderer/hooks/useAccountSubmenu'
 import { useMiniAppPopup } from '@renderer/hooks/useMiniAppPopup'
 import { useOpenReleaseNotes } from '@renderer/hooks/useOpenReleaseNotes'
+import { cherryServices } from '@shared/data/presets/nova'
 
 const logger = loggerService.withContext('HelpMenu')
 
@@ -46,8 +47,11 @@ export function HelpMenu({
 
   const openDocs = () => {
     const language = i18n.resolvedLanguage ?? i18n.language
-    const url =
-      language === 'zh-CN' || language === 'zh-TW' ? 'https://cherryai.com.cn/docs' : 'https://cherryai.com/docs'
+    const url = !cherryServices.enabled
+      ? 'https://cdkai.cc/docs'
+      : language === 'zh-CN' || language === 'zh-TW'
+        ? 'https://cherryai.com.cn/docs'
+        : 'https://cherryai.com/docs'
     openSmartMiniApp({
       appId: 'cherrystudio-guide',
       name: t('help.guide'),
@@ -109,24 +113,28 @@ export function HelpMenu({
               label={t('help.guide')}
               onClick={() => runAfterClose(openDocs)}
             />
-            <MenuItem
-              size="sm"
-              className="h-8 gap-2 rounded-md border-0 bg-transparent px-2 py-0 text-[13px] leading-5 [&_svg]:text-muted-foreground"
-              icon={<FileArchive size={16} />}
-              label={t('settings.about.feedback.diagnostics.title')}
-              onClick={() =>
-                runAfterClose(async () => {
-                  await DoctorPopup.show({ initialPanel: 'report' })
-                })
-              }
-            />
-            <MenuItem
-              size="sm"
-              className="h-8 gap-2 rounded-md border-0 bg-transparent px-2 py-0 text-[13px] leading-5 [&_svg]:text-muted-foreground"
-              icon={<MessageSquareText size={16} />}
-              label={t('help.feedback')}
-              onClick={() => runAfterClose(onFeedbackClick)}
-            />
+            {cherryServices.enabled ? (
+              <>
+                <MenuItem
+                  size="sm"
+                  className="h-8 gap-2 rounded-md border-0 bg-transparent px-2 py-0 text-[13px] leading-5 [&_svg]:text-muted-foreground"
+                  icon={<FileArchive size={16} />}
+                  label={t('settings.about.feedback.diagnostics.title')}
+                  onClick={() =>
+                    runAfterClose(async () => {
+                      await DoctorPopup.show({ initialPanel: 'report' })
+                    })
+                  }
+                />
+                <MenuItem
+                  size="sm"
+                  className="h-8 gap-2 rounded-md border-0 bg-transparent px-2 py-0 text-[13px] leading-5 [&_svg]:text-muted-foreground"
+                  icon={<MessageSquareText size={16} />}
+                  label={t('help.feedback')}
+                  onClick={() => runAfterClose(onFeedbackClick)}
+                />
+              </>
+            ) : null}
             <MenuItem
               size="sm"
               className="h-8 gap-2 rounded-md border-0 bg-transparent px-2 py-0 text-[13px] leading-5 [&_svg]:text-muted-foreground"

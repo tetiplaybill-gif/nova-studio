@@ -5,7 +5,6 @@ import { BrowserCapabilityUpgradeSeeder } from './seeders/browserCapabilityUpgra
 import { BuiltinMcpServerSeeder } from './seeders/builtinMcpServerSeeder'
 import { CherryAssistantInstructionsUpgradeSeeder } from './seeders/CherryAssistantInstructionsUpgradeSeeder'
 import { CherryAssistantSeeder } from './seeders/cherryAssistantSeeder'
-import { CherrySupportSeeder } from './seeders/cherrySupportSeeder'
 import { DefaultAssistantSeeder } from './seeders/defaultAssistantSeeder'
 import { ExternalSkillExportUpgradeSeeder } from './seeders/ExternalSkillExportUpgradeSeeder'
 import { KnowledgeBaseOrderSeeder } from './seeders/knowledgeBaseOrderSeeder'
@@ -30,7 +29,8 @@ import { WebSearchPreferenceUpgradeSeeder } from './seeders/WebSearchPreferenceU
  *
  * Keep NovaDefaultModelSeeder after PresetProviderSeeder (it needs the NOVA provider row) and before
  * DefaultAssistantSeeder (the seeded assistant references the NOVA default model, FK to user_model).
- * NOVA Studio does not seed Cherry Studio's CherryAI provider or its default model.
+ * NOVA Studio does not seed Cherry Studio's CherryAI provider, its default model, or the Cherry Support
+ * agent (which sends product feedback and diagnostics to the Cherry Studio team).
  *
  * To add a new seeder: create an ISeeder class, add it to this array.
  * No changes to DbService needed.
@@ -48,7 +48,6 @@ export const seeders: ISeeder[] = [
   new NovaDefaultModelSeeder(),
   new CherryAssistantSeeder(),
   new CherryAssistantInstructionsUpgradeSeeder(),
-  new CherrySupportSeeder(),
   new DefaultAssistantSeeder(),
   new LongTextPastePreferenceUpgradeSeeder(),
   new WebSearchPreferenceUpgradeSeeder(),

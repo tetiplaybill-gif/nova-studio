@@ -132,4 +132,18 @@ describe('MediaProtocolService', () => {
     main.url = 'https://untrusted.example'
     expect(allowed(7, main)).toBe(false)
   })
+
+  it('NOVA Studio: the same default-session filter refuses requests to Cherry Studio services', () => {
+    const [filter, check] = beforeRequestMock.mock.calls[0]
+    expect(filter.urls).toEqual(expect.arrayContaining(['*://*.cherry-ai.com/*', '*://*.cherryin.ai/*']))
+    const decide = (url: string) => {
+      let cancelled: boolean | undefined
+      check({ url, webContentsId: 1, frame: undefined }, (response: { cancel: boolean }) => {
+        cancelled = response.cancel
+      })
+      return cancelled
+    }
+    expect(decide('https://cloud.cherryai.com/api/v1/public/plans')).toBe(true)
+    expect(decide('https://api.cherry-ai.com/diagnostics')).toBe(true)
+  })
 })

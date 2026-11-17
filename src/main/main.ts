@@ -21,6 +21,7 @@ import { initCrashTelemetry } from '@main/core/preboot/crashTelemetry'
 import { runLegacyUpgradeGate } from '@main/core/preboot/legacyUpgradeGate'
 import { requireSingleInstance } from '@main/core/preboot/singleInstance'
 import { resolveUserDataLocation } from '@main/core/preboot/userDataLocation'
+import { installCherryServiceBlock } from '@main/core/security/cherryServiceBlocklist'
 import { MINI_APP_SCHEME_DECLARATION } from '@main/features/miniApp/runtime/protocol'
 import { runDataReset } from '@main/services/dataReset'
 import { initSentry } from '@main/services/errorReporting'
@@ -31,6 +32,8 @@ import { getApplicationId } from '@main/utils/appEdition'
 
 // should be the first to resolveUserDataLocation()
 resolveUserDataLocation()
+// NOVA Studio: refuse main-process requests to Cherry Studio's services before any service starts.
+installCherryServiceBlock(net)
 requireSingleInstance()
 configureChromiumFlags()
 configureRemoteDebugging()
@@ -43,7 +46,7 @@ initSentry()
 // process — startApp() itself awaits app.whenReady(), so this cannot move in there.
 protocol.registerSchemesAsPrivileged([CHERRY_MEDIA_SCHEME_DECLARATION, MINI_APP_SCHEME_DECLARATION])
 
-import { app, protocol } from 'electron'
+import { app, net, protocol } from 'electron'
 
 import { loggerService } from '@logger'
 

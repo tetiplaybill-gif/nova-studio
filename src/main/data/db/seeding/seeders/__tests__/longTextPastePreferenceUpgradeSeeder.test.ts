@@ -9,7 +9,11 @@ import { SeedRunner } from '@data/db/seeding/SeedRunner'
 const PASTE_AS_FILE_KEY = 'chat.input.paste_long_text_as_file'
 const PASTE_THRESHOLD_KEY = 'chat.input.paste_long_text_threshold'
 const PASTE_PREFERENCE_SEEDERS = seeders.filter(
-  ({ name }) => name === 'cherryaiDefaultModel' || name === 'longTextPastePreferenceUpgrade' || name === 'preference'
+  ({ name }) =>
+    name === 'presetProvider' ||
+    name === 'novaDefaultModel' ||
+    name === 'longTextPastePreferenceUpgrade' ||
+    name === 'preference'
 )
 
 describe('LongTextPastePreferenceUpgradeSeeder', () => {

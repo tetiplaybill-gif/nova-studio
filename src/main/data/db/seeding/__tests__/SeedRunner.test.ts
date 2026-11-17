@@ -6,11 +6,15 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { application } from '@application'
 import { appStateTable } from '@data/db/schemas/appState'
+import { agentTable } from '@data/db/schemas/agent'
 import { assistantTable } from '@data/db/schemas/assistant'
 import { preferenceTable } from '@data/db/schemas/preference'
+import { userModelTable } from '@data/db/schemas/userModel'
+import { userProviderTable } from '@data/db/schemas/userProvider'
 import { seeders } from '@data/db/seeding/seederRegistry'
 import { SeedRunner } from '@data/db/seeding/SeedRunner'
 import type { ISeeder } from '@data/db/types'
+import { NOVA_DEFAULT_UNIQUE_MODEL_ID } from '@shared/data/presets/nova'
 
 const BOOTSTRAP_MARKER_KEY = 'seedRunner:bootstrapCompleted'
 
@@ -187,6 +191,28 @@ describe('SeedRunner', () => {
 
     const assistants = await dbh.db.select().from(assistantTable)
     expect(assistants).toHaveLength(1)
+  })
+
+  it('NOVA Studio: a fresh install has the NOVA default model and no Cherry Studio services', async () => {
+    new SeedRunner(dbh.db).runAll(seeders)
+
+    const providerIds = (await dbh.db.select().from(userProviderTable)).map((row) => row.providerId)
+    expect(providerIds).toContain('nova')
+    expect(providerIds).not.toContain('cherryai')
+    expect(providerIds).not.toContain('cherryai-subscription')
+
+    const models = (await dbh.db.select().from(userModelTable)).map((row) => row.id)
+    expect(models).toContain(NOVA_DEFAULT_UNIQUE_MODEL_ID)
+    expect(models.some((id) => id.startsWith('cherryai::'))).toBe(false)
+
+    const defaultModel = dbh.db.select().from(preferenceTable).where(eq(preferenceTable.key, 'chat.default_model_id')).get()
+    expect(defaultModel?.value).toBe(NOVA_DEFAULT_UNIQUE_MODEL_ID)
+
+    const [assistant] = await dbh.db.select().from(assistantTable)
+    expect(assistant?.modelId).toBe(NOVA_DEFAULT_UNIQUE_MODEL_ID)
+
+    const agentNames = (await dbh.db.select().from(agentTable)).map((row) => row.name)
+    expect(agentNames.some((name) => /Cherry/.test(name ?? ''))).toBe(false)
   })
 
   it('seeds a fresh database before DbService is available', () => {

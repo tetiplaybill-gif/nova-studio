@@ -39,7 +39,7 @@ import { isWin } from '@renderer/utils/platform'
 import { isProtectedBuiltinAgentRole } from '@shared/ai/builtinAgent'
 import type { OnboardingProviderSetupStatus } from '@shared/data/preference/preferenceTypes'
 import { isManagedCherryProviderId } from '@shared/data/presets/cherryai'
-import { NOVA_DEFAULT_UNIQUE_MODEL_ID } from '@shared/data/presets/nova'
+import { cherryServices, NOVA_DEFAULT_UNIQUE_MODEL_ID } from '@shared/data/presets/nova'
 import type { Model, UniqueModelId } from '@shared/data/types/model'
 import type { CherryCloudStatus } from '@shared/ipc/schemas/cherryCloud'
 import { LATEST_PRIVACY_POLICY_VERSION } from '@shared/utils/constants'
@@ -389,8 +389,12 @@ export default function OnboardingPage({
     }
   }, [addApiKey, syncProviderModels, t, updateProvider])
 
-  const isPrimaryLoginPending = shouldUseCherryAccountLogin ? isCloudAuthorizing : isLoggingIn
-  const primaryLoginLabel = shouldUseCherryAccountLogin
+  // NOVA Studio: the only sign-in is the NOVA account, which lives on the provider step's NOVA card.
+  const isNovaOnboarding = !cherryServices.enabled
+  const isPrimaryLoginPending = isNovaOnboarding ? false : shouldUseCherryAccountLogin ? isCloudAuthorizing : isLoggingIn
+  const primaryLoginLabel = isNovaOnboarding
+    ? t('onboarding.welcome.login_nova')
+    : shouldUseCherryAccountLogin
     ? cloudStatus?.phase === 'signed-in'
       ? t('settings.provider.cherry_cloud.logged_in')
       : isCloudAuthorizing
@@ -442,7 +446,7 @@ export default function OnboardingPage({
             {step === 'welcome' && (
               <div className="flex h-full w-full items-center justify-center px-6 pb-20">
                 <div className="flex w-full max-w-[420px] flex-col items-center">
-                  <img src={AppLogo} alt="Cherry Studio" className="size-16 rounded-xl" />
+                  <img src={AppLogo} alt="NOVA Studio" className="size-16 rounded-xl" />
                   <div className="mt-5 flex flex-col gap-2 text-center">
                     <h1 className="m-0 font-semibold text-2xl text-foreground">{t('onboarding.welcome.title')}</h1>
                     <p className="m-0 text-muted-foreground text-sm">{t('onboarding.welcome.subtitle')}</p>
@@ -458,7 +462,11 @@ export default function OnboardingPage({
                       }
                       onClick={() =>
                         void runAfterPrivacyChoice(
-                          shouldUseCherryAccountLogin ? handleCherryCloudLogin : handleCherryInLogin
+                          isNovaOnboarding
+                            ? () => setStep('provider')
+                            : shouldUseCherryAccountLogin
+                              ? handleCherryCloudLogin
+                              : handleCherryInLogin
                         )
                       }>
                       {!isPrimaryLoginPending && <LogIn size={16} />}
@@ -475,19 +483,21 @@ export default function OnboardingPage({
                         {t('common.cancel')}
                       </Button>
                     ) : null}
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="lg"
-                      className="h-11 w-full rounded-xl"
-                      disabled={isUpdatingPrivacy}
-                      onClick={() => void runAfterPrivacyChoice(() => setStep('provider'))}>
-                      <KeyRound size={16} />
-                      {t('onboarding.welcome.other_provider')}
-                    </Button>
+                    {isNovaOnboarding ? null : (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="lg"
+                        className="h-11 w-full rounded-xl"
+                        disabled={isUpdatingPrivacy}
+                        onClick={() => void runAfterPrivacyChoice(() => setStep('provider'))}>
+                        <KeyRound size={16} />
+                        {t('onboarding.welcome.other_provider')}
+                      </Button>
+                    )}
                   </div>
                   <p className="mt-4 mb-0 text-center text-muted-foreground text-xs">
-                    {t('onboarding.welcome.setup_hint')}
+                    {isNovaOnboarding ? t('onboarding.welcome.nova_hint') : t('onboarding.welcome.setup_hint')}
                   </p>
                 </div>
               </div>

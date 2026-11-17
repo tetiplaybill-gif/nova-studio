@@ -25,6 +25,7 @@ import { openSettingsTab } from '@renderer/services/mainWindowNavigation'
 import { getAppEdition } from '@renderer/utils/appEdition'
 import { formatQuotaPercent, getLowestRemainingPercent } from '@renderer/utils/cherryCloudQuota'
 import { isEmoji } from '@renderer/utils/naming'
+import { cherryServices } from '@shared/data/presets/nova'
 
 import { AppearanceMenu } from './layout/AppearanceMenu'
 import { NotificationCenterButton } from './NotificationCenter'
@@ -76,7 +77,9 @@ export function UserAccountPanel({
   const upcomingPaidPlan = activePaidPlan ? undefined : upcomingPaid
   const paidPlanName = (activePaidPlan ?? upcomingPaidPlan)?.plan.display_name
   const remainingPercent = activePaidPlan ? (getLowestRemainingPercent(activePaidPlan) ?? null) : null
-  const cloudSubtitle = isCloudSignedIn
+  const cloudSubtitle = !cherryServices.enabled
+    ? null
+    : isCloudSignedIn
     ? paidPlanName || cloudStatus.displayName || t('settings.provider.cherry_cloud.logged_in')
     : isAuthorizing
       ? t('settings.provider.cherry_cloud.signing_in')
@@ -227,7 +230,7 @@ export function UserAccountPanel({
         </Button>
       </ColFlex>
       <ColFlex className="border-border-subtle gap-0.5 border-t py-1">
-        {activePaidPlan ? (
+        {!cherryServices.enabled ? null : activePaidPlan ? (
           <HoverCard openDelay={150} closeDelay={120}>
             <HoverCardTrigger asChild>{subscriptionRow}</HoverCardTrigger>
             <HoverCardContent side="right" align="start" sideOffset={8} className="w-64">
@@ -257,7 +260,7 @@ export function UserAccountPanel({
         />
         <AppearanceMenu onRequestClose={onRequestClose} />
         {children}
-        {cloudHeaderAction ? (
+        {cherryServices.enabled && cloudHeaderAction ? (
           <Button
             type="button"
             className="h-8 min-h-8 w-full justify-start gap-2 rounded-md bg-transparent px-2 py-0 text-[13px] text-foreground leading-5"

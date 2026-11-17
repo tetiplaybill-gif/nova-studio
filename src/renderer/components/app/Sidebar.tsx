@@ -26,6 +26,7 @@ import { trackSubscriptionEntryView } from '@renderer/services/cherryCloudSubscr
 import { openSettingsTab } from '@renderer/services/mainWindowNavigation'
 import { toast } from '@renderer/services/toast'
 import { isMac } from '@renderer/utils/platform'
+import { cherryServices } from '@shared/data/presets/nova'
 
 import { HelpMenu } from '../layout/HelpMenu'
 import { AppUpdateButton } from '../layout/ShellTabBarActions'
@@ -113,7 +114,7 @@ export default function Sidebar({
   }, [layout])
 
   const avatar = useAvatar()
-  const showSubscribeDot = useCherryCloudSubscribeReminder()
+  const showSubscribeDot = useCherryCloudSubscribeReminder() && cherryServices.enabled
   useEffect(() => {
     if (showSubscribeDot) trackSubscriptionEntryView('avatar_dot')
   }, [showSubscribeDot])

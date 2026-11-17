@@ -11,6 +11,7 @@ import { buildAssistantCatalogTabs, useAssistantCatalogPresets } from '@renderer
 import { useBuiltinMcpCatalog } from '@renderer/hooks/useBuiltinMcpCatalog'
 import { openSettingsTab } from '@renderer/services/mainWindowNavigation'
 import type { MarketplaceResourceType, MarketplaceView } from '@renderer/types/marketplace'
+import { cherryServices } from '@shared/data/presets/nova'
 
 import { MarketplaceCategoryFilter } from './MarketplaceComponents'
 import { MARKETPLACE_CATEGORY_KEYS } from './marketplaceLabels'
@@ -37,7 +38,11 @@ export default function MarketplacePage() {
   const { mcpView, mcpProvider } = marketplaceRoute.useSearch()
   const [selectedType, setSelectedType] = useState<MarketplaceView>('all')
   const resourceType = mcpView || mcpProvider ? 'mcp' : selectedType
-  const [sourceId, setSourceId] = useState<string | null>(null)
+  // NOVA Studio: Cherry Studio's curated skill list is served by Cherry's own service, so skills come from
+  // the public skills.sh registry instead and the curated list is never fetched.
+  const novaSkills = !cherryServices.enabled
+  const defaultSkillSource = novaSkills ? 'skills.sh' : null
+  const [sourceId, setSourceId] = useState<string | null>(defaultSkillSource)
   const [queries, setQueries] = useState<Record<MarketplaceView, string>>({
     all: '',
     skill: '',
@@ -60,7 +65,7 @@ export default function MarketplacePage() {
   const registrySource = skillSourceId === 'skills.sh' || skillSourceId === 'claude-plugins.dev' ? skillSourceId : null
   const skills = useMarketplace(
     registrySource ? null : skillSourceId,
-    !registrySource && (resourceType === 'all' || resourceType === 'skill')
+    !novaSkills && !registrySource && (resourceType === 'all' || resourceType === 'skill')
   )
   const agents = useAgentCatalogPresets({ enabled: resourceType === 'all' || resourceType === 'agent' })
   const skillCategories = useMemo(
@@ -93,12 +98,12 @@ export default function MarketplacePage() {
     mcp: mcp.presets.length,
     all: null
   }
-  const curatedCounts = [skills.curatedCount, counts.agent, counts.mcp]
+  const curatedCounts = novaSkills ? [counts.agent, counts.mcp] : [skills.curatedCount, counts.agent, counts.mcp]
   if (curatedCounts.every((count) => count !== null))
     counts.all = curatedCounts.reduce<number>((sum, count) => sum + (count ?? 0), 0)
   const browse = (type: MarketplaceResourceType) => {
     setQueries((current) => ({ ...current, [type]: query }))
-    if (type === 'skill') setSourceId(null)
+    if (type === 'skill') setSourceId(defaultSkillSource)
     if (type === 'agent') setTemplateCategory('')
     selectResourceType(type)
   }
@@ -233,7 +238,7 @@ export default function MarketplacePage() {
           ) : null}
           {resourceType === 'all' ? (
             <ScrollArea className="-mr-4 min-h-0 flex-1" contentProps={{ className: 'space-y-7 pr-5 pb-4' }}>
-              {OVERVIEW_TYPES.map((type) => (
+              {OVERVIEW_TYPES.filter((type) => !novaSkills || type !== 'skill').map((type) => (
                 <section key={type} data-testid={'marketplace-section-' + type}>
                   <div className="mb-3 flex items-center justify-between gap-3">
                     <h2 className="text-sm font-medium">{t('marketplace.type.' + type)}</h2>

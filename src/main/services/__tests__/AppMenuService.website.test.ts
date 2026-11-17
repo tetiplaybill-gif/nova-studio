@@ -40,10 +40,10 @@ describe('AppMenuService official website', () => {
   })
 
   it.each([
-    ['zh-CN', 'https://cherryai.com.cn'],
-    ['zh-TW', 'https://cherryai.com.cn'],
-    ['en-US', 'https://cherryai.com'],
-    ['ja-JP', 'https://cherryai.com']
+    ['zh-CN', 'https://cdkai.cc'],
+    ['zh-TW', 'https://cdkai.cc'],
+    ['en-US', 'https://cdkai.cc'],
+    ['ja-JP', 'https://cdkai.cc']
   ] as const)('opens the official site and documentation for %s', async (language, websiteUrl) => {
     MockMainPreferenceServiceUtils.setPreferenceValue('app.language', language)
     await service._doInit()

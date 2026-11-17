@@ -5,6 +5,7 @@ import parseRange from 'range-parser'
 
 import { loggerService } from '@logger'
 import { BaseService, Injectable, Phase, ServicePhase } from '@main/core/lifecycle'
+import { CHERRY_SERVICE_URL_PATTERNS, isCherryServiceUrl } from '@main/core/security/cherryServiceBlocklist'
 import { isAppRendererUrl } from '@main/core/security/validateSender'
 
 import { CHERRY_MEDIA_SCHEME, MEDIA_KINDS, type MediaEntry, type MediaKind } from './types'
@@ -34,9 +35,15 @@ export class MediaProtocolService extends BaseService {
   protected async onInit(): Promise<void> {
     // `protocol.handle` requires an app-ready process, hence Phase.WhenReady.
     protocol.handle(CHERRY_MEDIA_SCHEME, (request) => this.handleRequest(request))
+    // Electron keeps one onBeforeRequest listener per session, so this one also refuses requests to
+    // Cherry Studio's own services (see cherryServiceBlocklist).
     session.defaultSession.webRequest.onBeforeRequest(
-      { urls: [`${CHERRY_MEDIA_SCHEME}://*/*`] },
+      { urls: [`${CHERRY_MEDIA_SCHEME}://*/*`, ...CHERRY_SERVICE_URL_PATTERNS] },
       (details, callback) => {
+        if (isCherryServiceUrl(details.url)) {
+          callback({ cancel: true })
+          return
+        }
         const url = new URL(details.url)
         const entry = this.stores.get(url.hostname as MediaKind)?.get(url.pathname.slice(1))
         const access = entry?.access

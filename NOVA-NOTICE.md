@@ -17,6 +17,11 @@ Based on upstream commit `c2efa48fc09f85ef7e6eaf70f3d4a969b69f55af` (Cherry Stud
 - Disabled the upstream update feed, usage analytics and crash reporting.
 - Disabled the upstream announcement feed and provider-catalog downloads, and identify API
   requests as NOVA Studio.
+- Removed Cherry Studio's own services from the app: Cherry Cloud accounts and subscriptions, the
+  Cherry Support agent, product feedback and diagnostic upload, and the curated skill list; requests to
+  Cherry Studio's domains are refused in the main process. Help, About and menu links point to
+  cdkai.cc, the deep-link scheme is `novastudio://`, and the privacy policy describes NOVA Studio.
+- The NOVA provider's API address is fixed to cdkai.cc.
 - Added the NOVA account panel: sign in with a cdkai.cc account, get this computer's API key
   automatically, see the balance and open the top-up page.
 

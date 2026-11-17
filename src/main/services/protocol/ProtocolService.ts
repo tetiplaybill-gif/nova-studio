@@ -21,9 +21,10 @@ import { parseMcpInstallProtocolUrl } from './handlers/mcpInstall'
 import { handleNavigateProtocolUrl } from './handlers/navigate'
 import { handleProvidersProtocolUrl } from './handlers/providersImport'
 
-export const CHERRY_STUDIO_PROTOCOL = 'cherrystudio'
+/** NOVA Studio's own link scheme, so it never takes over links meant for an installed Cherry Studio. */
+export const CHERRY_STUDIO_PROTOCOL = 'novastudio'
 
-const DESKTOP_FILE_NAME = 'cherrystudio-url-handler.desktop'
+const DESKTOP_FILE_NAME = 'novastudio-url-handler.desktop'
 const execAsync = promisify(exec)
 const logger = loggerService.withContext('ProtocolService')
 
@@ -267,7 +268,7 @@ export class ProtocolService extends BaseService {
       }
 
       const desktopFileContent = `[Desktop Entry]
-Name=Cherry Studio
+Name=NOVA Studio
 Exec=${escapePathForExec(appPath)} %U
 Terminal=false
 Type=Application

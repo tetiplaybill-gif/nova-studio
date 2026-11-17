@@ -1,0 +1,58 @@
+/**
+ * NOVA Studio never contacts services run by the Cherry Studio team. The features that used them are
+ * hidden or rewired, and this list is the backstop: main-process `net.fetch` calls and default-session
+ * requests to these domains (and their subdomains) are refused before they leave the computer.
+ */
+const CHERRY_SERVICE_DOMAINS = [
+  'cherry-ai.com',
+  'cherryai.com',
+  'cherryai.com.cn',
+  'cherryin.ai',
+  'cherryin.net',
+  'cherryin.dev',
+  'cherrystudio.com'
+] as const
+
+export function isCherryServiceUrl(url: string): boolean {
+  let host: string
+  try {
+    host = new URL(url).hostname.toLowerCase().replace(/\.$/, '')
+  } catch {
+    return false
+  }
+  return CHERRY_SERVICE_DOMAINS.some((domain) => host === domain || host.endsWith(`.${domain}`))
+}
+
+/** webRequest URL patterns covering every blocked domain and subdomain, over http and https. */
+export const CHERRY_SERVICE_URL_PATTERNS: string[] = CHERRY_SERVICE_DOMAINS.flatMap((domain) => [
+  `*://${domain}/*`,
+  `*://*.${domain}/*`
+])
+
+export class CherryServiceBlockedError extends Error {
+  constructor(url: string) {
+    super(`NOVA Studio does not connect to Cherry Studio services (${new URL(url).hostname})`)
+    this.name = 'CherryServiceBlockedError'
+  }
+}
+
+type FetchLike = (input: string | URL | Request, init?: RequestInit) => Promise<Response>
+
+/** Wraps a `fetch`-shaped function so requests to Cherry Studio services fail without being sent. */
+export function blockCherryServices<F extends FetchLike>(fetchImpl: F): F {
+  const guarded = (input: string | URL | Request, init?: RequestInit) => {
+    const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
+    if (isCherryServiceUrl(url)) return Promise.reject(new CherryServiceBlockedError(url))
+    return fetchImpl(input, init)
+  }
+  return guarded as F
+}
+
+/** Installs the guard on Electron's `net.fetch`, which the main process uses for its own HTTP calls. */
+export function installCherryServiceBlock(netModule: { fetch: FetchLike }): void {
+  try {
+    netModule.fetch = blockCherryServices(netModule.fetch.bind(netModule))
+  } catch {
+    // A frozen module object: the default-session webRequest filter still applies.
+  }
+}

@@ -37,6 +37,13 @@ import { toast } from '@renderer/services/toast'
 import { openExternalWebsite } from '@renderer/services/website'
 import { cn } from '@renderer/utils/style'
 import { UpgradeChannel } from '@shared/data/preference/preferenceTypes'
+import {
+  cherryServices,
+  NOVA_DOCS_URL,
+  NOVA_SOURCE_URL,
+  NOVA_WEBSITE_URL,
+  UPSTREAM_PROJECT_URL
+} from '@shared/data/presets/nova'
 import { DOCTOR_OPEN_QUERY_PARAM, type DoctorPanel } from '@shared/utils/doctor'
 
 const AboutSettings: FC = () => {
@@ -162,7 +169,10 @@ const AboutSettings: FC = () => {
     })()
   }, [])
 
+  // NOVA Studio points its links at cdkai.cc; Cherry Studio's own links stay for upstream tests.
+  const isNova = !cherryServices.enabled
   const onOpenDocs = () => {
+    if (isNova) return void openExternalWebsite(NOVA_DOCS_URL)
     const isChinese = i18n.language.startsWith('zh')
     void openExternalWebsite(isChinese ? 'https://cherryai.com.cn/docs' : 'https://cherryai.com/docs')
   }
@@ -176,8 +186,8 @@ const AboutSettings: FC = () => {
           <div className="flex min-w-0 flex-1 items-center gap-3">
             <button
               type="button"
-              aria-label={t('settings.about.repository')}
-              onClick={() => onOpenWebsite('https://github.com/CherryHQ/cherry-studio')}
+              aria-label={isNova ? t('settings.about.website.title') : t('settings.about.repository')}
+              onClick={() => onOpenWebsite(isNova ? NOVA_WEBSITE_URL : 'https://github.com/CherryHQ/cherry-studio')}
               className="relative cursor-pointer">
               <span aria-hidden="true">
                 {appUpdateState.downloading && appUpdateState.downloadProgress > 0 && (
@@ -197,12 +207,14 @@ const AboutSettings: FC = () => {
             </button>
 
             <div className="flex min-h-18 flex-col items-start justify-center">
-              <div className="mb-1 text-lg font-bold text-foreground">Cherry Studio</div>
+              <div className="mb-1 text-lg font-bold text-foreground">{isNova ? 'NOVA Studio' : 'Cherry Studio'}</div>
               <div className="text-muted-foreground text-sm">{t('settings.about.description')}</div>
               <button
                 type="button"
                 aria-label={t('settings.about.releases.title')}
-                onClick={() => onOpenWebsite('https://github.com/CherryHQ/cherry-studio/releases')}
+                onClick={() =>
+                  isNova ? void showReleases() : onOpenWebsite('https://github.com/CherryHQ/cherry-studio/releases')
+                }
                 className="mt-1.5">
                 <Badge className="cursor-pointer rounded-md border-primary/20 bg-primary/10 px-1.5 py-0 text-[11px] leading-4 text-primary transition-colors hover:bg-primary/15">
                   v{version}
@@ -242,6 +254,8 @@ const AboutSettings: FC = () => {
               <Switch checked={autoCheckUpdate} onCheckedChange={(v) => setAutoCheckUpdate(v)} />
             </SettingRow>
 
+            {isNova ? null : (
+              <>
             <Divider className="my-3" />
             <SettingRow className="flex-nowrap gap-6">
               <div className="flex min-w-0 flex-1 items-center justify-between gap-6">
@@ -268,6 +282,8 @@ const AboutSettings: FC = () => {
                 <Switch className="shrink-0" checked={testPlan} onCheckedChange={(v) => handleSetTestPlan(v)} />
               </Tooltip>
             </SettingRow>
+              </>
+            )}
           </>
         )}
       </SettingGroup>
@@ -310,9 +326,30 @@ const AboutSettings: FC = () => {
           title={t('settings.about.website.title')}
           actionLabel={t('settings.about.website.button')}
           onAction={() =>
-            onOpenWebsite(i18n.language.startsWith('zh') ? 'https://cherryai.com.cn' : 'https://cherryai.com')
+            onOpenWebsite(
+              isNova ? NOVA_WEBSITE_URL : i18n.language.startsWith('zh') ? 'https://cherryai.com.cn' : 'https://cherryai.com'
+            )
           }
         />
+        {isNova ? (
+          <>
+        <Divider className="my-3" />
+        <AboutActionRow
+          icon={<Github className="size-4.5" />}
+          title={t('settings.about.nova.source.title')}
+          actionLabel={t('settings.about.nova.source.button')}
+          onAction={() => onOpenWebsite(NOVA_SOURCE_URL)}
+        />
+        <Divider className="my-3" />
+        <AboutActionRow
+          icon={<Star className="size-4.5" />}
+          title={t('settings.about.nova.upstream.title')}
+          actionLabel={t('settings.about.website.button')}
+          onAction={() => onOpenWebsite(UPSTREAM_PROJECT_URL)}
+        />
+          </>
+        ) : (
+          <>
         <Divider className="my-3" />
         <AboutActionRow
           icon={<Github className="size-4.5" />}
@@ -339,6 +376,8 @@ const AboutSettings: FC = () => {
           actionLabel={t('settings.about.website.button')}
           onAction={showEnterprise}
         />
+          </>
+        )}
         <Divider className="my-3" />
         <AboutActionRow
           id="setting-about-debug-tools"

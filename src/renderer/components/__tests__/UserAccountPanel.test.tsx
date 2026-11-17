@@ -7,6 +7,7 @@ import { SWRConfig } from 'swr'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import i18n from '@renderer/i18n/resolver'
+import { cherryServices } from '@shared/data/presets/nova'
 import type {
   CherryCloudAccountPlans,
   CherryCloudAccountReceipt,
@@ -127,6 +128,20 @@ beforeEach(async () => {
 afterEach(() => vi.unstubAllEnvs())
 
 describe('UserAccountPanel', () => {
+  it('NOVA Studio shows no Cherry Cloud subscription or identity in the account menu', async () => {
+    cherryServices.enabled = false
+    try {
+      renderAccount(<UserAccountPanel />)
+
+      expect(await screen.findByRole('button', { name: /设置/ })).toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: /去订阅/ })).not.toBeInTheDocument()
+      expect(screen.queryByText('c***@cherry-ai.com')).not.toBeInTheDocument()
+      expect(screen.queryByTestId('subscribe-reminder-dot')).not.toBeInTheDocument()
+    } finally {
+      cherryServices.enabled = true
+    }
+  })
+
   it('keeps the account entry label while loading and after signing out', async () => {
     const pendingStatus = deferred<{ ok: true; data: CherryCloudAccountReceipt }>()
     request.mockImplementation(() => pendingStatus.promise)

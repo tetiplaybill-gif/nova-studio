@@ -11,3 +11,18 @@ export const NOVA_PROVIDER_ID = 'nova'
 export function isHiddenInNovaStudio(providerId: string | null | undefined, presetProviderId?: string | null): boolean {
   return novaOnlyProviders.enabled && providerId !== NOVA_PROVIDER_ID && presetProviderId !== NOVA_PROVIDER_ID
 }
+
+/**
+ * The NOVA provider always talks to the cdkai.cc API: address overrides sent for it are dropped, so
+ * only other per-endpoint settings are stored. Other providers are returned unchanged.
+ */
+export function withoutNovaAddressOverrides<T>(providerId: string, endpointConfigs: T): T {
+  if (!novaOnlyProviders.enabled || providerId !== NOVA_PROVIDER_ID || !endpointConfigs) return endpointConfigs
+  return Object.fromEntries(
+    Object.entries(endpointConfigs as Record<string, unknown>).map(([endpoint, config]) => {
+      if (!config || typeof config !== 'object') return [endpoint, config]
+      const { baseUrl: _baseUrl, ...rest } = config as Record<string, unknown>
+      return [endpoint, rest]
+    })
+  ) as T
+}
