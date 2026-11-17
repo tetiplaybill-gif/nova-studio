@@ -128,7 +128,7 @@ const { activateNotification } = await import('../notificationActivation')
 const { ConversationNotificationService } = await import('../ConversationNotificationService')
 const { UsageBudgetNotificationService } = await import('../UsageBudgetNotificationService')
 const { NotificationService } = await import('../NotificationService')
-const { OfficialAnnouncementService } = await import('../OfficialAnnouncementService')
+const { OfficialAnnouncementService, officialAnnouncementFeed } = await import('../OfficialAnnouncementService')
 
 const mainWindowInfo = (overrides: Partial<WindowInfo> = {}): WindowInfo => ({
   id: 'main-1',
@@ -299,6 +299,7 @@ describe('NotificationService', () => {
     }
 
     beforeEach(async () => {
+      officialAnnouncementFeed.enabled = true
       vi.useFakeTimers()
       vi.setSystemTime(new Date('2026-10-28T02:00:00Z'))
       vi.spyOn(Math, 'random').mockReturnValue(0.5)
@@ -330,10 +331,19 @@ describe('NotificationService', () => {
     })
 
     afterEach(async () => {
+      officialAnnouncementFeed.enabled = false
       Object.defineProperty(process, 'platform', { value: originalPlatform })
       await announcements._doStop()
       await scheduler._doStop()
       vi.clearAllTimers()
+    })
+
+    it('NOVA Studio never requests the Cherry Studio announcement feed by default', async () => {
+      officialAnnouncementFeed.enabled = false
+      await announcements._doAllReady()
+      enable(true)
+      await vi.advanceTimersByTimeAsync(interval * 3)
+      expect(mocks.fetch).not.toHaveBeenCalled()
     })
 
     it('refreshes after the foreground cooldown, coalesces internal handoffs and cancels focus subscriptions', async () => {

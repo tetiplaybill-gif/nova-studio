@@ -22,6 +22,7 @@ const GithubCopilotSettings = lazy(() => import('./GithubCopilotSettings'))
 const GpuStackSettings = lazy(() => import('./GpuStackSettings'))
 const LmStudioSettings = lazy(() => import('./LmStudioSettings'))
 const LoginOauthPanel = lazy(() => import('./LoginOauthPanel'))
+const NovaAccount = lazy(() => import('./NovaAccount'))
 const OvmsSettings = lazy(() => import('./OvmsSettings'))
 const ProviderOauth = lazy(() => import('./ProviderOauth'))
 const VertexAiSettings = lazy(() => import('./VertexAiSettings'))
@@ -42,6 +43,11 @@ export type ProviderSpecificRegistryEntry = {
 
 export const PROVIDER_SPECIFIC_SETTINGS_REGISTRY: Record<ProviderSpecificPlacement, ProviderSpecificRegistryEntry[]> = {
   beforeAuth: [
+    {
+      key: 'nova-account',
+      when: ({ provider }) => provider.id === 'nova',
+      render: (providerId) => <NovaAccount providerId={providerId} />
+    },
     {
       key: 'oauth',
       when: ({ provider }) => isProviderSupportAuth(provider) || (provider.id === 'silicon' && hasApiKeys(provider)),

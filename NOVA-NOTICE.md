@@ -12,6 +12,10 @@ Based on upstream commit `c2efa48fc09f85ef7e6eaf70f3d4a969b69f55af` (Cherry Stud
 - Added the built-in NOVA provider (`https://api.cdkai.cc/v1`); other provider presets are
   hidden in this build and the add-provider control is removed.
 - Disabled the upstream update feed, usage analytics and crash reporting.
+- Disabled the upstream announcement feed and provider-catalog downloads, and identify API
+  requests as NOVA Studio.
+- Added the NOVA account panel: sign in with a cdkai.cc account, get this computer's API key
+  automatically, see the balance and open the top-up page.
 
 The complete corresponding source code of each NOVA Studio release is published by the
 operator of cdkai.cc.

@@ -23,3 +23,20 @@ describe('API key provider account panels', () => {
     expect(showsAccountPanel({ id, apiKeys: [] })).toBe(true)
   })
 })
+
+describe('NOVA account panel', () => {
+  const entry = PROVIDER_SPECIFIC_SETTINGS_REGISTRY.beforeAuth.find(({ key }) => key === 'nova-account')!
+
+  it('appears first, and only on the NOVA provider page, whether or not a key exists yet', () => {
+    expect(PROVIDER_SPECIFIC_SETTINGS_REGISTRY.beforeAuth[0].key).toBe('nova-account')
+    expect(entry.when({ provider: { id: 'nova', apiKeys: [] } } as unknown as ProviderSpecificContext)).toBe(true)
+    expect(
+      entry.when({
+        provider: { id: 'nova', apiKeys: [{ id: 'k', isEnabled: true }] }
+      } as unknown as ProviderSpecificContext)
+    ).toBe(true)
+    expect(entry.when({ provider: { id: 'openrouter', apiKeys: [] } } as unknown as ProviderSpecificContext)).toBe(
+      false
+    )
+  })
+})

@@ -30,6 +30,7 @@ import { mcpHandlers } from './mcp'
 import { miniAppHandlers } from './miniApp'
 import { navigationHandlers } from './navigation'
 import { notificationHandlers } from './notification'
+import { novaHandlers } from './nova'
 import { oauthHandlers } from './oauth'
 import { openclawHandlers } from './openclaw'
 import { ovmsHandlers } from './ovms'
@@ -73,6 +74,7 @@ export const ipcHandlers: IpcHandlersFor<IpcRequestSchemas> = {
   ...browserHandlers,
   ...channelHandlers,
   ...cherryinHandlers,
+  ...novaHandlers,
   ...cherryCloudHandlers,
   ...citationHandlers,
   ...codeCliHandlers,

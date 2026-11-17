@@ -28,6 +28,7 @@ import { type McpEventSchemas, mcpRequestSchemas } from './mcp'
 import { type MiniAppEventSchemas, miniAppRequestSchemas } from './miniApp'
 import { type NavigationEventSchemas, navigationRequestSchemas } from './navigation'
 import { type NotificationEventSchemas, notificationRequestSchemas } from './notification'
+import { novaRequestSchemas } from './nova'
 import { oauthRequestSchemas } from './oauth'
 import { openclawRequestSchemas } from './openclaw'
 import { ovmsRequestSchemas } from './ovms'
@@ -69,6 +70,7 @@ export const ipcRequestSchemas = {
   ...browserRequestSchemas,
   ...channelRequestSchemas,
   ...cherryinRequestSchemas,
+  ...novaRequestSchemas,
   ...cherryCloudRequestSchemas,
   ...citationRequestSchemas,
   ...codeCliRequestSchemas,

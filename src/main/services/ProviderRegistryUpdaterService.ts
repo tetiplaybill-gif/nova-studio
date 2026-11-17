@@ -20,6 +20,9 @@ import { regionService } from '@main/services/RegionService'
 import { generateUserAgent } from '@main/utils/systemInfo'
 import type { DataApiDataChangeEffect } from '@shared/data/api/types'
 
+/** NOVA Studio keeps its bundled NOVA-only registry; tests may switch remote updates on. */
+export const remoteRegistryUpdates = { enabled: false }
+
 const logger = loggerService.withContext('ProviderRegistryUpdaterService')
 
 // Remote source of the regenerated catalog. Pinned to a stable branch (not a
@@ -85,6 +88,9 @@ export class ProviderRegistryUpdaterService extends BaseService {
     // shadow the source catalog a developer just regenerated. `check()` is still
     // callable directly for manual/test runs.
     if (!app.isPackaged) return
+    // NOVA Studio ships its own NOVA-only registry. Cherry Studio's upstream catalog would
+    // replace it (bringing back every other provider), so automatic updates stay off.
+    if (!remoteRegistryUpdates.enabled) return
 
     this.registerInterval(() => this.check(), CHECK_INTERVAL_MS)
 

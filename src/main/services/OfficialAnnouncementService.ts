@@ -5,6 +5,9 @@ import { application } from '@application'
 import { loggerService } from '@logger'
 import { BaseService, DependsOn, Injectable, Phase, ServicePhase } from '@main/core/lifecycle'
 
+/** NOVA Studio never fetches Cherry Studio's announcement feed; tests may switch it on. */
+export const officialAnnouncementFeed = { enabled: false }
+
 const logger = loggerService.withContext('OfficialAnnouncementService')
 const SCHEDULE_ID = 'official-announcement:poll'
 const CHECK_INTERVAL_MS = 30 * 60 * 1000
@@ -67,6 +70,8 @@ export class OfficialAnnouncementService extends BaseService {
 
   private configure(delayMs = 5000): void {
     this.cancel()
+    // NOVA Studio: Cherry Studio's announcement feed is for Cherry users, so it is never fetched here.
+    if (!officialAnnouncementFeed.enabled) return
     if (!this.ready || !application.get('PreferenceService').get('app.notification.center.official.enabled')) return
     this.hasChecked = false
     this.controller = new AbortController()

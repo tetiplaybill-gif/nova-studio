@@ -133,6 +133,18 @@ describe('ProviderRegistryUpdaterService.check', () => {
     service = new ProviderRegistryUpdaterService()
   })
 
+  it('NOVA Studio never schedules upstream registry downloads in a packaged app', async () => {
+    vi.useFakeTimers()
+    try {
+      await service._doInit()
+      await vi.advanceTimersByTimeAsync(7 * 24 * 60 * 60 * 1000)
+      expect(netFetchMock).not.toHaveBeenCalled()
+      await service._doStop()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
   it('applies only remote-safe model metadata and notifies mounted DataApi projections', async () => {
     mockRemote({ dataVersion: 'v2' })
 
