@@ -6,7 +6,8 @@ import { getSentryBuildContext, getSentryLogContext, sanitizeSentryEvent } from 
 
 import { dependencies, name, version } from '../../../../package.json'
 
-const SENTRY_DSN = 'https://194ceab3bd44e686bd3ebda9de3c20fd@o4509184559218688.ingest.us.sentry.io/4509184569442304'
+// NOVA Studio sends no crash reports to the upstream project; an empty DSN disables sending.
+const SENTRY_DSN = ''
 
 // An explicit allowlist prevents SDK upgrades from adding instrumentation.
 // ErrorReportingService installs SentryMinidump after preferences are ready.

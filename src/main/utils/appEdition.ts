@@ -6,7 +6,7 @@ import { application } from '@application'
 import type { AppEdition } from '@shared/types/appEdition'
 
 const APPLICATION_IDS = {
-  global: 'com.kangfenmao.CherryStudio',
+  global: 'com.nova.studio',
   cn: 'com.cherryai.cherrystudio.cn'
 } as const satisfies Record<AppEdition, string>
 

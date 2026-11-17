@@ -1,5 +1,5 @@
-appId: com.kangfenmao.CherryStudio
-productName: Cherry Studio
+appId: com.nova.studio
+productName: NOVA Studio
 extraMetadata:
   cherryEdition: global
 electronLanguages:
@@ -16,7 +16,7 @@ directories:
   buildResources: build
 
 protocols:
-  - name: Cherry Studio
+  - name: NOVA Studio
     schemes:
       - cherrystudio
 files:
@@ -109,7 +109,7 @@ extraResources:
   - from: "node_modules/pdfjs-dist/standard_fonts"
     to: "pdfjs/standard_fonts"
 win:
-  executableName: Cherry Studio
+  executableName: NOVA Studio
   artifactName: ${productName}-${version}-${arch}-setup.${ext}
   extraResources:
     # before-pack adds system-speech only for x64; extraResources .exe files use signtoolOptions below.
@@ -152,15 +152,15 @@ mac:
   extendInfo:
     NSCameraUsageDescription: Application requests access to the device's camera.
     NSMicrophoneUsageDescription: Application requests access to the device's microphone.
-    NSSpeechRecognitionUsageDescription: Cherry Studio transcribes voice recordings on this device.
+    NSSpeechRecognitionUsageDescription: NOVA Studio transcribes voice recordings on this device.
     NSDocumentsFolderUsageDescription: Application requests access to the user's Documents folder.
     NSDownloadsFolderUsageDescription: Application requests access to the user's Downloads folder.
-    NSCalendarsUsageDescription: Cherry Studio allows local MCP servers to read and manage your calendar events.
-    NSCalendarsFullAccessUsageDescription: Cherry Studio allows local MCP servers to read and manage your calendar events.
-    NSCalendarsWriteOnlyAccessUsageDescription: Cherry Studio allows local MCP servers to create calendar events.
-    NSRemindersUsageDescription: Cherry Studio allows local MCP servers to read and manage your reminders.
-    NSRemindersFullAccessUsageDescription: Cherry Studio allows local MCP servers to read and manage your reminders.
-    NSAppleEventsUsageDescription: Cherry Studio allows local MCP servers to control other applications using AppleScript.
+    NSCalendarsUsageDescription: NOVA Studio allows local MCP servers to read and manage your calendar events.
+    NSCalendarsFullAccessUsageDescription: NOVA Studio allows local MCP servers to read and manage your calendar events.
+    NSCalendarsWriteOnlyAccessUsageDescription: NOVA Studio allows local MCP servers to create calendar events.
+    NSRemindersUsageDescription: NOVA Studio allows local MCP servers to read and manage your reminders.
+    NSRemindersFullAccessUsageDescription: NOVA Studio allows local MCP servers to read and manage your reminders.
+    NSAppleEventsUsageDescription: NOVA Studio allows local MCP servers to control other applications using AppleScript.
   target:
     - target: dmg
     - target: zip
@@ -185,7 +185,7 @@ toolsets:
   appimage: "1.0.3"
 linux:
   artifactName: ${productName}-${version}-${arch}.${ext}
-  executableName: CherryStudio
+  executableName: NOVAStudio
   target:
     - target: AppImage
     - target: deb
@@ -194,7 +194,7 @@ linux:
   category: Utility
   desktop:
     entry:
-      Name: Cherry Studio
+      Name: NOVA Studio
       StartupWMClass: CherryStudio
   mimeTypes:
     - x-scheme-handler/cherrystudio
@@ -204,7 +204,7 @@ rpm:
   fpm: ["--rpm-rpmbuild-define=_build_id_links none"]
 publish:
   provider: generic
-  url: https://releases.cherry-ai.com
+  url: https://cdkai.cc/downloads/nova-studio
   useMultipleRangeRequest: false
 electronDownload:
   mirror: https://npmmirror.com/mirrors/electron/
@@ -215,11 +215,11 @@ artifactBuildCompleted: scripts/packaging/artifact-build-completed.js
 releaseInfo:
   releaseNotes: |
     <!--LANG:en-->
-    Cherry Studio 2.2.2 - Agent Approvals, Provider Fixes, and Polish
+    NOVA Studio 2.2.2 - Agent Approvals, Provider Fixes, and Polish
 
     ✨ New Features
     - [Computer Use] Computer Use is now on by default and asks before accessing each app. Choose Always, Approve for session, or Reject, and manage saved approvals in Settings. Bypass mode skips these prompts without saving permissions. (action required: turn it off in Settings if you do not want it.)
-    - [Skills] Added an "Export skills to external agents" switch in Settings → Skills. It is off by default for new installations, so the shared skills directory is no longer created without an explicit opt-in; installations that already exported keep it on, and turning it off removes only the links Cherry Studio created.
+    - [Skills] Added an "Export skills to external agents" switch in Settings → Skills. It is off by default for new installations, so the shared skills directory is no longer created without an explicit opt-in; installations that already exported keep it on, and turning it off removes only the links NOVA Studio created.
     - [Agent] Agents on DeepSeek models now show a short intent line above each tool call. Agent sessions keep tool steps expanded by default and fold repeated calls of the same kind.
     - [App] Added Polish language support.
 
@@ -249,11 +249,11 @@ releaseInfo:
     - [Updater] Release notes in the update dialog now follow the app's resolved language, including when the app follows the system language.
 
     <!--LANG:zh-CN-->
-    Cherry Studio 2.2.2 - 智能体审批、服务商修复与波兰语支持
+    NOVA Studio 2.2.2 - 智能体审批、服务商修复与波兰语支持
 
     ✨ 新功能
     - [电脑操作] 电脑操作现在默认开启，并在访问每个应用前请求批准。可选择「始终允许」「本次会话允许」或「拒绝」，并可在设置中管理已保存的批准。绕过模式会跳过这些提示且不保存权限。（需要操作：如不希望启用，请在设置中关闭。）
-    - [技能] 在「设置 → 技能」新增「导出技能给外部 Agent」开关。新安装默认关闭，不再未经同意就创建共享技能目录；此前已经导出的安装升级后保持开启，关闭后只会移除 Cherry Studio 创建的链接。
+    - [技能] 在「设置 → 技能」新增「导出技能给外部 Agent」开关。新安装默认关闭，不再未经同意就创建共享技能目录；此前已经导出的安装升级后保持开启，关闭后只会移除 NOVA Studio 创建的链接。
     - [智能体] 使用 DeepSeek 模型的智能体现在会在每次工具调用上方显示一句简短意图。智能体会话默认展开工具步骤，并折叠同类的重复调用。
     - [应用] 新增波兰语支持。
 

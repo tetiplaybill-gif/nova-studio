@@ -80,7 +80,8 @@ export function classifyUpdateFailure(error: unknown): FailureFacts {
 
 type ReleaseRegion = 'cn' | 'global'
 
-export const RELEASE_HISTORY_URL = 'https://releases.cherry-ai.com/release-history.json'
+export const RELEASE_HISTORY_URL = 'https://cdkai.cc/downloads/nova-studio/release-history.json'
+const NOVA_UPDATE_FEED_READY = false
 const RELEASE_HISTORY_TIMEOUT_MS = 10_000
 const RELEASE_HISTORY_MAX_BYTES = 1024 * 1024
 
@@ -452,7 +453,8 @@ export class AppUpdaterService extends BaseService {
   private async performUpdateCheck() {
     void application.get('AnalyticsService').trackAppUpdate()
 
-    if (this.isPortable()) {
+    // NOVA Studio has no signed update feed yet; never contact the upstream release server.
+    if (this.isPortable() || !NOVA_UPDATE_FEED_READY) {
       return {
         currentVersion: app.getVersion(),
         updateInfo: null

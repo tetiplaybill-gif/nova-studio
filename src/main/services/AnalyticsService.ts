@@ -17,7 +17,8 @@ const logger = loggerService.withContext('AnalyticsService')
 // Public, write-only keys of the PostHog projects that keep usage insights, like the Sentry DSN.
 const POSTHOG_PROJECT_KEYS = {
   cn: 'phc_vwsf7qr54Vk2ff23Nj2B4PEYtSkkpheKrb8VcdfDujna',
-  global: 'phc_G0omsYajA6A9BY5c0rnU04ZaZck25xpR0DqKhwfF39n'
+  // NOVA Studio sends no usage analytics to the upstream project.
+  global: ''
 } as const satisfies Record<AppEdition, string>
 const POSTHOG_HOST = 'https://us.i.posthog.com'
 
