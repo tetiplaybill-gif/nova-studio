@@ -1,6 +1,6 @@
 {
   "name": "NOVAStudio",
-  "version": "2.2.2",
+  "version": "2.2.3",
   "private": true,
   "description": "NOVA Studio, the desktop client for NOVA API (based on Cherry Studio, AGPL-3.0).",
   "homepage": "https://cdkai.cc/download",
