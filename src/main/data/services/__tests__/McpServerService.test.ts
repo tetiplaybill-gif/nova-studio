@@ -59,7 +59,7 @@ describe('McpServerService', () => {
             name: 'test-server',
             type,
             baseUrl: 'https://example.com',
-            headers: { 'HTTP-Referer': 'https://cherry-ai.com', 'X-Title': 'Cherry Studio' }
+            headers: { 'HTTP-Referer': 'https://cdkai.cc', 'X-Title': 'NOVA Studio' }
           })?.id
         ).toBe('srv-1')
       }

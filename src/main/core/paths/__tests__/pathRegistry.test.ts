@@ -240,11 +240,11 @@ describe('buildPathRegistry', () => {
     expect(path.relative(path.join(buildPathRegistry()['cherry.home'], 'cache', 'uv'), first)).not.toMatch(/\s/u)
   })
 
-  it('keeps persisted MCP resource blobs in Cherry temporary storage', () => {
+  it('keeps persisted MCP resource blobs in the NOVA Studio temporary folder', () => {
     const registry = buildPathRegistry()
 
     expect(registry['feature.mcp.resource_results.temp']).toBe(
-      path.join('/mock/temp', 'CherryStudio', 'mcp-resource-results')
+      path.join('/mock/temp', 'NOVAStudio', 'mcp-resource-results')
     )
   })
 
