@@ -25,8 +25,16 @@ export default defineProvider({
         wire: modeWire('reasoning.effort', { off: 'none', auto: EFFORT, effort: EFFORT }, { autoEffort: 'medium' })
       },
       modelsApiUrls: {
-        default: 'https://api.cdkai.cc/v1/models'
+        default: 'https://api.cdkai.cc/v1/models',
+        embedding: 'https://api.cdkai.cc/v1/embeddings/models',
+        image: 'https://api.cdkai.cc/v1/images/models',
+        reranker: 'https://api.cdkai.cc/v1/models?output_modalities=rerank'
       }
+    },
+    // Image generation goes through the same OpenRouter-compatible adapter as chat.
+    'openai-image-generation': {
+      adapterFamily: 'openrouter',
+      baseUrl: 'https://api.cdkai.cc/v1/'
     }
   },
   serverTools: [

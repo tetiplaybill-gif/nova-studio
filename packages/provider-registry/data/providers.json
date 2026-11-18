@@ -2980,7 +2980,10 @@
           "adapterFamily": "openrouter",
           "baseUrl": "https://api.cdkai.cc/v1/",
           "modelsApiUrls": {
-            "default": "https://api.cdkai.cc/v1/models"
+            "default": "https://api.cdkai.cc/v1/models",
+            "embedding": "https://api.cdkai.cc/v1/embeddings/models",
+            "image": "https://api.cdkai.cc/v1/images/models",
+            "reranker": "https://api.cdkai.cc/v1/models?output_modalities=rerank"
           },
           "reasoningFormat": {
             "type": "openai-chat",
@@ -3021,6 +3024,10 @@
               }
             }
           }
+        },
+        "openai-image-generation": {
+          "adapterFamily": "openrouter",
+          "baseUrl": "https://api.cdkai.cc/v1/"
         }
       },
       "id": "nova",

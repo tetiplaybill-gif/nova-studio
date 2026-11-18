@@ -775,6 +775,53 @@ const openRouterFetcher: ModelFetcher = {
   }
 }
 
+/**
+ * NOVA serves every model type from one listing: `/v1/models?output_modalities=all` tags each
+ * model with its `type` and the NOVA endpoints it serves. Image and rerank models get the same
+ * capabilities and endpoint types the OpenRouter fetcher gives them, since NOVA mirrors OpenRouter.
+ */
+const NOVA_TYPE_SHAPES: Record<string, Pick<Partial<Model>, 'capabilities' | 'endpointTypes'>> = {
+  image: { capabilities: [MODEL_CAPABILITY.IMAGE_GENERATION], endpointTypes: [ENDPOINT_TYPE.OPENAI_IMAGE_GENERATION] },
+  embeddings: { capabilities: [MODEL_CAPABILITY.EMBEDDING], endpointTypes: [ENDPOINT_TYPE.OPENAI_EMBEDDINGS] },
+  rerank: { capabilities: [MODEL_CAPABILITY.RERANK] },
+  speech: { capabilities: [MODEL_CAPABILITY.AUDIO_GENERATION], endpointTypes: [ENDPOINT_TYPE.OPENAI_TEXT_TO_SPEECH] },
+  transcription: {
+    capabilities: [MODEL_CAPABILITY.AUDIO_TRANSCRIPT],
+    endpointTypes: [ENDPOINT_TYPE.OPENAI_AUDIO_TRANSCRIPTION]
+  },
+  video: { capabilities: [MODEL_CAPABILITY.VIDEO_GENERATION], endpointTypes: [ENDPOINT_TYPE.OPENAI_VIDEO_GENERATION] }
+}
+/** API-only types with no matching feature in the app. */
+const NOVA_API_ONLY_TYPES = new Set(['decisions', 'extractions'])
+
+export function novaModelShape(item: { type?: unknown; endpoints?: unknown }): Partial<Model> | null {
+  const type = typeof item.type === 'string' ? item.type : 'chat'
+  if (NOVA_API_ONLY_TYPES.has(type)) return null
+  const shape = NOVA_TYPE_SHAPES[type]
+  if (shape) return { ...shape }
+  // Chat models that can also draw (e.g. Gemini image models) stay chat models with the extra capability.
+  const endpoints = Array.isArray(item.endpoints) ? item.endpoints : []
+  return endpoints.includes('/v1/images') ? { capabilities: [MODEL_CAPABILITY.IMAGE_GENERATION] } : {}
+}
+
+const novaFetcher: ModelFetcher = {
+  match: (p) => p.id === 'nova',
+  fetch: async (provider, signal) => {
+    const headers = defaultHeaders(provider)
+    const base = provider.endpointConfigs?.[ENDPOINT_TYPE.OPENAI_CHAT_COMPLETIONS]?.modelsApiUrls?.default
+    const url = `${base ?? 'https://api.cdkai.cc/v1/models'}?output_modalities=all`
+    const response = await getFromApi({ url, headers, responseSchema: OpenAIModelsResponseSchema, abortSignal: signal })
+    warnSkippedOpenAIModelEntries(provider.id, response)
+    const models: Partial<Model>[] = []
+    for (const m of dedup(response.data, (item) => item.id)) {
+      const shape = novaModelShape(m as { type?: unknown; endpoints?: unknown })
+      if (!shape) continue
+      models.push(toModel(m.id, provider, { name: m.name, ownedBy: m.owned_by, ...shape }))
+    }
+    return listing(models)
+  }
+}
+
 const ppioFetcher: ModelFetcher = {
   match: (p) => p.id === SystemProviderIds.ppio,
   fetch: async (provider, signal, options) => {
@@ -1233,6 +1280,7 @@ const fetchers: ModelFetcher[] = [
   togetherFetcher,
   newApiFetcher,
   tokenDanceFetcher,
+  novaFetcher,
   openRouterFetcher,
   ppioFetcher,
   gatewayFetcher,

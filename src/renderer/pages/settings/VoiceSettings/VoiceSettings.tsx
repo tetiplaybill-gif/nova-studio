@@ -52,6 +52,8 @@ import {
   DOWNLOADABLE_SPEECH_BUNDLES,
   WINDOWS_ASR_MODEL_ID,
   WINDOWS_TTS_MODEL_ID,
+  NOVA_ASR_MODEL_ID,
+  NOVA_TTS_MODEL_ID,
   type LocalSpeechModelId,
   type LocalVoiceModelDescriptor,
   isTranscriptionModelId,
@@ -117,7 +119,9 @@ const MODEL_LABEL_KEYS: Record<LocalVoiceModelId, string> = {
   [FUNASR_MODEL_ID]: 'settings.voice.model.funasr',
   [QWEN3_ASR_MODEL_ID]: 'settings.voice.model.qwen3_asr',
   [WINDOWS_ASR_MODEL_ID]: 'settings.voice.model.windows_asr',
-  [WINDOWS_TTS_MODEL_ID]: 'settings.voice.model.windows_tts'
+  [WINDOWS_TTS_MODEL_ID]: 'settings.voice.model.windows_tts',
+  [NOVA_ASR_MODEL_ID]: 'settings.voice.model.nova_asr',
+  [NOVA_TTS_MODEL_ID]: 'settings.voice.model.nova_tts'
 }
 
 function statusKey(status: StatusState): string {

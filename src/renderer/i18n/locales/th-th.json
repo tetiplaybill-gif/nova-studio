@@ -6274,6 +6274,8 @@
   "settings.voice.model.apple_tts": "เสียงระบบของ Apple",
   "settings.voice.model.funasr": "FunASR Nano",
   "settings.voice.model.kokoro_tts": "Kokoro v1.1 (จีน + อังกฤษ)",
+  "settings.voice.model.nova_asr": "การรู้จำเสียง NOVA Cloud",
+  "settings.voice.model.nova_tts": "เสียงอ่าน NOVA Cloud",
   "settings.voice.model.qwen3_asr": "Qwen3-ASR 1.7B (8-bit)",
   "settings.voice.model.qwen3_tts": "Qwen3-TTS CustomVoice (8-bit)",
   "settings.voice.model.windows_asr": "การจดจำเสียงระบบของ Windows",

@@ -26,3 +26,24 @@ export const NOVA_DOCS_URL = 'https://cdkai.cc/docs'
 export const NOVA_SOURCE_URL = 'https://cdkai.cc/downloads/nova-studio/source'
 /** The project NOVA Studio is based on. */
 export const UPSTREAM_PROJECT_URL = 'https://github.com/CherryHQ/cherry-studio'
+
+/** The NOVA API that cloud voice calls, with the key the NOVA account panel created. */
+export const NOVA_API_BASE_URL = 'https://api.cdkai.cc/v1'
+
+/** Speech-to-text model behind NOVA cloud dictation: inexpensive, multilingual, detects the language. */
+export const NOVA_TRANSCRIPTION_MODEL = 'openai/gpt-4o-mini-transcribe'
+
+export interface NovaSpeechVoice {
+  /** Stable id stored in voice settings. */
+  readonly id: string
+  readonly name: string
+  readonly locale: string
+  readonly languages?: readonly string[]
+  readonly model: string
+  readonly voice: string
+  /** Sample rate of the model's raw 16-bit mono PCM output. */
+  readonly sampleRate: number
+}
+
+/** Voices offered for NOVA cloud read-aloud; each model's PCM sample rate was measured on cdkai.cc. */
+export const NOVA_SPEECH_VOICES: readonly NovaSpeechVoice[] = []

@@ -25,6 +25,9 @@ export interface LocalSpeechVoice {
 export const QWEN3_ASR_MODEL_ID = 'local-voice::qwen3-asr-1.7b' as const
 export const QWEN3_ASR_BUNDLE_ID = 'qwen3-asr-1.7b-8bit' as const
 
+export const NOVA_ASR_MODEL_ID = 'local-voice::nova-cloud-asr' as const
+export const NOVA_TTS_MODEL_ID = 'local-voice::nova-cloud-tts' as const
+
 export const FUNASR_BUNDLE_ID = 'funasr-nano-int8' as const
 export const FUNASR_MODEL_ID = 'local-voice::funasr-nano' as const
 export const DOWNLOADABLE_TRANSCRIPTION_BUNDLES = {
@@ -62,7 +65,9 @@ export const LOCAL_VOICE_MODEL_IDS = [
   FUNASR_MODEL_ID,
   QWEN3_ASR_MODEL_ID,
   QWEN3_TTS_MODEL_ID,
-  KOKORO_TTS_MODEL_ID
+  KOKORO_TTS_MODEL_ID,
+  NOVA_ASR_MODEL_ID,
+  NOVA_TTS_MODEL_ID
 ] as const
 export type LocalVoiceModelId = (typeof LOCAL_VOICE_MODEL_IDS)[number]
 export type LocalSpeechModelId =
@@ -70,11 +75,13 @@ export type LocalSpeechModelId =
   | typeof WINDOWS_TTS_MODEL_ID
   | typeof QWEN3_TTS_MODEL_ID
   | typeof KOKORO_TTS_MODEL_ID
+  | typeof NOVA_TTS_MODEL_ID
 export type LocalTranscriptionModelId =
   | typeof APPLE_ASR_MODEL_ID
   | typeof WINDOWS_ASR_MODEL_ID
   | typeof FUNASR_MODEL_ID
   | typeof QWEN3_ASR_MODEL_ID
+  | typeof NOVA_ASR_MODEL_ID
 
 export interface LocalVoiceModelFacts {
   readonly id: LocalVoiceModelId
@@ -87,6 +94,24 @@ export interface LocalVoiceModelFacts {
 }
 
 export const LOCAL_VOICE_MODELS: readonly LocalVoiceModelFacts[] = Object.freeze([
+  Object.freeze({
+    id: NOVA_ASR_MODEL_ID,
+    providerId: 'local-voice',
+    name: 'NOVA Cloud ASR',
+    capabilities: Object.freeze([MODEL_CAPABILITY.AUDIO_TRANSCRIPT]),
+    inputModalities: Object.freeze([MODALITY.AUDIO]),
+    outputModalities: Object.freeze([MODALITY.TEXT]),
+    supportsStreaming: false
+  }),
+  Object.freeze({
+    id: NOVA_TTS_MODEL_ID,
+    providerId: 'local-voice',
+    name: 'NOVA Cloud TTS',
+    capabilities: Object.freeze([MODEL_CAPABILITY.AUDIO_GENERATION]),
+    inputModalities: Object.freeze([MODALITY.TEXT]),
+    outputModalities: Object.freeze([MODALITY.AUDIO]),
+    supportsStreaming: false
+  }),
   Object.freeze({
     id: QWEN3_ASR_MODEL_ID,
     providerId: 'local-voice',
