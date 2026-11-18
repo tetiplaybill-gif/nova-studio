@@ -391,16 +391,20 @@ export default function OnboardingPage({
 
   // NOVA Studio: the only sign-in is the NOVA account, which lives on the provider step's NOVA card.
   const isNovaOnboarding = !cherryServices.enabled
-  const isPrimaryLoginPending = isNovaOnboarding ? false : shouldUseCherryAccountLogin ? isCloudAuthorizing : isLoggingIn
+  const isPrimaryLoginPending = isNovaOnboarding
+    ? false
+    : shouldUseCherryAccountLogin
+      ? isCloudAuthorizing
+      : isLoggingIn
   const primaryLoginLabel = isNovaOnboarding
     ? t('onboarding.welcome.login_nova')
     : shouldUseCherryAccountLogin
-    ? cloudStatus?.phase === 'signed-in'
-      ? t('settings.provider.cherry_cloud.logged_in')
-      : isCloudAuthorizing
-        ? t('settings.provider.cherry_cloud.signing_in')
-        : t('onboarding.welcome.login_cherry_cloud')
-    : t('onboarding.welcome.login_cherryin')
+      ? cloudStatus?.phase === 'signed-in'
+        ? t('settings.provider.cherry_cloud.logged_in')
+        : isCloudAuthorizing
+          ? t('settings.provider.cherry_cloud.signing_in')
+          : t('onboarding.welcome.login_cherry_cloud')
+      : t('onboarding.welcome.login_cherryin')
 
   return (
     <div className="flex h-screen w-screen flex-col overflow-hidden bg-sidebar text-foreground">

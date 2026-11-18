@@ -4,7 +4,6 @@ import { app } from 'electron'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { ENDPOINT_TYPE } from '@cherrystudio/provider-registry'
-
 import { assistantTable } from '@data/db/schemas/assistant'
 import { messageTable } from '@data/db/schemas/message'
 import { preferenceTable } from '@data/db/schemas/preference'

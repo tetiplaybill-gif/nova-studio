@@ -5,8 +5,8 @@ import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { application } from '@application'
-import { appStateTable } from '@data/db/schemas/appState'
 import { agentTable } from '@data/db/schemas/agent'
+import { appStateTable } from '@data/db/schemas/appState'
 import { assistantTable } from '@data/db/schemas/assistant'
 import { preferenceTable } from '@data/db/schemas/preference'
 import { userModelTable } from '@data/db/schemas/userModel'
@@ -205,7 +205,11 @@ describe('SeedRunner', () => {
     expect(models).toContain(NOVA_DEFAULT_UNIQUE_MODEL_ID)
     expect(models.some((id) => id.startsWith('cherryai::'))).toBe(false)
 
-    const defaultModel = dbh.db.select().from(preferenceTable).where(eq(preferenceTable.key, 'chat.default_model_id')).get()
+    const defaultModel = dbh.db
+      .select()
+      .from(preferenceTable)
+      .where(eq(preferenceTable.key, 'chat.default_model_id'))
+      .get()
     expect(defaultModel?.value).toBe(NOVA_DEFAULT_UNIQUE_MODEL_ID)
 
     const [assistant] = await dbh.db.select().from(assistantTable)

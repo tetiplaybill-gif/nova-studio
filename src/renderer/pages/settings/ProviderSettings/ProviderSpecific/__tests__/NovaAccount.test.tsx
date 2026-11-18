@@ -148,7 +148,10 @@ describe('NovaAccount', () => {
   })
 
   it('opens the top-up page and refreshes the balance on return', async () => {
-    const getSummary = vi.fn().mockResolvedValueOnce(summary()).mockResolvedValue(summary({ balanceUsd: 32.5 }))
+    const getSummary = vi
+      .fn()
+      .mockResolvedValueOnce(summary())
+      .mockResolvedValue(summary({ balanceUsd: 32.5 }))
     provider.apiKeys = [{ id: 'nova', label: 'NOVA Studio', isEnabled: true }]
     site({ 'nova.status': { signedIn: true, email: 'buyer@example.com', name: 'Buyer' }, 'nova.summary': getSummary })
     const user = userEvent.setup()

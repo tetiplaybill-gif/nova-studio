@@ -256,32 +256,32 @@ const AboutSettings: FC = () => {
 
             {isNova ? null : (
               <>
-            <Divider className="my-3" />
-            <SettingRow className="flex-nowrap gap-6">
-              <div className="flex min-w-0 flex-1 items-center justify-between gap-6">
-                <SettingRowTitle>{t('settings.general.test_plan.title')}</SettingRowTitle>
-                {testPlan && (
-                  <SegmentedControl<UpgradeChannel>
-                    value={getTestChannel()}
-                    onValueChange={handleTestChannelChange}
-                    options={testChannels.map((option) => ({
-                      value: option.value,
-                      label: (
-                        <Tooltip content={option.tooltip}>
-                          <span>{option.label}</span>
-                        </Tooltip>
-                      )
-                    }))}
-                    size="sm"
-                  />
-                )}
-              </div>
-              <Tooltip
-                content={t('settings.general.test_plan.tooltip')}
-                classNames={{ placeholder: 'inline-flex items-center' }}>
-                <Switch className="shrink-0" checked={testPlan} onCheckedChange={(v) => handleSetTestPlan(v)} />
-              </Tooltip>
-            </SettingRow>
+                <Divider className="my-3" />
+                <SettingRow className="flex-nowrap gap-6">
+                  <div className="flex min-w-0 flex-1 items-center justify-between gap-6">
+                    <SettingRowTitle>{t('settings.general.test_plan.title')}</SettingRowTitle>
+                    {testPlan && (
+                      <SegmentedControl<UpgradeChannel>
+                        value={getTestChannel()}
+                        onValueChange={handleTestChannelChange}
+                        options={testChannels.map((option) => ({
+                          value: option.value,
+                          label: (
+                            <Tooltip content={option.tooltip}>
+                              <span>{option.label}</span>
+                            </Tooltip>
+                          )
+                        }))}
+                        size="sm"
+                      />
+                    )}
+                  </div>
+                  <Tooltip
+                    content={t('settings.general.test_plan.tooltip')}
+                    classNames={{ placeholder: 'inline-flex items-center' }}>
+                    <Switch className="shrink-0" checked={testPlan} onCheckedChange={(v) => handleSetTestPlan(v)} />
+                  </Tooltip>
+                </SettingRow>
               </>
             )}
           </>
@@ -327,55 +327,59 @@ const AboutSettings: FC = () => {
           actionLabel={t('settings.about.website.button')}
           onAction={() =>
             onOpenWebsite(
-              isNova ? NOVA_WEBSITE_URL : i18n.language.startsWith('zh') ? 'https://cherryai.com.cn' : 'https://cherryai.com'
+              isNova
+                ? NOVA_WEBSITE_URL
+                : i18n.language.startsWith('zh')
+                  ? 'https://cherryai.com.cn'
+                  : 'https://cherryai.com'
             )
           }
         />
         {isNova ? (
           <>
-        <Divider className="my-3" />
-        <AboutActionRow
-          icon={<Github className="size-4.5" />}
-          title={t('settings.about.nova.source.title')}
-          actionLabel={t('settings.about.nova.source.button')}
-          onAction={() => onOpenWebsite(NOVA_SOURCE_URL)}
-        />
-        <Divider className="my-3" />
-        <AboutActionRow
-          icon={<Star className="size-4.5" />}
-          title={t('settings.about.nova.upstream.title')}
-          actionLabel={t('settings.about.website.button')}
-          onAction={() => onOpenWebsite(UPSTREAM_PROJECT_URL)}
-        />
+            <Divider className="my-3" />
+            <AboutActionRow
+              icon={<Github className="size-4.5" />}
+              title={t('settings.about.nova.source.title')}
+              actionLabel={t('settings.about.nova.source.button')}
+              onAction={() => onOpenWebsite(NOVA_SOURCE_URL)}
+            />
+            <Divider className="my-3" />
+            <AboutActionRow
+              icon={<Star className="size-4.5" />}
+              title={t('settings.about.nova.upstream.title')}
+              actionLabel={t('settings.about.website.button')}
+              onAction={() => onOpenWebsite(UPSTREAM_PROJECT_URL)}
+            />
           </>
         ) : (
           <>
-        <Divider className="my-3" />
-        <AboutActionRow
-          icon={<Github className="size-4.5" />}
-          title={t('settings.about.repository.title')}
-          actionLabel={
-            <>
-              <Star aria-hidden="true" className="lucide-custom size-3.5 text-foreground-tertiary" />
-              {t('settings.about.repository.button')}
-            </>
-          }
-          onAction={() => onOpenWebsite('https://github.com/CherryHQ/cherry-studio')}
-        />
-        <Divider className="my-3" />
-        <AboutActionRow
-          icon={<MessageSquareText className="size-4.5" />}
-          title={t('settings.about.feedback.title')}
-          actionLabel={t('settings.about.feedback.button')}
-          onAction={() => setFeedbackOpen(true)}
-        />
-        <Divider className="my-3" />
-        <AboutActionRow
-          icon={<Building2 className="size-4.5" />}
-          title={t('settings.about.enterprise.title')}
-          actionLabel={t('settings.about.website.button')}
-          onAction={showEnterprise}
-        />
+            <Divider className="my-3" />
+            <AboutActionRow
+              icon={<Github className="size-4.5" />}
+              title={t('settings.about.repository.title')}
+              actionLabel={
+                <>
+                  <Star aria-hidden="true" className="lucide-custom size-3.5 text-foreground-tertiary" />
+                  {t('settings.about.repository.button')}
+                </>
+              }
+              onAction={() => onOpenWebsite('https://github.com/CherryHQ/cherry-studio')}
+            />
+            <Divider className="my-3" />
+            <AboutActionRow
+              icon={<MessageSquareText className="size-4.5" />}
+              title={t('settings.about.feedback.title')}
+              actionLabel={t('settings.about.feedback.button')}
+              onAction={() => setFeedbackOpen(true)}
+            />
+            <Divider className="my-3" />
+            <AboutActionRow
+              icon={<Building2 className="size-4.5" />}
+              title={t('settings.about.enterprise.title')}
+              actionLabel={t('settings.about.website.button')}
+              onAction={showEnterprise}
+            />
           </>
         )}
         <Divider className="my-3" />

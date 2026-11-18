@@ -3,10 +3,10 @@ import { createRequire } from 'node:module'
 
 import { beforeAll, beforeEach, expect, vi } from 'vitest'
 
+import { cherryServices } from '../src/shared/data/presets/nova'
 import { MockCherrystudioUI } from './__mocks__/renderer/CherrystudioUI'
 import { resetPopupMocks } from './__mocks__/renderer/popup'
 import { resetToastMocks } from './__mocks__/renderer/toast'
-import { cherryServices } from '../src/shared/data/presets/nova'
 
 // NOVA Studio hides Cherry Cloud entry points; upstream UI tests exercise them, so they are on in tests.
 cherryServices.enabled = true

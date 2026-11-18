@@ -163,7 +163,12 @@ export class NovaAccountService {
   public async createKey(): Promise<NovaKeyResult> {
     const account = await this.load()
     if (!account) return { ok: false, error: 'signed_out' }
-    const name = `${NOVA_KEY_LABEL} · ${this.deps.hostname().replace(/[^\p{L}\p{N} ._-]/gu, '').slice(0, 40) || 'computer'}`
+    const name = `${NOVA_KEY_LABEL} · ${
+      this.deps
+        .hostname()
+        .replace(/[^\p{L}\p{N} ._-]/gu, '')
+        .slice(0, 40) || 'computer'
+    }`
     try {
       const body = await this.request(account, 'POST', '/api/platform/keys', { name })
       const id = body?.id
@@ -322,7 +327,8 @@ export class NovaAccountService {
         this.account = { ...stored, keyId: typeof stored.keyId === 'string' ? stored.keyId : null }
       }
     } catch (error) {
-      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') logger.warn('Ignoring an unreadable NOVA session', error as Error)
+      if ((error as NodeJS.ErrnoException).code !== 'ENOENT')
+        logger.warn('Ignoring an unreadable NOVA session', error as Error)
     }
     return this.account
   }

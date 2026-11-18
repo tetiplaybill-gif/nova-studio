@@ -206,9 +206,7 @@ describe('AnalyticsService data collection preference', () => {
     expect(posthog.capture).not.toHaveBeenCalled()
   })
 
-  it.each([
-    ['cn', 'phc_vwsf7qr54Vk2ff23Nj2B4PEYtSkkpheKrb8VcdfDujna']
-  ] as const)(
+  it.each([['cn', 'phc_vwsf7qr54Vk2ff23Nj2B4PEYtSkkpheKrb8VcdfDujna']] as const)(
     'sends %s edition usage insights to that edition’s PostHog project in release builds',
     async (edition, key) => {
       vi.stubEnv('DEV', false)

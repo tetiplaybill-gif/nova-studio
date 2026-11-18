@@ -80,12 +80,12 @@ export function UserAccountPanel({
   const cloudSubtitle = !cherryServices.enabled
     ? null
     : isCloudSignedIn
-    ? paidPlanName || cloudStatus.displayName || t('settings.provider.cherry_cloud.logged_in')
-    : isAuthorizing
-      ? t('settings.provider.cherry_cloud.signing_in')
-      : cloudStatusLoadState === 'error'
-        ? t('error.http.503')
-        : null
+      ? paidPlanName || cloudStatus.displayName || t('settings.provider.cherry_cloud.logged_in')
+      : isAuthorizing
+        ? t('settings.provider.cherry_cloud.signing_in')
+        : cloudStatusLoadState === 'error'
+          ? t('error.http.503')
+          : null
   const cloudSubtitleRole =
     isCloudSignedIn || isAuthorizing ? 'status' : cloudStatusLoadState === 'error' ? 'alert' : undefined
   const accountDisplayName = userName || t('settings.profile.title')

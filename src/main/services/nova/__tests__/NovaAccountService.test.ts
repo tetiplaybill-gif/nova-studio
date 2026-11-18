@@ -33,7 +33,10 @@ function fakeSite(routes: Record<string, Reply[]>) {
     const reply = queue.length > 1 ? queue.shift()! : queue[0]
     const headers = new Headers({ 'Content-Type': 'application/json' })
     for (const cookie of reply.cookies ?? []) headers.append('Set-Cookie', cookie)
-    return new Response(reply.body === undefined ? '' : JSON.stringify(reply.body), { status: reply.status ?? 200, headers })
+    return new Response(reply.body === undefined ? '' : JSON.stringify(reply.body), {
+      status: reply.status ?? 200,
+      headers
+    })
   })
   return { fetch: fetch as unknown as typeof globalThis.fetch, seen }
 }
@@ -46,10 +49,15 @@ const reversibleBox: SecretBox = {
 
 const signInRoutes = (): Record<string, Reply[]> => ({
   'GET /api/bootstrap': [
-    { body: { user: null, csrf_token: 'csrf-1' }, cookies: ['XSRF-TOKEN=x1; path=/', 'nova_session=guest; path=/; httponly'] },
+    {
+      body: { user: null, csrf_token: 'csrf-1' },
+      cookies: ['XSRF-TOKEN=x1; path=/', 'nova_session=guest; path=/; httponly']
+    },
     { body: { user, csrf_token: 'csrf-2' } }
   ],
-  'POST /api/auth/login': [{ body: { user }, cookies: ['nova_session=signed-in; path=/; httponly', 'XSRF-TOKEN=x2; path=/'] }]
+  'POST /api/auth/login': [
+    { body: { user }, cookies: ['nova_session=signed-in; path=/; httponly', 'XSRF-TOKEN=x2; path=/'] }
+  ]
 })
 
 let dir: string
@@ -74,7 +82,11 @@ describe('NovaAccountService', () => {
 
     expect(result).toEqual({ ok: true, email: 'buyer@example.com', name: 'Buyer' })
     const login = site.seen[1]
-    expect(login).toMatchObject({ method: 'POST', path: '/api/auth/login', body: { email: 'buyer@example.com', password: 'secret', otp: '' } })
+    expect(login).toMatchObject({
+      method: 'POST',
+      path: '/api/auth/login',
+      body: { email: 'buyer@example.com', password: 'secret', otp: '' }
+    })
     expect(login.headers['X-CSRF-TOKEN']).toBe('csrf-1')
     expect(login.headers.Cookie).toBe('nova_session=guest; XSRF-TOKEN=x1')
     expect(site.seen[2].headers.Cookie).toBe('nova_session=signed-in; XSRF-TOKEN=x2')
@@ -89,7 +101,10 @@ describe('NovaAccountService', () => {
       ...signInRoutes(),
       'POST /api/auth/login': [{ status: 422, body: { message: 'code', requires_otp: true } }]
     })
-    expect(await service(otp.fetch).signIn('buyer@example.com', 'secret', '')).toEqual({ ok: false, error: 'otp_required' })
+    expect(await service(otp.fetch).signIn('buyer@example.com', 'secret', '')).toEqual({
+      ok: false,
+      error: 'otp_required'
+    })
 
     const wrong = fakeSite({ ...signInRoutes(), 'POST /api/auth/login': [{ status: 422, body: { errors: {} } }] })
     const nova = service(wrong.fetch)
@@ -107,7 +122,10 @@ describe('NovaAccountService', () => {
       ],
       'POST /api/auth/login': [{ body: { user }, cookies: ['nova_session=s; path=/'] }]
     })
-    expect(await service(site.fetch).signIn('buyer@example.com', 'secret', '')).toEqual({ ok: false, error: 'unavailable' })
+    expect(await service(site.fetch).signIn('buyer@example.com', 'secret', '')).toEqual({
+      ok: false,
+      error: 'unavailable'
+    })
   })
 
   it('reports a network failure as offline', async () => {
@@ -234,11 +252,12 @@ describe('NovaAccountService', () => {
 
   it('refuses a CSRF token that could inject headers', async () => {
     const site = fakeSite({
-      'GET /api/bootstrap': [
-        { body: { user: null, csrf_token: 'bad\r\nX-Evil: 1' } }
-      ]
+      'GET /api/bootstrap': [{ body: { user: null, csrf_token: 'bad\r\nX-Evil: 1' } }]
     })
-    expect(await service(site.fetch).signIn('buyer@example.com', 'secret', '')).toEqual({ ok: false, error: 'unavailable' })
+    expect(await service(site.fetch).signIn('buyer@example.com', 'secret', '')).toEqual({
+      ok: false,
+      error: 'unavailable'
+    })
     expect(site.seen).toHaveLength(1)
   })
 })
