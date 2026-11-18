@@ -82,7 +82,7 @@ export function createNovaTranscriptionModel(options: TranscriptionOptions): Tra
       form.append('model', NOVA_TRANSCRIPTION_MODEL)
       const language = options.language?.split('-')[0]
       if (language) form.append('language', language)
-      form.append('file', new Blob([audio], { type: file.type }), file.name)
+      form.append('file', new Blob([new Uint8Array(audio)], { type: file.type }), file.name)
       const response = await novaFetch('/audio/transcriptions', { method: 'POST', body: form }, input.abortSignal)
       const body = (await response.json()) as { text?: unknown; language?: unknown; duration?: unknown }
       const text = typeof body.text === 'string' ? body.text : ''
