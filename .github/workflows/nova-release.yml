@@ -65,9 +65,12 @@ jobs:
       - name: Package
         shell: bash
         run: |
-          if [ "${{ matrix.platform }}" = mac ] && [ -z "$CSC_LINK" ]; then
-            # No Developer ID: ad-hoc sign so the app runs on Apple Silicon.
-            extra="-c.mac.identity=-"
+          if [ -z "$CSC_LINK" ]; then
+            # No certificate: an empty CSC_LINK would be read as a file path, so remove it entirely.
+            unset CSC_LINK CSC_KEY_PASSWORD
+            export CSC_IDENTITY_AUTO_DISCOVERY=false
+            # macOS without a Developer ID: ad-hoc sign so the app runs on Apple Silicon.
+            if [ "${{ matrix.platform }}" = mac ]; then extra="-c.mac.identity=-"; fi
           fi
           pnpm exec electron-builder ${{ matrix.builder }} --publish never $extra
         env:
