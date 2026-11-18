@@ -30,7 +30,7 @@ jobs:
             arch: arm64
             builder: --mac --arm64
           - platform: mac
-            os: macos-15-intel
+            os: macos-latest  # Intel package is cross-built; macos-15-intel lacks Swift 6.2
             arch: x64
             builder: --mac --x64
     runs-on: ${{ matrix.os }}
