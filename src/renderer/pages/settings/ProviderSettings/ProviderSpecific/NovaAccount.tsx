@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { Button, Input, Skeleton } from '@cherrystudio/ui'
+import { usePreference } from '@data/hooks/usePreference'
 import { loggerService } from '@logger'
 import NovaLogo from '@renderer/assets/images/logo.png'
 import { useProvider } from '@renderer/hooks/useProvider'
@@ -66,6 +67,12 @@ const NovaAccount: FC<NovaAccountProps> = ({ providerId }) => {
   const toppingUp = useRef(false)
 
   const novaKeys = provider?.apiKeys.filter((key) => key.label === NOVA_KEY_LABEL) ?? []
+
+  // The profile shows the NOVA account's name until the user picks their own.
+  const [userName, setUserName] = usePreference('app.user.name')
+  useEffect(() => {
+    if (account?.name && !userName?.trim()) void setUserName(account.name)
+  }, [account?.name, setUserName, userName])
 
   /** Gets a fresh key for this computer and stores it in place of any earlier NOVA Studio key. */
   const installKey = useCallback(async (): Promise<boolean> => {

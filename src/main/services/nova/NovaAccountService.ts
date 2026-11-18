@@ -5,6 +5,7 @@ import { safeStorage } from 'electron'
 
 import { application } from '@application'
 import { loggerService } from '@logger'
+import { providerService } from '@main/data/services/ProviderService'
 import {
   NOVA_KEY_LABEL,
   NOVA_ORIGIN,
@@ -79,6 +80,8 @@ export interface NovaAccountDeps {
   secretBox: SecretBox
   hostname: () => string
   now: () => number
+  /** This computer's NOVA API key, which reads the balance without a website session. */
+  apiKey: () => string | null
 }
 
 /**
@@ -101,30 +104,41 @@ export class NovaAccountService {
       storagePath: deps.storagePath ?? (() => application.getPath('app.userdata', 'nova-account.bin')),
       secretBox: deps.secretBox ?? electronSecretBox,
       hostname: deps.hostname ?? (() => os.hostname()),
-      now: deps.now ?? (() => Date.now())
+      now: deps.now ?? (() => Date.now()),
+      apiKey:
+        deps.apiKey ??
+        (() => {
+          try {
+            return providerService.getRotatedApiKey('nova') || null
+          } catch {
+            return null
+          }
+        })
     }
   }
 
   public async status(): Promise<NovaStatus> {
     const account = await this.load()
     if (!account) return { signedIn: false }
-    if (this.deps.now() - this.verifiedAt > VERIFY_EVERY_MS) {
+    if (this.deps.now() - this.verifiedAt > VERIFY_EVERY_MS && Object.keys(account.cookies).length) {
       try {
         const user = readUser(await this.request(account, 'GET', '/api/bootstrap'))
-        if (!user || user.email !== account.email) {
+        if (user && user.email !== account.email) {
           await this.forget()
           return { signedIn: false }
         }
-        account.name = user.name
+        if (user) account.name = user.name
+        else account.cookies = {}
         this.verifiedAt = this.deps.now()
         await this.save()
       } catch (error) {
+        // The website session lapsed: the account and its API key stay; only key changes need a new sign-in.
         if (error instanceof NovaHttpError && (error.status === 401 || error.status === 419)) {
-          await this.forget()
-          return { signedIn: false }
+          account.cookies = {}
+          await this.save()
+        } else {
+          logger.debug('Could not re-check the NOVA session', error as Error)
         }
-        // Offline or the site is briefly down: keep the session and try again next time.
-        logger.debug('Could not re-check the NOVA session', error as Error)
       }
     }
     return { signedIn: true, email: account.email, name: account.name }
@@ -190,22 +204,32 @@ export class NovaAccountService {
   public async summary(): Promise<NovaAccountSummary | null> {
     const account = await this.load()
     if (!account) return null
+    const key = this.deps.apiKey()
+    if (!key || !headerSafe(key)) return { email: account.email, name: account.name, balanceUsd: 0, group: null, keyActive: false }
+    let response: Response
     try {
-      const body = await this.request(account, 'GET', '/api/platform/keys')
-      const wallet = body?.wallet as Record<string, unknown> | undefined
-      const group = body?.group as Record<string, unknown> | undefined
-      const keys = Array.isArray(body?.keys) ? (body.keys as Array<Record<string, unknown>>) : []
-      const available = typeof wallet?.available_micro === 'number' ? wallet.available_micro : 0
-      return {
-        email: account.email,
-        name: account.name,
-        balanceUsd: Math.floor(available / 10_000) / 100,
-        group: typeof group?.name === 'string' ? group.name.slice(0, 40) : null,
-        keyActive: account.keyId !== null && keys.some((k) => k.id === account.keyId)
-      }
+      // The same endpoint and number the website console shows: the balance not held by requests in flight.
+      response = await this.deps.fetch(`${NOVA_ORIGIN}/v1/key`, {
+        headers: { Accept: 'application/json', Authorization: `Bearer ${key}` },
+        redirect: 'manual',
+        signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
+      })
     } catch (error) {
-      if (error instanceof NovaHttpError && (error.status === 401 || error.status === 419)) await this.forget()
-      throw error
+      throw new NovaOfflineError((error as Error).message)
+    }
+    if (response.status === 401 || response.status === 403) {
+      return { email: account.email, name: account.name, balanceUsd: 0, group: null, keyActive: false }
+    }
+    if (!response.ok) throw new NovaHttpError(response.status, null)
+    const body = (await response.json().catch(() => null)) as { data?: Record<string, unknown> } | null
+    const balance = typeof body?.data?.balance === 'number' ? body.data.balance : 0
+    const group = body?.data?.group
+    return {
+      email: account.email,
+      name: account.name,
+      balanceUsd: Math.floor(Math.max(0, balance) * 100 + 1e-6) / 100,
+      group: typeof group === 'string' ? group.slice(0, 40) : null,
+      keyActive: true
     }
   }
 

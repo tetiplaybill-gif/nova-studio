@@ -72,8 +72,20 @@ afterEach(async () => {
   await fs.rm(dir, { recursive: true, force: true })
 })
 
-const service = (fetch: typeof globalThis.fetch, secretBox: SecretBox = reversibleBox, now = () => 1_000) =>
-  new NovaAccountService({ fetch, secretBox, storagePath: () => storagePath, hostname: () => 'Wang’s Mac\r\nX', now })
+const service = (
+  fetch: typeof globalThis.fetch,
+  secretBox: SecretBox = reversibleBox,
+  now = () => 1_000,
+  apiKey: () => string | null = () => 'sk-nova-first'
+) =>
+  new NovaAccountService({
+    fetch,
+    secretBox,
+    storagePath: () => storagePath,
+    hostname: () => 'Wang’s Mac\r\nX',
+    now,
+    apiKey
+  })
 
 describe('NovaAccountService', () => {
   it('signs in with the CSRF token, keeps the rotated session cookie and verifies it before trusting it', async () => {
@@ -168,36 +180,32 @@ describe('NovaAccountService', () => {
     expect(await service(fakeSite({}).fetch, noKeychain).createKey()).toEqual({ ok: false, error: 'signed_out' })
   })
 
-  it('reads the available balance in dollars and whether this computer’s key is still active', async () => {
+  it('reads the same available balance as the website with this computer’s key, without a website session', async () => {
     const site = fakeSite({
       ...signInRoutes(),
-      'POST /api/platform/keys': [{ body: { id: KEY_ID, key: 'sk-nova-first' } }],
-      'GET /api/platform/keys': [
-        {
-          body: {
-            wallet: { balance_micro: 12_349_999, held_micro: 1_000_000, available_micro: 11_349_999 },
-            group: { name: 'Retail' },
-            keys: [{ id: KEY_ID }]
-          }
-        },
-        { body: { wallet: { available_micro: 0 }, group: null, keys: [] } }
+      'GET /v1/key': [
+        { body: { data: { balance: 722.258965, group: 'retail', usage: 1 } } },
+        { status: 401, body: { error: { code: 'invalid_api_key' } } }
       ]
     })
     const nova = service(site.fetch)
     await nova.signIn('buyer@example.com', 'secret', '')
-    await nova.createKey()
 
     expect(await nova.summary()).toEqual({
       email: 'buyer@example.com',
       name: 'Buyer',
-      balanceUsd: 11.34,
-      group: 'Retail',
+      balanceUsd: 722.25,
+      group: 'retail',
       keyActive: true
     })
+    const keyRead = site.seen.find((r) => r.path === '/v1/key')!
+    expect(keyRead.headers.Authorization).toBe('Bearer sk-nova-first')
+    expect(keyRead.headers.Cookie).toBeUndefined()
+    // A revoked key is reported, not mistaken for a zero balance on a working key.
     expect((await nova.summary())?.keyActive).toBe(false)
   })
 
-  it('restores the saved session after a restart and drops it once the website no longer accepts it', async () => {
+  it('restores the saved account after a restart and keeps it when the website session lapses', async () => {
     const first = fakeSite(signInRoutes())
     await service(first.fetch).signIn('buyer@example.com', 'secret', '')
 
@@ -209,9 +217,15 @@ describe('NovaAccountService', () => {
     })
     expect(later.seen[0].headers.Cookie).toContain('nova_session=signed-in')
 
+    // The two-hour website session ran out: the app stays signed in and keeps using its key.
     const expired = fakeSite({ 'GET /api/bootstrap': [{ body: { user: null, csrf_token: 'c' } }] })
-    expect(await service(expired.fetch, reversibleBox, () => 10_000_000).status()).toEqual({ signedIn: false })
-    await expect(fs.access(storagePath)).rejects.toThrow()
+    expect((await service(expired.fetch, reversibleBox, () => 10_000_000).status()).signedIn).toBe(true)
+    await expect(fs.access(storagePath)).resolves.toBeUndefined()
+
+    // Someone else's session on this computer is never kept.
+    const other = fakeSite({ 'GET /api/bootstrap': [{ body: { user: { id: 9, email: 'x@example.com' } } }] })
+    await service(fakeSite(signInRoutes()).fetch).signIn('buyer@example.com', 'secret', '')
+    expect(await service(other.fetch, reversibleBox, () => 10_000_000).status()).toEqual({ signedIn: false })
   })
 
   it('stays signed in while offline', async () => {
