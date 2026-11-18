@@ -126,7 +126,8 @@ win:
   verifyUpdateCodeSignature: false
 nsis:
   # Preserve the existing global installer identity so either edition replaces the same Windows installation.
-  guid: 41a4ccd8-bcc0-5710-9eee-0e164da68057
+  # NOVA Studio's own installer identity, so Windows never treats it as Cherry Studio.
+  guid: 262f880b-0b41-5945-b3a8-5ea57be15980
   artifactName: ${productName}-${version}-${arch}-setup.${ext}
   shortcutName: ${productName}
   uninstallDisplayName: ${productName}

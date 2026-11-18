@@ -32,8 +32,10 @@ import { getApplicationId } from '@main/utils/appEdition'
 
 // should be the first to resolveUserDataLocation()
 resolveUserDataLocation()
-// NOVA Studio: refuse main-process requests to Cherry Studio's services before any service starts.
+// NOVA Studio: refuse main-process requests to Cherry Studio's services before any service starts,
+// through Electron's net.fetch and Node's global fetch alike.
 installCherryServiceBlock(net)
+installCherryServiceBlock(globalThis)
 requireSingleInstance()
 configureChromiumFlags()
 configureRemoteDebugging()

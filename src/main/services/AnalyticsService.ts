@@ -22,6 +22,13 @@ const POSTHOG_PROJECT_KEYS = {
 } as const satisfies Record<AppEdition, string>
 const POSTHOG_HOST = 'https://us.i.posthog.com'
 
+/**
+ * NOVA Studio sends no usage analytics: both clients here report to Cherry Studio's own services, so
+ * the service never activates, whatever the data-collection setting says. Upstream tests switch it on
+ * in tests/main.setup.ts.
+ */
+export const analyticsAvailability = { enabled: false }
+
 // Development builds record usage insights only in a project set through MAIN_VITE_POSTHOG_KEY.
 function resolvePostHogKey(): string {
   const override = import.meta.env.MAIN_VITE_POSTHOG_KEY?.trim()
@@ -82,10 +89,12 @@ export class AnalyticsService extends BaseService implements Activatable {
 
   private refreshDesiredEnabled(): void {
     const preferenceService = application.get('PreferenceService')
-    this.desiredEnabled = isDataCollectionConsented(
-      preferenceService.get('app.privacy.data_collection.enabled'),
-      preferenceService.get('app.privacy.policy_version')
-    )
+    this.desiredEnabled =
+      analyticsAvailability.enabled &&
+      isDataCollectionConsented(
+        preferenceService.get('app.privacy.data_collection.enabled'),
+        preferenceService.get('app.privacy.policy_version')
+      )
     this.reconciler.request()
   }
 

@@ -60,6 +60,8 @@ const DELIVERY: Record<string, Partial<Record<string, Delivery>>> = {
   openai: { 'web-search': factories('openai', 'openai-chat') },
   grok: { 'web-search': factories('xai-responses') },
   openrouter: { 'web-search': factories('openrouter'), 'url-context': factories('openrouter') },
+  // NOVA's chat endpoint uses adapterFamily 'openrouter', so it rides the OpenRouter SDK provider and tools.
+  nova: { 'web-search': factories('openrouter'), 'url-context': factories('openrouter') },
   perplexity: { 'web-search': { kind: 'implicit' } },
   // Responses-endpoint models only; the openai extension's factory emits the bare tool shape.
   doubao: { 'web-search': factories('openai') },

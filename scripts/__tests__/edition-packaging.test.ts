@@ -75,7 +75,7 @@ describe('edition packaging', () => {
     expect(script).toContain(`--${arch}`)
   })
 
-  it('keeps the existing global product and update identity', () => {
+  it('NOVA Studio keeps its own product, installer and update identity', () => {
     const config = parse(readFileSync(path.join(projectRoot, 'electron-builder.yml'), 'utf8'))
 
     expect({
@@ -87,12 +87,12 @@ describe('edition packaging', () => {
       publish: config.publish,
       windowsArtifactName: config.win.artifactName
     }).toEqual({
-      appId: 'com.kangfenmao.CherryStudio',
+      appId: 'com.nova.studio',
       edition: GLOBAL_EDITION,
-      nsisGuid: '41a4ccd8-bcc0-5710-9eee-0e164da68057',
-      productName: 'Cherry Studio',
-      protocol: 'cherrystudio',
-      publish: expect.objectContaining({ provider: 'generic', url: 'https://releases.cherry-ai.com' }),
+      nsisGuid: '262f880b-0b41-5945-b3a8-5ea57be15980',
+      productName: 'NOVA Studio',
+      protocol: 'novastudio',
+      publish: expect.objectContaining({ provider: 'generic', url: 'https://cdkai.cc/downloads/nova-studio' }),
       windowsArtifactName: '${productName}-${version}-${arch}-setup.${ext}'
     })
   })
@@ -122,8 +122,8 @@ describe('edition packaging', () => {
     })
     const chinaPackageMetadata = { ...packageMetadata, ...config.extraMetadata }
 
-    expect(packageMetadata.productName ?? packageMetadata.name).toBe('CherryStudio')
-    expect(chinaPackageMetadata.productName ?? chinaPackageMetadata.name).toBe('CherryStudio')
+    expect(packageMetadata.productName ?? packageMetadata.name).toBe('NOVAStudio')
+    expect(chinaPackageMetadata.productName ?? chinaPackageMetadata.name).toBe('NOVAStudio')
   })
 
   it.each([

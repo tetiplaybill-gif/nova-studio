@@ -58,4 +58,13 @@ describe('Cherry Studio service blocklist', () => {
     expect(CHERRY_SERVICE_URL_PATTERNS).toContain('*://cherry-ai.com/*')
     expect(CHERRY_SERVICE_URL_PATTERNS).toContain('*://*.cherryin.ai/*')
   })
+
+  it('also guards a global fetch, as main.ts installs it on globalThis', async () => {
+    const scope = { fetch: vi.fn(async (_input: string | URL | Request, _init?: RequestInit) => new Response('ok')) }
+    installCherryServiceBlock(scope)
+    await expect(scope.fetch('https://analytics.cherry-ai.com/api/events')).rejects.toBeInstanceOf(
+      CherryServiceBlockedError
+    )
+    await expect(scope.fetch('https://api.cdkai.cc/v1/models')).resolves.toBeInstanceOf(Response)
+  })
 })

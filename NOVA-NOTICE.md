@@ -22,6 +22,8 @@ Based on upstream commit `c2efa48fc09f85ef7e6eaf70f3d4a969b69f55af` (Cherry Stud
   Cherry Studio's domains are refused in the main process. Help, About and menu links point to
   cdkai.cc, the deep-link scheme is `novastudio://`, and the privacy policy describes NOVA Studio.
 - The NOVA provider's API address is fixed to cdkai.cc.
+- Usage analytics are switched off entirely, and NOVA Studio has its own application id, Windows
+  installer GUID, data and temp folders, so it installs alongside Cherry Studio without sharing anything.
 - Added the NOVA account panel: sign in with a cdkai.cc account, get this computer's API key
   automatically, see the balance and open the top-up page.
 

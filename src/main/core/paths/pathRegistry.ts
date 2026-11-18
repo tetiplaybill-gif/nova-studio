@@ -55,7 +55,8 @@ export function buildPathRegistry() {
   const appUserDataToolchainMise = path.join(appUserDataToolchain, 'mise')
   const appSession = app.getPath('sessionData')
   const sysTemp = app.getPath('temp')
-  const appTemp = path.join(sysTemp, 'CherryStudio')
+  // NOVA Studio keeps its own temp folder so it never shares one with an installed Cherry Studio.
+  const appTemp = path.join(sysTemp, 'NOVAStudio')
   // electron-builder `extraResources` output — distinct from appRootResources
   const appExtraResources = process.resourcesPath
   // `resources/` inside asar (bundled assets) — distinct from appExtraResources

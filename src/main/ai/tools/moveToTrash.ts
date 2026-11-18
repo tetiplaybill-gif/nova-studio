@@ -149,6 +149,7 @@ export function getProtectedTrashTargetReason(
                 ? [
                     'Library/Accounts',
                     'Library/Application Support/CherryStudio',
+                    'Library/Application Support/NOVAStudio',
                     'Library/CloudStorage',
                     'Library/Cookies',
                     'Library/Keychains',

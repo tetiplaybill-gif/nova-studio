@@ -91,7 +91,7 @@ vi.mock('@application', async () => {
   })
 })
 
-import { AnalyticsService } from '../AnalyticsService'
+import { AnalyticsService, analyticsAvailability } from '../AnalyticsService'
 
 let destroyResolvers: Array<() => void>
 
@@ -101,6 +101,7 @@ function changePreference(key: string, value: boolean | string): void {
 }
 
 beforeEach(() => {
+  analyticsAvailability.enabled = true
   BaseService.resetInstances()
   vi.unstubAllEnvs()
   posthog.capture.mockClear()
@@ -206,8 +207,7 @@ describe('AnalyticsService data collection preference', () => {
   })
 
   it.each([
-    ['cn', 'phc_vwsf7qr54Vk2ff23Nj2B4PEYtSkkpheKrb8VcdfDujna'],
-    ['global', 'phc_G0omsYajA6A9BY5c0rnU04ZaZck25xpR0DqKhwfF39n']
+    ['cn', 'phc_vwsf7qr54Vk2ff23Nj2B4PEYtSkkpheKrb8VcdfDujna']
   ] as const)(
     'sends %s edition usage insights to that edition’s PostHog project in release builds',
     async (edition, key) => {
@@ -221,6 +221,20 @@ describe('AnalyticsService data collection preference', () => {
       expect(posthog.constructor).toHaveBeenCalledWith(key, expect.anything())
     }
   )
+
+  it('NOVA Studio sends no usage analytics even when data collection is consented', async () => {
+    analyticsAvailability.enabled = false
+    vi.stubEnv('DEV', false)
+    vi.stubEnv('MAIN_VITE_POSTHOG_KEY', '')
+    vi.mocked(getAppEdition).mockReturnValue('global')
+    const service = new AnalyticsService()
+    await service._doInit()
+    await new Promise((resolve) => setTimeout(resolve, 20))
+
+    expect(service.isActivated).toBe(false)
+    expect(MockAnalyticsClient).not.toHaveBeenCalled()
+    expect(posthog.constructor).not.toHaveBeenCalled()
+  })
 
   it('activates after the latest privacy policy is accepted', async () => {
     captured.preferenceValues['app.privacy.policy_version'] = ''
