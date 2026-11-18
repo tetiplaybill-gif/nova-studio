@@ -1,5 +1,9 @@
 [
   {
+    "version": "2.2.3",
+    "releaseNotes": "<!--LANG:en-->\nNOVA Studio 2.2.3\n\n✨ What's new\n- [Models] Image, embedding, speech, transcription, video and rerank models from cdkai.cc now appear alongside chat models.\n- [Voice] New NOVA cloud dictation and read-aloud options in voice settings.\n- [Account] Settings → Profile shows your NOVA account, balance and top-up instead of the old subscription panel.\n- [Account] The balance matches the website and no longer disappears when your website sign-in expires.\n- [Branding] Windows and the tray icon now say NOVA Studio.\n<!--LANG:zh-CN-->\nNOVA Studio 2.2.3\n\n✨ 更新内容\n- [模型] cdkai.cc 上的图像、向量、语音合成、语音识别、视频和重排序模型现已与对话模型一起列出。\n- [语音] 语音设置新增 NOVA 云端听写与朗读。\n- [账户] 设置 → 个人信息 显示你的 NOVA 账户、余额与充值入口，不再显示旧的订阅面板。\n- [账户] 余额与官网一致，网站登录过期后也不会消失。\n- [品牌] 窗口标题与托盘图标改为 NOVA Studio。\n<!--LANG:END-->"
+  },
+  {
     "version": "2.2.2",
     "releaseNotes": "<!--LANG:en-->\nNOVA Studio 2.2.2 - First release\n\n✨ What's included\n- [Account] Sign in with your cdkai.cc account on the NOVA provider page. NOVA Studio creates an API key for this computer automatically, shows your balance and opens the top-up page.\n- [Models] Every model on cdkai.cc in one place, with DeepSeek V4 Flash ready as the default for chat, translation and the quick assistant.\n- [Privacy] No usage analytics, crash reporting or announcements are sent anywhere. Your sign-in is kept in your system keychain.\n- [Source] NOVA Studio is based on Cherry Studio and released under the AGPL-3.0 license. See Settings → About for the source code.\n<!--LANG:zh-CN-->\nNOVA Studio 2.2.2 - 首个版本\n\n✨ 包含内容\n- [账户] 在 NOVA 服务商页面使用 cdkai.cc 账户登录。NOVA Studio 会自动为这台电脑创建 API Key，显示余额并可直接打开充值页面。\n- [模型] cdkai.cc 上的全部模型集中在一处，默认使用 DeepSeek V4 Flash 进行对话、翻译和快捷助手。\n- [隐私] 不发送任何使用统计、崩溃报告或公告请求。登录信息保存在系统钥匙串中。\n- [源代码] NOVA Studio 基于 Cherry Studio，以 AGPL-3.0 许可证发布。源代码见 设置 → 关于。\n<!--LANG:END-->"
   }
