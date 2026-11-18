@@ -1,6 +1,6 @@
 # Builds NOVA Studio installers on GitHub's own runners. Run it by hand from the Actions tab
-# ("Run workflow"); nothing is published automatically. Download the installers from the run's
-# artifacts and upload them to cdkai.cc.
+# ("Run workflow"). Installers land in the run's artifacts and, by default, in a DRAFT GitHub
+# release for the package.json version; nothing becomes public until the draft is published.
 #
 # Signing: without certificates the builds are unsigned (Windows SmartScreen and macOS Gatekeeper
 # warn on first launch). To sign the macOS build, add these repository secrets: CSC_LINK (base64
@@ -11,6 +11,11 @@ name: NOVA Studio release build
 
 on:
   workflow_dispatch:
+    inputs:
+      draft_release:
+        description: Also attach the installers to a draft GitHub release (vVERSION). Publish it by hand.
+        type: boolean
+        default: true
 
 permissions:
   contents: read
@@ -92,3 +97,30 @@ jobs:
             dist/*.zip
             dist/*.blockmap
             dist/latest*.yml
+
+  draft-release:
+    needs: build
+    if: inputs.draft_release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/download-artifact@v6
+        with:
+          path: out
+          merge-multiple: true
+      - name: Checksums
+        run: cd out && sha256sum *.exe *.dmg *.zip > SHA256SUMS.txt && cat SHA256SUMS.txt
+      - name: Create or update draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="v$(node -p "require('./package.json').version")"
+          if gh release view "$tag" >/dev/null 2>&1; then
+            gh release upload "$tag" out/* --clobber
+          else
+            gh release create "$tag" out/* --draft --target "$GITHUB_SHA" \
+              --title "NOVA Studio ${tag#v}" \
+              --notes "NOVA Studio ${tag#v}. Unsigned builds: on first launch Windows SmartScreen and macOS Gatekeeper will warn. Checksums are in SHA256SUMS.txt."
+          fi
