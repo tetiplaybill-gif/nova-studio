@@ -1,5 +1,6 @@
 import {
   ArrowUpFromLine,
+  ChevronDown,
   Clapperboard,
   Dices,
   Film,
@@ -127,6 +128,7 @@ const VideoComposer: FC<Props> = ({
 }) => {
   const { t } = useTranslation()
   const [showNegative, setShowNegative] = useState(!!draft.negativePrompt)
+  const [showMore, setShowMore] = useState(false)
   const modeModels = useMemo(() => modelsForMode(models, draft.mode), [models, draft.mode])
   const model = modeModels.find((m) => m.id === draft.modelId)
   const video = model?.video
@@ -171,7 +173,7 @@ const VideoComposer: FC<Props> = ({
     <div className="flex h-full min-h-0 flex-col">
       <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto p-4">
         <Section title={t('nova_media.video.mode.title')}>
-          <div className="grid grid-cols-4 gap-1.5" role="radiogroup" aria-label={t('nova_media.video.mode.title')}>
+          <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label={t('nova_media.video.mode.title')}>
             {MODES.map(({ mode, icon: Icon }) => (
               <Tooltip key={mode} content={t(`nova_media.video.mode.${mode}_hint`)}>
                 <button
@@ -180,12 +182,12 @@ const VideoComposer: FC<Props> = ({
                   aria-checked={draft.mode === mode}
                   onClick={() => setMode(mode)}
                   className={cn(
-                    'flex w-full flex-col items-center gap-1 rounded-lg border px-1 py-2 text-[11px] transition-colors focus-visible:border-primary focus-visible:outline-none',
+                    'flex items-center gap-1.5 rounded-full border px-3 py-1.5 font-medium text-xs transition-colors focus-visible:border-primary focus-visible:outline-none',
                     draft.mode === mode
-                      ? 'border-border-selected bg-accent text-foreground'
-                      : 'border-border-subtle text-muted-foreground hover:bg-accent hover:text-foreground'
+                      ? 'border-primary bg-primary/12 text-foreground'
+                      : 'border-border text-muted-foreground hover:border-border-strong hover:text-foreground'
                   )}>
-                  <Icon className="size-4" />
+                  <Icon className="size-3.5" />
                   <span className="truncate">{t(`nova_media.video.mode.${mode}`)}</span>
                 </button>
               </Tooltip>
@@ -526,98 +528,112 @@ const VideoComposer: FC<Props> = ({
                   onChange={(generateAudio) => patch({ generateAudio })}
                 />
               )}
-              {draft.mode !== 'extend' && (
-                <Field label={t('nova_media.video.count')}>
-                  <SegmentedControl
-                    size="sm"
-                    options={['1', '2', '3', '4'].map((value) => ({ value, label: value }))}
-                    value={String(draft.count)}
-                    onValueChange={(count) => patch({ count: Number(count) })}
-                  />
-                </Field>
-              )}
-              {video.seed && (
-                <Field label={t('nova_media.video.seed')}>
-                  <div className="flex items-center gap-2">
-                    <InputNumber
-                      size="small"
-                      min={0}
-                      max={4_294_967_295}
-                      step={1}
-                      value={draft.seed}
-                      placeholder={t('nova_media.video.seed_random')}
-                      onValueChange={(seed) => patch({ seed })}
-                      className="flex-1"
-                    />
-                    <Tooltip content={t('nova_media.video.seed_roll')}>
-                      <Button
-                        variant="outline"
-                        size="icon-sm"
-                        aria-label={t('nova_media.video.seed_roll')}
-                        onClick={() => patch({ seed: Math.floor(Math.random() * 4_294_967_295) })}>
-                        <Dices className="size-3.5" />
-                      </Button>
-                    </Tooltip>
-                    <Tooltip content={t('nova_media.video.seed_clear')}>
-                      <Button
-                        variant={draft.seed === null ? 'secondary' : 'outline'}
-                        size="icon-sm"
-                        aria-label={t('nova_media.video.seed_clear')}
-                        onClick={() => patch({ seed: null })}>
-                        <Lock className="size-3.5" />
-                      </Button>
-                    </Tooltip>
-                  </div>
-                </Field>
-              )}
-              {video.passthrough
-                .filter((key) => OPTION_CONTROLS[key])
-                .map((key) => {
-                  const control = OPTION_CONTROLS[key]
-                  const label = t(`nova_media.video.option.${key}`)
-                  const value = draft.options[key]
-                  if (control.kind === 'bool') {
-                    return (
-                      <ToggleRow
-                        key={key}
-                        label={label}
-                        checked={value === true}
-                        onChange={(checked) => setOption(key, checked)}
-                      />
-                    )
-                  }
-                  if (control.kind === 'choice') {
-                    return (
-                      <Field key={key} label={label}>
-                        <Select value={typeof value === 'string' ? value : ''} onValueChange={(v) => setOption(key, v)}>
-                          <SelectTrigger size="sm" className="w-full">
-                            <SelectValue placeholder={t('nova_media.video.option.model_default')} />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {control.choices.map((choice) => (
-                              <SelectItem key={choice} value={choice}>
-                                {t(`nova_media.video.option.${key}_${choice}`)}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </Field>
-                    )
-                  }
-                  return (
-                    <Field key={key} label={label}>
-                      <InputNumber
-                        size="small"
-                        min={control.min}
-                        max={control.max}
-                        step={control.step}
-                        value={typeof value === 'number' ? value : null}
-                        placeholder={t('nova_media.video.option.model_default')}
-                        onValueChange={(v) => setOption(key, v ?? undefined)}
+              <button
+                type="button"
+                aria-expanded={showMore}
+                onClick={() => setShowMore((open) => !open)}
+                className="flex items-center gap-1 self-start rounded-md font-medium text-muted-foreground text-xs transition-colors hover:text-foreground focus-visible:text-foreground focus-visible:outline-none">
+                <ChevronDown className={cn('size-3.5 transition-transform', showMore && 'rotate-180')} />
+                {t('nova_ui.video.more_settings')}
+              </button>
+              {showMore && (
+                <>
+                  {draft.mode !== 'extend' && (
+                    <Field label={t('nova_media.video.count')}>
+                      <SegmentedControl
+                        size="sm"
+                        options={['1', '2', '3', '4'].map((value) => ({ value, label: value }))}
+                        value={String(draft.count)}
+                        onValueChange={(count) => patch({ count: Number(count) })}
                       />
                     </Field>
-                  )
-                })}
+                  )}
+                  {video.seed && (
+                    <Field label={t('nova_media.video.seed')}>
+                      <div className="flex items-center gap-2">
+                        <InputNumber
+                          size="small"
+                          min={0}
+                          max={4_294_967_295}
+                          step={1}
+                          value={draft.seed}
+                          placeholder={t('nova_media.video.seed_random')}
+                          onValueChange={(seed) => patch({ seed })}
+                          className="flex-1"
+                        />
+                        <Tooltip content={t('nova_media.video.seed_roll')}>
+                          <Button
+                            variant="outline"
+                            size="icon-sm"
+                            aria-label={t('nova_media.video.seed_roll')}
+                            onClick={() => patch({ seed: Math.floor(Math.random() * 4_294_967_295) })}>
+                            <Dices className="size-3.5" />
+                          </Button>
+                        </Tooltip>
+                        <Tooltip content={t('nova_media.video.seed_clear')}>
+                          <Button
+                            variant={draft.seed === null ? 'secondary' : 'outline'}
+                            size="icon-sm"
+                            aria-label={t('nova_media.video.seed_clear')}
+                            onClick={() => patch({ seed: null })}>
+                            <Lock className="size-3.5" />
+                          </Button>
+                        </Tooltip>
+                      </div>
+                    </Field>
+                  )}
+                  {video.passthrough
+                    .filter((key) => OPTION_CONTROLS[key])
+                    .map((key) => {
+                      const control = OPTION_CONTROLS[key]
+                      const label = t(`nova_media.video.option.${key}`)
+                      const value = draft.options[key]
+                      if (control.kind === 'bool') {
+                        return (
+                          <ToggleRow
+                            key={key}
+                            label={label}
+                            checked={value === true}
+                            onChange={(checked) => setOption(key, checked)}
+                          />
+                        )
+                      }
+                      if (control.kind === 'choice') {
+                        return (
+                          <Field key={key} label={label}>
+                            <Select
+                              value={typeof value === 'string' ? value : ''}
+                              onValueChange={(v) => setOption(key, v)}>
+                              <SelectTrigger size="sm" className="w-full">
+                                <SelectValue placeholder={t('nova_media.video.option.model_default')} />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {control.choices.map((choice) => (
+                                  <SelectItem key={choice} value={choice}>
+                                    {t(`nova_media.video.option.${key}_${choice}`)}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </Field>
+                        )
+                      }
+                      return (
+                        <Field key={key} label={label}>
+                          <InputNumber
+                            size="small"
+                            min={control.min}
+                            max={control.max}
+                            step={control.step}
+                            value={typeof value === 'number' ? value : null}
+                            placeholder={t('nova_media.video.option.model_default')}
+                            onValueChange={(v) => setOption(key, v ?? undefined)}
+                          />
+                        </Field>
+                      )
+                    })}
+                </>
+              )}
             </div>
           </Section>
         )}

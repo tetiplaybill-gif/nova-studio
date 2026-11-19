@@ -22,6 +22,8 @@ import {
 import { openExternalWebsite } from '@renderer/services/website'
 import { cn } from '@renderer/utils/style'
 
+import NovaAccountCard from './NovaAccountCard'
+
 const builtinTools = settingsMenu.filter((item) => item.groupKey === BUILTIN_TOOLS_GROUP_KEY)
 
 const SettingsPage: FC = () => {
@@ -89,6 +91,7 @@ const SettingsPage: FC = () => {
                 }
               />
             )}
+            <NovaAccountCard />
             <ScrollArea className="min-h-0 flex-1 select-none">
               <MenuList className={settingsSubmenuListClassName}>
                 {settingsMenu.map((item, index) => {

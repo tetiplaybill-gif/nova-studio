@@ -36,7 +36,7 @@
   --error-border: var(--cs-error-border);
 
   /* Stable product domain: rich text and code */
-  --code-block: #e3e3e3;
+  --code-block: #eceef2;
   --inline-code: rgba(0, 0, 0, 0.06);
   --inline-code-foreground: rgb(218, 97, 92);
 
@@ -83,7 +83,7 @@
   --composer-surface: var(--cs-card);
 
   /* Stable product domain: user-message surface */
-  --chat-user: rgba(0, 0, 0, 0.045);
+  --chat-user: oklch(0.962 0.003 270);
 
   /* Stable product domain: cross-surface resource-list rows */
   /* Hover and selected share one fill */
@@ -99,8 +99,8 @@
   --link: var(--cs-brand-400);
 
   /* Stable product domain: rich text and code */
-  --code-block: #323232;
-  --inline-code: #323232;
+  --code-block: #1a1d24;
+  --inline-code: #22262e;
 
   /* Default code theme: one lightness band so no hue dominates */
   --cherry-code-keyword: var(--cs-violet-300);
@@ -113,9 +113,9 @@
   --cherry-code-deleted: var(--cs-red-400);
 
   /* Stable product domain: references and search highlights */
-  --reference: #404040;
+  --reference: #2a2f39;
   --reference-foreground: #fff;
-  --reference-subtle: #0b0e12;
+  --reference-subtle: #0b0c0f;
   --highlight-foreground: var(--foreground);
   --highlight: var(--cs-amber-900);
   --highlight-accent: var(--cs-orange-800);
@@ -129,14 +129,14 @@
    * so the well stays `0.55 × (0.209 − 0.1727)` below the rails whatever is
    * behind the window — the hierarchy cannot invert on a light wallpaper.
    * Over the rails in a normal window this lands on `--chat-message-well-solid`. */
-  --chat-message-well: oklch(0.1727 0 0 / 0.55);
-  --chat-message-well-solid: oklch(0.191 0 0);
-  --composer-surface: #2f2f2f;
+  --chat-message-well: oklch(0.175 0.006 270 / 0.55);
+  --chat-message-well-solid: oklch(0.19 0.006 270);
+  --composer-surface: oklch(0.255 0.009 270);
 
   /* Stable product domain: user-message surface.
    * Sits between the well and the composer so a sent message never reads as
    * the still-editable input. */
-  --chat-user: oklch(0.2393 0 0);
+  --chat-user: oklch(0.235 0.008 270);
 
   --resource-list-row-selected: oklch(1 0 0 / 0.14);
 }
