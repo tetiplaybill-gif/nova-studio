@@ -43,6 +43,8 @@ vi.mock('@cherrystudio/ui', async (importOriginal) => ({
   )
 }))
 
+vi.mock('../NovaAccountCard', () => ({ default: () => null }))
+
 vi.mock('@renderer/hooks/useMacTransparentWindow', () => ({
   default: () => isMacTransparentWindowMock()
 }))
