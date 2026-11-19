@@ -3,17 +3,21 @@ import { eq, isNull, sql } from 'drizzle-orm'
 import { app } from 'electron'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { ENDPOINT_TYPE } from '@cherrystudio/provider-registry'
 import { agentTable } from '@data/db/schemas/agent'
 import { agentSessionTable } from '@data/db/schemas/agentSession'
 import { agentWorkspaceTable } from '@data/db/schemas/agentWorkspace'
 import { appStateTable } from '@data/db/schemas/appState'
 import { CherryAssistantSeeder } from '@data/db/seeding/seeders/cherryAssistantSeeder'
+import { NovaDefaultModelSeeder } from '@data/db/seeding/seeders/novaDefaultModelSeeder'
 import { SeedRunner } from '@data/db/seeding/SeedRunner'
 import type { ISeeder } from '@data/db/types'
 import { agentService } from '@data/services/AgentService'
 import { agentSessionService } from '@data/services/AgentSessionService'
+import { providerService } from '@data/services/ProviderService'
 import { generateOrderKeyBetween } from '@data/services/utils/orderKey'
 import { AGENT_WORKSPACE_TYPE } from '@shared/data/api/schemas/agentWorkspaces'
+import { NOVA_DEFAULT_UNIQUE_MODEL_ID, NOVA_PROVIDER_ID } from '@shared/data/presets/nova'
 
 function builtinAgents(db: ReturnType<typeof setupTestDatabase>['db']) {
   return db
@@ -90,7 +94,7 @@ describe('CherryAssistantSeeder', () => {
     const [updated] = builtinAgents(dbh.db)
     expect(updated.configuration).toMatchObject({ permission_mode: 'default' })
     const [journal] = dbh.db.select().from(appStateTable).where(eq(appStateTable.key, 'seed:cherryAssistant')).all()
-    expect(journal?.value).toMatchObject({ version: '2' })
+    expect(journal?.value).toMatchObject({ version: new CherryAssistantSeeder().version })
   })
 
   it('adds Cherry Assistant after a version 1 skip in an existing library and journals the rollout', () => {
@@ -191,6 +195,83 @@ describe('CherryAssistantSeeder', () => {
     expect(dbh.db.select().from(agentTable).where(isNull(agentTable.deletedAt)).all()).toHaveLength(0)
     expect(builtinAgents(dbh.db)).toHaveLength(1)
     const [journal] = dbh.db.select().from(appStateTable).where(eq(appStateTable.key, 'seed:cherryAssistant')).all()
-    expect(journal?.value).toMatchObject({ version: '2' })
+    expect(journal?.value).toMatchObject({ version: new CherryAssistantSeeder().version })
+  })
+})
+
+describe('CherryAssistantSeeder on NOVA Studio', () => {
+  const dbh = setupTestDatabase()
+
+  function seedNovaDefaultModel() {
+    providerService.batchUpsert([
+      {
+        providerId: NOVA_PROVIDER_ID,
+        presetProviderId: NOVA_PROVIDER_ID,
+        name: 'NOVA',
+        endpointConfigs: null,
+        defaultChatEndpoint: ENDPOINT_TYPE.OPENAI_CHAT_COMPLETIONS,
+        authConfig: null,
+        providerSettings: null,
+        isEnabled: true
+      }
+    ])
+    new NovaDefaultModelSeeder().run(dbh.db)
+  }
+
+  const assistant = () =>
+    dbh.db
+      .select()
+      .from(agentTable)
+      .all()
+      .find((row) => row.configuration.builtin_role === 'assistant')
+
+  beforeEach(() => {
+    vi.mocked(app.getPreferredSystemLanguages).mockReturnValue(['en-US'])
+  })
+
+  it('creates the assistant ready to answer channels, on the NOVA default model', () => {
+    seedNovaDefaultModel()
+    new CherryAssistantSeeder().run(dbh.db)
+
+    expect(assistant()).toMatchObject({ name: 'NOVA Helper', model: NOVA_DEFAULT_UNIQUE_MODEL_ID })
+    expect(assistant()?.configuration.avatar).not.toBe('🍒')
+  })
+
+  it('gives an existing assistant without a model the default and replaces only the stock avatar', () => {
+    new CherryAssistantSeeder().run(dbh.db)
+    const id = assistant()!.id
+    dbh.db
+      .update(agentTable)
+      .set({ model: null, configuration: { ...assistant()!.configuration, avatar: '🍒' } })
+      .where(eq(agentTable.id, id))
+      .run()
+    seedNovaDefaultModel()
+
+    new CherryAssistantSeeder().run(dbh.db)
+
+    expect(assistant()?.model).toBe(NOVA_DEFAULT_UNIQUE_MODEL_ID)
+    expect(assistant()?.configuration.avatar).not.toBe('🍒')
+  })
+
+  it("keeps the user's own model and avatar", () => {
+    seedNovaDefaultModel()
+    new CherryAssistantSeeder().run(dbh.db)
+    const id = assistant()!.id
+    dbh.db
+      .update(agentTable)
+      .set({ model: null, configuration: { ...assistant()!.configuration, avatar: '🦊' } })
+      .where(eq(agentTable.id, id))
+      .run()
+    dbh.db.update(agentTable).set({ model: NOVA_DEFAULT_UNIQUE_MODEL_ID }).where(eq(agentTable.id, id)).run()
+
+    new CherryAssistantSeeder().run(dbh.db)
+
+    expect(assistant()?.configuration.avatar).toBe('🦊')
+  })
+
+  it('leaves the model empty rather than pointing at a model the user removed', () => {
+    new CherryAssistantSeeder().run(dbh.db)
+
+    expect(assistant()?.model).toBeNull()
   })
 })

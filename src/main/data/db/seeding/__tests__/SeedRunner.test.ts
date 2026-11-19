@@ -28,6 +28,9 @@ function createSeeder(overrides: Partial<ISeeder> = {}): ISeeder {
   }
 }
 
+// The NOVA agent's seeded model is validated against the app edition, which reads package.json.
+vi.mock('@main/utils/appEdition', () => ({ getAppEdition: () => 'global' }))
+
 describe('SeedRunner', () => {
   const dbh = setupTestDatabase()
 
