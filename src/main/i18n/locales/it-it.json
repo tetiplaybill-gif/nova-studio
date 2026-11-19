@@ -1,5 +1,5 @@
 {
-  "agent.builtin.cherry_assistant.description": "Consulente integrato di NOVA Studio. Diagnostica problemi, guida le operazioni, raccoglie FAQ, invia segnalazioni di bug e richieste di funzionalità, cerca e crea Skills",
+  "agent.builtin.cherry_assistant.description": "Built-in NOVA Studio advisor. Diagnoses issues, guides you through the app, and finds or creates Skills",
   "agent.builtin.cherry_doctor.description": "Analista integrato di diagnostica di sistema. Legge il rapporto diagnostico e lo stato di esecuzione, spiega la causa del problema e propone correzioni circoscritte",
   "agent.builtin.cherry_support.description": "Agente di supporto ufficiale di NOVA Studio per la configurazione, la risoluzione dei problemi, le FAQ e i commenti",
   "agent.session.claude.runtime_unavailable": "L'agente Claude non è pronto. Attendi il completamento del download o riprova.",
@@ -12,7 +12,7 @@
   "agent.session.workspace_status.missing": "Il percorso dell'area di lavoro non esiste: {{path}}",
   "agent.session.workspace_status.not_directory": "Il percorso dell'area di lavoro non è una cartella: {{path}}",
   "agent.tools.to_markdown.unsupported_windows_arm64": "to_markdown non è supportato su Windows ARM64 perché il convertitore di documenti incluso non dispone di una versione nativa per questa piattaforma. Reinstallare le dipendenze non risolverà questa limitazione.",
-  "apiGateway.docs.description": "API HTTP di NOVA Studio compatibile con OpenAI, Anthropic e Gemini, con endpoint specifici di Cherry (modelli, basi di conoscenza)",
+  "apiGateway.docs.description": "API HTTP di NOVA Studio compatibile con OpenAI, Anthropic e Gemini, con endpoint specifici di NOVA (modelli, basi di conoscenza)",
   "apiGateway.docs.language_switcher_label": "Lingua della documentazione",
   "apiGateway.docs.operations.chat_completions": "Crea un completamento di chat. I corpi della richiesta e della risposta seguono il formato OpenAI Chat Completions; imposta `stream: true` per un output incrementale.",
   "apiGateway.docs.operations.count_tokens": "Stima quanti token di input utilizza un insieme di messaggi in formato Anthropic.",

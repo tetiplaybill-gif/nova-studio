@@ -1379,7 +1379,7 @@ export const exportMarkdownToJoplin = async (
       body: JSON.stringify({
         title: title,
         body: content,
-        source: 'Cherry Studio'
+        source: 'NOVA Studio'
       })
     })
 
@@ -1448,7 +1448,7 @@ export const exportMarkdownToSiyuan = async (title: string, content: string): Pr
     }
 
     // 确保根路径以/开头
-    const rootPath = siyuanRootPath?.startsWith('/') ? siyuanRootPath : `/${siyuanRootPath || 'CherryStudio'}`
+    const rootPath = siyuanRootPath?.startsWith('/') ? siyuanRootPath : `/${siyuanRootPath || 'NOVAStudio'}`
     const renderedRootPath = await renderSprigTemplate(siyuanApiUrl, siyuanToken, rootPath)
     // 创建文档
     const docTitle = `${title.replace(/[#|\\^\\[\]]/g, '')}`

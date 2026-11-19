@@ -1,5 +1,5 @@
 {
-  "agent.builtin.cherry_assistant.description": "Vestavěný poradce NOVA Studio. Diagnostikuje problémy, provádí po krocích, shromažďuje FAQ, odesílá chyby a žádosti o funkce a vyhledává a vytváří Skills",
+  "agent.builtin.cherry_assistant.description": "Built-in NOVA Studio advisor. Diagnoses issues, guides you through the app, and finds or creates Skills",
   "agent.builtin.cherry_doctor.description": "Vestavěný analytik systémové diagnostiky. Čte diagnostickou zprávu a stav běhu, vysvětluje hlavní příčinu a navrhuje omezené opravy",
   "agent.builtin.cherry_support.description": "Oficiální podpora agenta NOVA Studio pro nastavení, řešení problémů, FAQ a zpětnou vazbu",
   "agent.session.claude.runtime_unavailable": "Claude Agent ještě není připraven. Počkejte na dokončení stahování nebo to zkuste znovu.",
@@ -12,7 +12,7 @@
   "agent.session.workspace_status.missing": "Cesta k pracovnímu prostoru neexistuje: {{path}}",
   "agent.session.workspace_status.not_directory": "Cesta k pracovnímu prostoru není adresář: {{path}}",
   "agent.tools.to_markdown.unsupported_windows_arm64": "Nástroj to_markdown není na Windows ARM64 podporován, protože vestavěný převodník dokumentů nemá nativní sestavení pro tuto platformu. Opětovná instalace závislostí toto omezení nevyřeší.",
-  "apiGateway.docs.description": "HTTP API pro NOVA Studio kompatibilní s OpenAI, Anthropic a Gemini, a dále koncové body specifické pro Cherry (modely, znalostní báze)",
+  "apiGateway.docs.description": "HTTP API pro NOVA Studio kompatibilní s OpenAI, Anthropic a Gemini, a dále koncové body specifické pro NOVA (modely, znalostní báze)",
   "apiGateway.docs.language_switcher_label": "Jazyk dokumentace",
   "apiGateway.docs.operations.chat_completions": "Vytvoří dokončení chatu. Tělo požadavku i odpovědi odpovídá formátu OpenAI Chat Completions; pro postupný výstup nastavte `stream: true`.",
   "apiGateway.docs.operations.count_tokens": "Odhadne, kolik vstupních tokenů spotřebuje sada zpráv ve formátu Anthropic.",

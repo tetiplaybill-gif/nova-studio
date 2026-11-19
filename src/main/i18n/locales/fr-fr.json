@@ -1,5 +1,5 @@
 {
-  "agent.builtin.cherry_assistant.description": "Conseiller intégré de NOVA Studio. Il diagnostique les problèmes, vous guide dans les opérations, recueille les FAQ, soumet les bugs et demandes de fonctionnalités, et recherche ou crée des Skills.",
+  "agent.builtin.cherry_assistant.description": "Built-in NOVA Studio advisor. Diagnoses issues, guides you through the app, and finds or creates Skills",
   "agent.builtin.cherry_doctor.description": "Analyste intégré du diagnostic système. Lit le rapport de diagnostic et l'état d'exécution, explique la cause racine et propose des corrections limitées",
   "agent.builtin.cherry_support.description": "Agent d'assistance officiel de NOVA Studio pour la configuration, le diagnostic, les FAQ et les commentaires",
   "agent.session.claude.runtime_unavailable": "Claude Agent n’est pas prêt. Attendez la fin du téléchargement ou réessayez.",
@@ -12,7 +12,7 @@
   "agent.session.workspace_status.missing": "Le chemin de l'espace de travail n'existe pas : {{path}}",
   "agent.session.workspace_status.not_directory": "Le chemin de l’espace de travail n’est pas un répertoire : {{path}}",
   "agent.tools.to_markdown.unsupported_windows_arm64": "to_markdown n’est pas pris en charge sur Windows ARM64, car le convertisseur de documents intégré ne dispose pas de version native pour cette plateforme. Réinstaller les dépendances ne résoudra pas cette limitation.",
-  "apiGateway.docs.description": "API HTTP de NOVA Studio compatible OpenAI, Anthropic et Gemini, ainsi que les endpoints propres à Cherry (modèles, bases de connaissances)",
+  "apiGateway.docs.description": "API HTTP de NOVA Studio compatible OpenAI, Anthropic et Gemini, ainsi que les endpoints propres à NOVA (modèles, bases de connaissances)",
   "apiGateway.docs.language_switcher_label": "Langue de la documentation",
   "apiGateway.docs.operations.chat_completions": "Crée une complétion de conversation. Les corps de requête et de réponse suivent le format OpenAI Chat Completions ; avec `stream: true`, la sortie est incrémentale.",
   "apiGateway.docs.operations.count_tokens": "Estime le nombre de tokens d'entrée consommés par un ensemble de messages au format Anthropic.",

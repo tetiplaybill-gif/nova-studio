@@ -1,5 +1,5 @@
 {
-  "agent.builtin.cherry_assistant.description": "ที่ปรึกษาในตัวของ NOVA Studio วินิจฉัยปัญหา แนะนำการใช้งาน รวบรวม FAQ ส่งรายงานบั๊ก/คำขอฟีเจอร์ และค้นหา/สร้าง Skills",
+  "agent.builtin.cherry_assistant.description": "Built-in NOVA Studio advisor. Diagnoses issues, guides you through the app, and finds or creates Skills",
   "agent.builtin.cherry_doctor.description": "เอเจนต์วิเคราะห์ System Doctor ในตัว อ่านรายงานวินิจฉัยและสถานะ runtime อธิบายสาเหตุที่แท้จริง และเสนอวิธีแก้ที่ควบคุมขอบเขตได้",
   "agent.builtin.cherry_support.description": "เอเจนต์สนับสนุนอย่างเป็นทางการของ NOVA Studio สำหรับคำแนะนำการตั้งค่า การแก้ไขปัญหา FAQ และข้อเสนอแนะ",
   "agent.session.claude.runtime_unavailable": "Claude Agent ยังไม่พร้อม รอดาวน์โหลดเสร็จหรือลองอีกครั้ง",
@@ -12,7 +12,7 @@
   "agent.session.workspace_status.missing": "ไม่มีเส้นทางเวิร์กสเปซ: {{path}}",
   "agent.session.workspace_status.not_directory": "เส้นทางเวิร์กสเปซไม่ใช่ไดเรกทอรี: {{path}}",
   "agent.tools.to_markdown.unsupported_windows_arm64": "ไม่รองรับ to_markdown บน Windows ARM64 เนื่องจากตัวแปลงเอกสารที่มาพร้อมแอปไม่มีบิลด์แบบเนทีฟสำหรับแพลตฟอร์มนี้ การติดตั้งส่วนที่ต้องพึ่งพาใหม่จะไม่แก้ไขข้อจำกัดนี้",
-  "apiGateway.docs.description": "HTTP API ที่เข้ากันได้กับ OpenAI, Anthropic และ Gemini สำหรับ NOVA Studio พร้อมด้วยเอนด์พอยต์เฉพาะของ Cherry (โมเดล, ความรู้)",
+  "apiGateway.docs.description": "HTTP API ที่เข้ากันได้กับ OpenAI, Anthropic และ Gemini สำหรับ NOVA Studio พร้อมด้วยเอนด์พอยต์เฉพาะของ NOVA (โมเดล, ความรู้)",
   "apiGateway.docs.language_switcher_label": "ภาษาของเอกสาร",
   "apiGateway.docs.operations.chat_completions": "สร้าง Chat Completion คำขอและเนื้อหาการตอบสนองเป็นไปตามรูปแบบ OpenAI Chat Completions ตั้งค่า `stream: true` สำหรับเอาต์พุตแบบเพิ่มทีละส่วน",
   "apiGateway.docs.operations.count_tokens": "ประมาณจำนวนอินพุตโทเค็นที่ชุดข้อความในรูปแบบ Anthropic ใช้",

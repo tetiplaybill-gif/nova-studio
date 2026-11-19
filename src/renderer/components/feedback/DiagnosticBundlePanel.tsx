@@ -8,6 +8,7 @@ import { ipcApi } from '@renderer/ipc'
 import { loggerService } from '@renderer/services/LoggerService'
 import { toast } from '@renderer/services/toast'
 import { formatFileSize } from '@renderer/utils/file'
+import { cherryServices, NOVA_WEBSITE_URL } from '@shared/data/presets/nova'
 import { diagnosticsErrorCodes } from '@shared/ipc/errors/diagnostics'
 import { IpcError } from '@shared/ipc/errors/IpcError'
 import type { OutputFor } from '@shared/ipc/types'
@@ -164,6 +165,11 @@ const DiagnosticBundlePanel: FC<DiagnosticBundlePanelProps> = ({ appVersion, onB
 
   const handleContactSupport = async () => {
     if (!savedResult) return
+    // NOVA support lives on the NOVA website; the bundle stays on this computer until the user shares it.
+    if (!cherryServices.enabled) {
+      await ipcApi.request('system.shell.open_website', NOVA_WEBSITE_URL)
+      return
+    }
     const params = new URLSearchParams({
       subject: t('settings.about.diagnostics.mail.subject', { bundleId: savedResult.bundleId }),
       body: t('settings.about.diagnostics.mail.body', {

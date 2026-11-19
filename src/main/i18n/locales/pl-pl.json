@@ -1,5 +1,5 @@
 {
-  "agent.builtin.cherry_assistant.description": "Wbudowany doradca NOVA Studio. Diagnozuje problemy, prowadzi przez operacje, gromadzi często zadawane pytania, zgłasza błędy/propozycje funkcji oraz wyszukuje i tworzy umiejętności",
+  "agent.builtin.cherry_assistant.description": "Built-in NOVA Studio advisor. Diagnoses issues, guides you through the app, and finds or creates Skills",
   "agent.builtin.cherry_doctor.description": "Wbudowany analityk diagnostyki systemu. Odczytuje raport diagnostyczny i stan środowiska wykonawczego, wyjaśnia przyczynę źródłową oraz proponuje ukierunkowane poprawki",
   "agent.builtin.cherry_support.description": "Oficjalny agent pomocy NOVA Studio do wskazówek konfiguracyjnych, rozwiązywania problemów, często zadawanych pytań i opinii",
   "agent.session.claude.runtime_unavailable": "Agent Claude nie jest gotowy. Poczekaj na zakończenie pobierania lub spróbuj ponownie.",
@@ -12,7 +12,7 @@
   "agent.session.workspace_status.missing": "Ścieżka obszaru roboczego nie istnieje: {{path}}",
   "agent.session.workspace_status.not_directory": "Ścieżka obszaru roboczego nie jest katalogiem: {{path}}",
   "agent.tools.to_markdown.unsupported_windows_arm64": "Narzędzie to_markdown nie jest obsługiwane w systemie Windows ARM64, ponieważ dołączony konwerter dokumentów nie ma natywnej kompilacji dla tej platformy. Ponowna instalacja zależności nie usunie tego ograniczenia.",
-  "apiGateway.docs.description": "Zgodne z OpenAI, Anthropic i Gemini API HTTP dla NOVA Studio oraz punkty końcowe specyficzne dla Cherry (modele, bazy wiedzy)",
+  "apiGateway.docs.description": "Zgodne z OpenAI, Anthropic i Gemini API HTTP dla NOVA Studio oraz punkty końcowe specyficzne dla NOVA (modele, bazy wiedzy)",
   "apiGateway.docs.language_switcher_label": "Język dokumentacji",
   "apiGateway.docs.operations.chat_completions": "Utwórz uzupełnienie czatu. Treści żądania i odpowiedzi są zgodne z formatem OpenAI Chat Completions; ustaw `stream: true` dla odpowiedzi strumieniowej.",
   "apiGateway.docs.operations.count_tokens": "Szacuj, ile tokenów wejściowych zużywa zestaw wiadomości w formacie Anthropic.",
