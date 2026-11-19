@@ -39,7 +39,7 @@ export const BUILTIN_AGENT_TOOL_GUARD_RULES: readonly ToolGuardRule[] = [
     match: { when: destructiveBuiltinOperation },
     effect: 'deny',
     reason: (hit) =>
-      `This built-in Tool Guard blocked ${hit.evidence}. It is enforced by Cherry Studio itself; there is no hook in your settings to inspect or edit. ` +
+      `This built-in Tool Guard blocked ${hit.evidence}. It is enforced by NOVA Studio itself; there is no hook in your settings to inspect or edit. ` +
       'It must never permanently delete data or bypass this safeguard. For a confirmed file or directory inside the session workspace, ' +
       'use mcp__assistant-files__move_to_trash, which moves it to the operating-system trash; protected paths cannot be deleted.'
   },
@@ -50,11 +50,11 @@ export const BUILTIN_AGENT_TOOL_GUARD_RULES: readonly ToolGuardRule[] = [
     appliesTo: { roles: [BUILTIN_AGENT_ROLE.ASSISTANT] },
     match: { tool: 'Bash', when: feedbackSubmissionCommand },
     effect: 'ask',
-    reason: 'Submitting Cherry Studio feedback externally requires live per-call user approval.',
+    reason: 'Submitting NOVA Studio feedback externally requires live per-call user approval.',
     headless: {
       predicate: 'either',
       reason:
-        'Headless channel or scheduled turns cannot submit Cherry Studio feedback. Keep only a sanitized local feedback draft for an interactive user to review and submit.'
+        'Headless channel or scheduled turns cannot submit NOVA Studio feedback. Keep only a sanitized local feedback draft for an interactive user to review and submit.'
     }
   },
   {
@@ -80,7 +80,7 @@ export const BUILTIN_AGENT_TOOL_GUARD_RULES: readonly ToolGuardRule[] = [
     headless: {
       predicate: 'either',
       reason:
-        'Headless channel or scheduled turns cannot present a diagnostic report for user review. Ask the user to open the feedback entry in Cherry Studio instead.'
+        'Headless channel or scheduled turns cannot present a diagnostic report for user review. Ask the user to open the feedback entry in NOVA Studio instead.'
     }
   }
 ]

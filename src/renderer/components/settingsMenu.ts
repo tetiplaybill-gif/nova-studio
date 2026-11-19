@@ -32,6 +32,7 @@ import { createElement } from 'react'
 import { GatewayIcon } from '@renderer/components/icons/GatewayIcon'
 import { McpLogo } from '@renderer/components/icons/SvgIcon'
 import { parseAppRouteUrl } from '@renderer/utils/appRouteUrl'
+import { cherryServices } from '@shared/data/presets/nova'
 import { isSettingsPath } from '@shared/data/types/settingsPath'
 
 /** Resolve the section label without changing the default settings tab title. */
@@ -168,12 +169,17 @@ export const settingsMenu: readonly SettingsMenuEntry[] = [
     icon: createElement(Radio),
     groupKey: 'settings.menuGroups.automation'
   },
-  {
-    route: '/settings/device-connections',
-    titleKey: 'deviceConnections.title',
-    icon: createElement(MonitorSmartphone),
-    groupKey: 'settings.menuGroups.automation'
-  },
+  // Device connections pair with Cherry Studio's own phone app, so NOVA Studio hides them.
+  ...(cherryServices.enabled
+    ? [
+        {
+          route: '/settings/device-connections',
+          titleKey: 'deviceConnections.title',
+          icon: createElement(MonitorSmartphone),
+          groupKey: 'settings.menuGroups.automation'
+        }
+      ]
+    : []),
   {
     route: '/settings/shortcut',
     titleKey: 'settings.shortcuts.title',

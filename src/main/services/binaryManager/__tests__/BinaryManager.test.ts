@@ -2536,7 +2536,7 @@ describe('BinaryManager', () => {
         ['latest', 'latest']
       ])('rejects bundled marker %s with unproven exact target %s', async (version, targetVersion) => {
         const service = bundledService(version)
-        const error = `Cannot satisfy uv@${targetVersion}: source=bundled; bundled version=${version || 'unknown (version marker missing or empty)'}. The requested version could not be verified as an exact semantic-version match. Omit the version target (requestedVersion in cli_install) to use the bundled copy, or update/reinstall Cherry Studio; bundled tools cannot be updated independently.`
+        const error = `Cannot satisfy uv@${targetVersion}: source=bundled; bundled version=${version || 'unknown (version marker missing or empty)'}. The requested version could not be verified as an exact semantic-version match. Omit the version target (requestedVersion in cli_install) to use the bundled copy, or update/reinstall NOVA Studio; bundled tools cannot be updated independently.`
 
         await expect(service.installByName({ name: 'uv', targetVersion })).rejects.toThrow(error)
         await expect(service.installByName({ name: 'uv', targetVersion })).rejects.toThrow(error)
@@ -2586,7 +2586,7 @@ describe('BinaryManager', () => {
         vi.mocked(findCommandInShellEnv).mockResolvedValue('/usr/local/bin/fd')
         mockExecFileAsync.mockResolvedValue({ stdout: '{}', stderr: '' })
         const error =
-          'Cannot satisfy fd@11.0.0: source=system; installed version cannot be verified. Cherry Studio cannot update or replace this system installation. Manage it outside Cherry Studio, or omit the version target (requestedVersion in cli_install) to use the available executable.'
+          'Cannot satisfy fd@11.0.0: source=system; installed version cannot be verified. NOVA Studio cannot update or replace this system installation. Manage it outside NOVA Studio, or omit the version target (requestedVersion in cli_install) to use the available executable.'
 
         await expect(service.installByName({ name: 'fd', targetVersion: '11.0.0' })).rejects.toThrow(error)
         expect((await service.getToolSnapshots(['fd'])).fd).toMatchObject({

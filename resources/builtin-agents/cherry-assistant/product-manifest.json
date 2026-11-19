@@ -1,13 +1,25 @@
 {
   "schemaVersion": 1,
   "package": {
-    "name": "CherryStudio",
-    "version": "2.2.2",
-    "description": "A powerful AI assistant for producer.",
-    "homepage": "https://github.com/CherryHQ/cherry-studio"
+    "name": "NOVAStudio",
+    "version": "2.2.3",
+    "description": "NOVA Studio, the desktop client for NOVA API (based on Cherry Studio, AGPL-3.0).",
+    "homepage": "https://cdkai.cc/download"
   },
   "routes": {
     "primary": [
+      {
+        "id": "home",
+        "path": "/app/home"
+      },
+      {
+        "id": "create",
+        "path": "/app/create"
+      },
+      {
+        "id": "apps",
+        "path": "/app/launchpad"
+      },
       {
         "id": "agents",
         "path": "/app/agents"
@@ -23,6 +35,18 @@
       {
         "id": "paintings",
         "path": "/app/paintings"
+      },
+      {
+        "id": "video",
+        "path": "/app/video"
+      },
+      {
+        "id": "audio",
+        "path": "/app/audio"
+      },
+      {
+        "id": "analyze",
+        "path": "/app/analyze"
       },
       {
         "id": "marketplace",
@@ -57,11 +81,15 @@
       "/app",
       "/settings",
       "/app/agents",
+      "/app/analyze",
+      "/app/audio",
       "/app/browser",
       "/app/chat",
       "/app/code",
+      "/app/create",
       "/app/file-preview",
       "/app/files",
+      "/app/home",
       "/app/knowledge",
       "/app/launchpad",
       "/app/marketplace",
@@ -69,6 +97,7 @@
       "/app/release-notes",
       "/app/scheduled-tasks",
       "/app/translate",
+      "/app/video",
       "/settings/about",
       "/settings/api-gateway",
       "/settings/appearance",
@@ -877,280 +906,12 @@
     }
   ],
   "providers": {
-    "version": "a6291a3a00ded246",
-    "count": 68,
+    "version": "0930f6686185089d",
+    "count": 1,
     "entries": [
       {
-        "id": "cherryin",
-        "name": "CherryIN"
-      },
-      {
-        "id": "silicon",
-        "name": "Silicon"
-      },
-      {
-        "id": "aihubmix",
-        "name": "AiHubMix"
-      },
-      {
-        "id": "ovms",
-        "name": "OpenVINO Model Server"
-      },
-      {
-        "id": "ocoolai",
-        "name": "ocoolAI"
-      },
-      {
-        "id": "zhipu",
-        "name": "ZhiPu"
-      },
-      {
-        "id": "deepseek",
-        "name": "deepseek"
-      },
-      {
-        "id": "alayanew",
-        "name": "AlayaNew"
-      },
-      {
-        "id": "dmxapi",
-        "name": "DMXAPI"
-      },
-      {
-        "id": "aionly",
-        "name": "AIOnly"
-      },
-      {
-        "id": "burncloud",
-        "name": "BurnCloud"
-      },
-      {
-        "id": "302ai",
-        "name": "302.AI"
-      },
-      {
-        "id": "lanyun",
-        "name": "LANYUN"
-      },
-      {
-        "id": "ph8",
-        "name": "PH8"
-      },
-      {
-        "id": "sophnet",
-        "name": "SophNet"
-      },
-      {
-        "id": "ppio",
-        "name": "PPIO"
-      },
-      {
-        "id": "qiniu",
-        "name": "Qiniu"
-      },
-      {
-        "id": "openrouter",
-        "name": "OpenRouter"
-      },
-      {
-        "id": "ollama",
-        "name": "Ollama"
-      },
-      {
-        "id": "radeon-cloud",
-        "name": "AMD GPU Cloud"
-      },
-      {
-        "id": "tokendance",
-        "name": "TokenDance"
-      },
-      {
-        "id": "new-api",
-        "name": "New API"
-      },
-      {
-        "id": "lmstudio",
-        "name": "LM Studio"
-      },
-      {
-        "id": "litellm",
-        "name": "LiteLLM"
-      },
-      {
-        "id": "anthropic",
-        "name": "Anthropic"
-      },
-      {
-        "id": "claude-code",
-        "name": "Claude Code"
-      },
-      {
-        "id": "openai-codex",
-        "name": "OpenAI Codex"
-      },
-      {
-        "id": "grok-cli",
-        "name": "Grok CLI"
-      },
-      {
-        "id": "omlx",
-        "name": "oMLX"
-      },
-      {
-        "id": "rapid-mlx",
-        "name": "Rapid-MLX"
-      },
-      {
-        "id": "openai",
-        "name": "OpenAI"
-      },
-      {
-        "id": "opencode",
-        "name": "OpenCode Go"
-      },
-      {
-        "id": "azure-openai",
-        "name": "Azure OpenAI"
-      },
-      {
-        "id": "gemini",
-        "name": "Gemini"
-      },
-      {
-        "id": "vertexai",
-        "name": "VertexAI"
-      },
-      {
-        "id": "copilot",
-        "name": "Github Copilot"
-      },
-      {
-        "id": "moonshot",
-        "name": "Moonshot AI"
-      },
-      {
-        "id": "moonshot-global",
-        "name": "Moonshot"
-      },
-      {
-        "id": "baichuan",
-        "name": "BAICHUAN AI"
-      },
-      {
-        "id": "dashscope",
-        "name": "Qianwen AI platform - CN"
-      },
-      {
-        "id": "qwencloud",
-        "name": "Qwen Cloud"
-      },
-      {
-        "id": "stepfun",
-        "name": "StepFun"
-      },
-      {
-        "id": "doubao",
-        "name": "Doubao"
-      },
-      {
-        "id": "minimax",
-        "name": "MiniMax"
-      },
-      {
-        "id": "groq",
-        "name": "Groq"
-      },
-      {
-        "id": "together",
-        "name": "Together"
-      },
-      {
-        "id": "fireworks",
-        "name": "Fireworks"
-      },
-      {
-        "id": "nvidia",
-        "name": "nvidia"
-      },
-      {
-        "id": "grok",
-        "name": "Grok"
-      },
-      {
-        "id": "mistral",
-        "name": "Mistral"
-      },
-      {
-        "id": "jina",
-        "name": "Jina"
-      },
-      {
-        "id": "perplexity",
-        "name": "Perplexity"
-      },
-      {
-        "id": "modelscope",
-        "name": "ModelScope"
-      },
-      {
-        "id": "xirang",
-        "name": "Xirang"
-      },
-      {
-        "id": "tokenhub",
-        "name": "TokenHub"
-      },
-      {
-        "id": "baidu-cloud",
-        "name": "Baidu Cloud"
-      },
-      {
-        "id": "gpustack",
-        "name": "GPUStack"
-      },
-      {
-        "id": "voyageai",
-        "name": "VoyageAI"
-      },
-      {
-        "id": "aws-bedrock",
-        "name": "AWS Bedrock"
-      },
-      {
-        "id": "poe",
-        "name": "Poe"
-      },
-      {
-        "id": "longcat",
-        "name": "LongCat"
-      },
-      {
-        "id": "huggingface",
-        "name": "Hugging Face"
-      },
-      {
-        "id": "gateway",
-        "name": "Vercel AI Gateway"
-      },
-      {
-        "id": "cerebras",
-        "name": "Cerebras AI"
-      },
-      {
-        "id": "comfyui",
-        "name": "ComfyUI"
-      },
-      {
-        "id": "mimo",
-        "name": "Xiaomi MiMo"
-      },
-      {
-        "id": "zai",
-        "name": "zai"
-      },
-      {
-        "id": "minimax-global",
-        "name": "minimax-global"
+        "id": "nova",
+        "name": "NOVA"
       }
     ]
   },

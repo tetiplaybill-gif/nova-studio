@@ -11,5 +11,7 @@ describe('settings menu edition', () => {
 
     expect(settingsMenu.some(({ route }) => route === '/settings/profile')).toBe(true)
     expect(settingsMenu.some(({ route }) => route === '/settings/scheduled-tasks')).toBe(false)
+    // Its phone app is Cherry Studio's own.
+    expect(settingsMenu.some(({ route }) => route === '/settings/device-connections')).toBe(false)
   })
 })

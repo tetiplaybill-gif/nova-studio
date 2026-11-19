@@ -289,7 +289,7 @@ async function createAgent(
     modelService.getByKey(providerId, modelId)
   } catch (error) {
     if (isDataApiError(error) && error.code === DataApiErrorCode.NOT_FOUND) {
-      throw new Error(`Model is not configured in Cherry Studio: ${parsedModel.data}`)
+      throw new Error(`Model is not configured in NOVA Studio: ${parsedModel.data}`)
     }
     throw error
   }
@@ -699,7 +699,7 @@ const ASSISTANT_TOOLS: Record<AssistantToolName, (server: McpServer, defaultMode
       'navigate',
       {
         description:
-          'Create a clickable link to a Cherry Studio route from product_info. Prefer it over written UI steps.',
+          'Create a clickable link to a NOVA Studio route from product_info. Prefer it over written UI steps.',
         inputSchema: NavigateInputSchema
       },
       async (args) => navigate(args)
@@ -709,7 +709,7 @@ const ASSISTANT_TOOLS: Record<AssistantToolName, (server: McpServer, defaultMode
       'diagnose',
       {
         description:
-          'Read Cherry Studio runtime state for troubleshooting: app info, providers, connectivity, logs, MCP status.',
+          'Read NOVA Studio runtime state for troubleshooting: app info, providers, connectivity, logs, MCP status.',
         inputSchema: DiagnoseInputSchema
       },
       async (args, ctx) => diagnose(args, ctx.mcpReq.signal)
@@ -718,7 +718,7 @@ const ASSISTANT_TOOLS: Record<AssistantToolName, (server: McpServer, defaultMode
     server.registerTool(
       'product_info',
       {
-        description: 'Read Cherry Studio product facts from the installed manifest. Request only the section you need.',
+        description: 'Read NOVA Studio product facts from the installed manifest. Request only the section you need.',
         inputSchema: ProductInfoInputSchema
       },
       async (args) => productInfo(args)

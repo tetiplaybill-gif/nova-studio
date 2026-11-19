@@ -34,7 +34,7 @@ afterEach(() => {
 
 describe('app Sidebar continuous resize', () => {
   it.each([
-    { name: 'hidden through icon width', startWidth: 0, firstMove: 25, previewWidth: 50 },
+    { name: 'hidden through icon width', startWidth: 0, firstMove: 25, previewWidth: 60 },
     { name: 'hidden through an intermediate preview', startWidth: 0, firstMove: 80, previewWidth: 80 },
     { name: 'full through hidden width', startWidth: 170, firstMove: 10, previewWidth: 0 }
   ])('continues dragging from $name until release', ({ startWidth, firstMove, previewWidth }) => {

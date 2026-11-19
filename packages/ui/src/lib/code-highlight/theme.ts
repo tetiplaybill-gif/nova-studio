@@ -18,8 +18,8 @@ export const cherryCodeTheme: Theme = {
     prefix: '--cherry-code-',
     defaults: {
       background: 'transparent',
-      foreground: 'oklch(0.213 0 0)',
-      muted: 'oklch(0.556 0 0)',
+      foreground: 'oklch(0.19 0.008 270)',
+      muted: 'oklch(0.5 0.015 265)',
       selection: 'oklch(0.54 0.215 263 / 0.2)',
       keyword: 'oklch(0.49 0.242 292)',
       string: 'oklch(0.5 0.104 166)',
@@ -27,7 +27,7 @@ export const cherryCodeTheme: Theme = {
       type: 'oklch(0.52 0.093 223)',
       function: 'oklch(0.54 0.215 263)',
       tag: 'oklch(0.52 0.199 17)',
-      link: 'oklch(0.54 0.215 263)',
+      link: 'oklch(0.53 0.15 38)',
       inserted: 'oklch(0.52 0.137 150)',
       deleted: 'oklch(0.58 0.214 27)'
     }

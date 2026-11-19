@@ -146,7 +146,7 @@ if (command === 'use') {
         arguments: { name: 'uv', tool: 'uv', requestedVersion: '0.13.4' }
       })
       const error =
-        'Cannot satisfy uv@0.13.4: source=bundled; bundled version=0.11.16. The requested version could not be verified as an exact semantic-version match. Omit the version target (requestedVersion in cli_install) to use the bundled copy, or update/reinstall Cherry Studio; bundled tools cannot be updated independently.'
+        'Cannot satisfy uv@0.13.4: source=bundled; bundled version=0.11.16. The requested version could not be verified as an exact semantic-version match. Omit the version target (requestedVersion in cli_install) to use the bundled copy, or update/reinstall NOVA Studio; bundled tools cannot be updated independently.'
       expect(result.isError).toBe(true)
       expect(result.content).toContainEqual(
         expect.objectContaining({ type: 'text', text: expect.stringContaining(error) })

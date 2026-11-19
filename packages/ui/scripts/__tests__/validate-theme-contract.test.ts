@@ -112,8 +112,8 @@ describe('validateThemeContractSources', () => {
 
   it('requires product variables to be owned by product.css', async () => {
     const sources = await loadSources()
-    sources.product = sources.product.replace('  --chat-user: rgba(0, 0, 0, 0.045);\n', '')
-    sources.primitiveColors += '\n:root {\n  --chat-user: rgba(0, 0, 0, 0.045);\n}\n'
+    sources.product = sources.product.replace('  --chat-user: oklch(0.962 0.003 270);\n', '')
+    sources.primitiveColors += '\n:root {\n  --chat-user: oklch(0.962 0.003 270);\n}\n'
 
     expect(() => validateThemeContractSources(sources)).toThrow(/product contract in product.css is missing/)
   })
@@ -137,7 +137,7 @@ describe('validateThemeContractSources', () => {
   it('rejects unresolved references introduced by a dark override', async () => {
     const sources = await loadSources()
     sources.providerColors = sources.providerColors.replace(
-      '--cs-background: oklch(0.209 0 0 / 0.55);',
+      '--cs-background: oklch(0.205 0.008 270);',
       '--cs-background: var( --cs-missing-dark-background);'
     )
 
@@ -149,8 +149,8 @@ describe('validateThemeContractSources', () => {
   it('rejects variable cycles introduced by dark overrides', async () => {
     const sources = await loadSources()
     sources.product = sources.product
-      .replace('--code-block: #323232;', '--code-block: var(--inline-code);')
-      .replace('--inline-code: #323232;', '--inline-code: var(--code-block);')
+      .replace('--code-block: #1a1d24;', '--code-block: var(--inline-code);')
+      .replace('--inline-code: #22262e;', '--inline-code: var(--code-block);')
 
     expect(() => validateThemeContractSources(sources)).toThrow(/dark variable cycle/)
   })

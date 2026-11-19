@@ -203,7 +203,7 @@ describe('renderer CacheService equality semantics', () => {
 
     it('is false when the set value happens to equal the default', async () => {
       const service = await createService()
-      service.setPersist('ui.sidebar.width', 50) // 50 is the schema default
+      service.setPersist('ui.sidebar.width', 60) // 60 is the schema default
       expect(service.hasPersist('ui.sidebar.width')).toBe(false)
     })
   })
@@ -213,7 +213,7 @@ describe('renderer CacheService equality semantics', () => {
       const service = await createService()
       service.setPersist('ui.sidebar.width', 999)
       service.deletePersist('ui.sidebar.width')
-      expect(service.getPersist('ui.sidebar.width')).toBe(50)
+      expect(service.getPersist('ui.sidebar.width')).toBe(60)
       expect(service.hasPersist('ui.sidebar.width')).toBe(false)
     })
 

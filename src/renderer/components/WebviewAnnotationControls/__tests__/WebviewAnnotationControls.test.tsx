@@ -162,7 +162,7 @@ describe('WebviewAnnotationControls', () => {
 
   it('configures the guest with the resolved app accent', () => {
     // Hex input (not a pass-through `rgb(...)` string) so the assertion cannot pass without the `Color()` transform.
-    mockPreferenceState.set('ui.theme_user.color_primary', '#00b96b')
+    mockPreferenceState.set('ui.theme_user.color_primary', '#4f46e5')
     const webview = createWebview()
     renderControls(webview)
 
@@ -172,9 +172,9 @@ describe('WebviewAnnotationControls', () => {
       expect.objectContaining({
         type: 'configure',
         theme: 'dark',
-        accent: 'rgb(0, 185, 107)',
-        // getForegroundColor(#00b96b) — see src/renderer/utils/style.ts
-        accentForeground: '#000000'
+        accent: 'rgb(79, 70, 229)',
+        // getForegroundColor(#4f46e5) — see src/renderer/utils/style.ts
+        accentForeground: '#FFFFFF'
       })
     )
   })

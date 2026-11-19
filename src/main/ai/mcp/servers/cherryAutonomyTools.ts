@@ -1131,7 +1131,7 @@ function assertConfigMutationAuthorized(ctx: AutonomyToolsContext): void {
   const interaction = application.get('AgentSessionRuntimeService').getInteractionState(ctx.sessionId)
   if (interaction.currentTurn === 'headless') {
     throw new Error(
-      'Headless channel or scheduled turns cannot mutate agent configuration. Ask the user to make this change in Cherry Studio.'
+      'Headless channel or scheduled turns cannot mutate agent configuration. Ask the user to make this change in NOVA Studio.'
     )
   }
 }

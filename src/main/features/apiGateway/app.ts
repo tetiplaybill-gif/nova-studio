@@ -175,7 +175,7 @@ export function buildApp({
     .get(
       '/',
       () => ({
-        name: 'Cherry Studio API',
+        name: 'NOVA Studio API',
         version: '1.0.0',
         endpoints: {
           health: 'GET /health',

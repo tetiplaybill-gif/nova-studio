@@ -8,6 +8,7 @@ import {
   COMPRESSION_MIN_OUTPUT_TOKENS
 } from '../../../packages/aiCore/src/core/context/middleware'
 import { appLanguageOptions } from '../../../src/renderer/i18n/languages'
+import { NOVA_PROVIDER_ID } from '../../../src/shared/data/presets/nova'
 import { DEFAULT_CONTEXT_SETTINGS, MIN_TRUNCATE_THRESHOLD } from '../../../src/shared/data/types/contextSettings'
 import { McpServerInstallSourceSchema, McpServerTypeSchema } from '../../../src/shared/data/types/mcpServer'
 import { CodeCli } from '../../../src/shared/types/codeCli'
@@ -107,10 +108,12 @@ function readPackageMetadata(): ProductManifest['package'] {
 
 function readProviders(): ProductManifest['providers'] {
   const { version, providers } = JSON.parse(fs.readFileSync(PROVIDERS_FILE, 'utf-8')) as ProviderRegistryFile
+  // NOVA Studio offers only the NOVA provider; the others stay in the registry but are hidden in the app.
+  const shipped = providers.filter(({ id }) => id === NOVA_PROVIDER_ID)
   return {
     version,
-    count: providers.length,
-    entries: providers.map(({ id, name }) => ({ id, name }))
+    count: shipped.length,
+    entries: shipped.map(({ id, name }) => ({ id, name }))
   }
 }
 

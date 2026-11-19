@@ -91,7 +91,7 @@ describe('FeedbackDialog', () => {
     const request = mocks.ipcRequest.mock.calls.find(([route]) => route === 'system.shell.open_external_website')
     const url = new URL(request![1] as string)
     expect(url.pathname).toBe('support@cherry-ai.com')
-    expect(url.searchParams.get('subject')).toBe('Cherry Studio Feedback')
+    expect(url.searchParams.get('subject')).toBe('NOVA Studio Feedback')
     expect(url.searchParams.get('body')).toContain('Version: 2.1.9')
     expect(url.searchParams.get('body')).toContain('Platform: darwin')
   })

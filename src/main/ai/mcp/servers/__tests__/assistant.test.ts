@@ -386,7 +386,7 @@ describe('create_agent', () => {
     })
 
     expect(result.isError).toBe(true)
-    expect(toolResultText(result)).toContain('Model is not configured in Cherry Studio: anthropic::missing')
+    expect(toolResultText(result)).toContain('Model is not configured in NOVA Studio: anthropic::missing')
     expect(mocks.agentCreate).not.toHaveBeenCalled()
   })
 

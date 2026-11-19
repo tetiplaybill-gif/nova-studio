@@ -5,6 +5,8 @@ import {
   APPLE_TTS_MODEL_ID,
   FUNASR_MODEL_ID,
   KOKORO_TTS_MODEL_ID,
+  NOVA_ASR_MODEL_ID,
+  NOVA_TTS_MODEL_ID,
   WINDOWS_ASR_MODEL_ID,
   WINDOWS_TTS_MODEL_ID,
   TranscriptionLanguageSource,
@@ -48,7 +50,9 @@ describe('device-scoped voice catalog and request policy', () => {
     [{ platform: 'linux', arch: 'x64' }, [FUNASR_MODEL_ID, KOKORO_TTS_MODEL_ID]],
     [{ platform: 'win32', arch: 'arm64' }, [FUNASR_MODEL_ID, KOKORO_TTS_MODEL_ID]],
     [{ platform: 'darwin', arch: 'arm64', majorVersion: 12 }, [FUNASR_MODEL_ID, KOKORO_TTS_MODEL_ID]]
-  ])('offers only runnable models on %j', (environment, expected) => {
+  ])('offers only runnable models on %j', (environment, local) => {
+    // NOVA's cloud voices run everywhere; the device decides only which local models appear.
+    const expected = [...local, NOVA_ASR_MODEL_ID, NOVA_TTS_MODEL_ID]
     const catalog = listVoiceModels(environment)
     expect(catalog.models.map((model) => model.id).sort()).toEqual([...expected].sort())
     if (catalog.defaultAsrModelId) expect(expected).toContain(catalog.defaultAsrModelId)

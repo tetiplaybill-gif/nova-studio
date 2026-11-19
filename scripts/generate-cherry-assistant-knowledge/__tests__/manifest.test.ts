@@ -43,17 +43,13 @@ describe('generateProductManifest', () => {
     expect(manifest.commands).toEqual(JSON.parse(JSON.stringify(COMMAND_DEFINITIONS)))
   })
 
-  it('includes the shipped provider registry without a maintained category map', () => {
+  it('advertises only the NOVA provider, the one NOVA Studio offers', () => {
     const manifest = generateProductManifest()
     const registry = JSON.parse(
       fs.readFileSync(path.resolve(__dirname, '../../../packages/provider-registry/data/providers.json'), 'utf-8')
-    ) as { version: string; providers: Array<{ id: string; name: string }> }
+    ) as { version: string }
 
-    expect(manifest.providers).toEqual({
-      version: registry.version,
-      count: registry.providers.length,
-      entries: registry.providers.map(({ id, name }) => ({ id, name }))
-    })
+    expect(manifest.providers).toEqual({ version: registry.version, count: 1, entries: [{ id: 'nova', name: 'NOVA' }] })
   })
 
   it('includes the application language options shown by the current UI', () => {

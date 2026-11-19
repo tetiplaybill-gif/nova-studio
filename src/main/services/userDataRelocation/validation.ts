@@ -93,7 +93,7 @@ export function assertRelocationPaths(
     if (ACTIVE_PROFILE_MARKERS.some((marker) => entries.includes(marker))) {
       invalid(
         'target_in_use',
-        `target appears to be an active userData directory; close other Cherry Studio instances, or remove stale SingletonLock and SingletonSocket markers if none are running: ${toValue}`
+        `target appears to be an active userData directory; close other NOVA Studio instances, or remove stale SingletonLock and SingletonSocket markers if none are running: ${toValue}`
       )
     }
   }
