@@ -21,6 +21,7 @@ import { ipcApi } from '@renderer/ipc'
 import { openRoute } from '@renderer/services/mainWindowNavigation'
 import { toast } from '@renderer/services/toast'
 import { openExternalWebsite } from '@renderer/services/website'
+import { cherryServices, NOVA_WEBSITE_URL } from '@shared/data/presets/nova'
 
 export const FEEDBACK_GITHUB_URL = 'https://github.com/CherryHQ/cherry-studio/issues/new/choose'
 const FEEDBACK_EMAIL = 'support@cherry-ai.com'
@@ -98,7 +99,7 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
   const openEmailFeedback = async () => {
     const { version } = await ipcApi.request('app.get_info')
     const platform = window.electron.process.platform
-    const url = `mailto:${FEEDBACK_EMAIL}?subject=Cherry Studio Feedback&body=%0A%0AVersion: ${version} | Platform: ${platform}`
+    const url = `mailto:${FEEDBACK_EMAIL}?subject=NOVA Studio Feedback&body=%0A%0AVersion: ${version} | Platform: ${platform}`
     await openExternalWebsite(url)
   }
 
@@ -123,23 +124,29 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
               })
             }
           />
-          <FeedbackOption
-            icon={<Bot className="size-5" />}
-            title={t('settings.about.feedback.agent.title')}
-            description={t('settings.about.feedback.agent.description')}
-            onSelect={() => selectOption(openAgentFeedback)}
-          />
-          <FeedbackOption
-            icon={<Github className="size-5" />}
-            title={t('settings.about.feedback.github.title')}
-            description={t('settings.about.feedback.github.description')}
-            onSelect={() => selectOption(openGitHubIssue)}
-          />
+          {cherryServices.enabled && (
+            <>
+              <FeedbackOption
+                icon={<Bot className="size-5" />}
+                title={t('settings.about.feedback.agent.title')}
+                description={t('settings.about.feedback.agent.description')}
+                onSelect={() => selectOption(openAgentFeedback)}
+              />
+              <FeedbackOption
+                icon={<Github className="size-5" />}
+                title={t('settings.about.feedback.github.title')}
+                description={t('settings.about.feedback.github.description')}
+                onSelect={() => selectOption(openGitHubIssue)}
+              />
+            </>
+          )}
           <FeedbackOption
             icon={<Mail className="size-5" />}
             title={t('settings.about.contact.title')}
-            description={FEEDBACK_EMAIL}
-            onSelect={() => selectOption(openEmailFeedback)}
+            description={cherryServices.enabled ? FEEDBACK_EMAIL : NOVA_WEBSITE_URL.replace('https://', '')}
+            onSelect={() =>
+              selectOption(cherryServices.enabled ? openEmailFeedback : () => openExternalWebsite(NOVA_WEBSITE_URL))
+            }
           />
         </ItemGroup>
       </DialogContent>
