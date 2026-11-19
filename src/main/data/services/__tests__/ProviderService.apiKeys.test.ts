@@ -3,10 +3,11 @@ import { resolve } from 'node:path'
 import { setupTestDatabase } from '@test-helpers/db'
 import { MockMainCacheServiceUtils } from '@test-mocks/main/CacheService'
 import { eq } from 'drizzle-orm'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { application } from '@application'
 import { userProviderTable } from '@data/db/schemas/userProvider'
+import { novaOnlyProviders } from '@data/novaOnlyProviders'
 import { providerRegistryService } from '@data/services/ProviderRegistryService'
 import { providerService } from '@data/services/ProviderService'
 import { generateOrderKeyBetween } from '@data/services/utils/orderKey'
@@ -406,5 +407,50 @@ describe('ProviderService API keys', () => {
 
     expect(providerService.getRotatedApiKey('single-enabled')).toBe('sk-only')
     expect(providerService.getRotatedApiKey('all-disabled')).toBe('')
+  })
+})
+
+describe('ProviderService NOVA first key', () => {
+  const dbh = setupTestDatabase()
+
+  beforeEach(() => {
+    novaOnlyProviders.enabled = true
+  })
+  afterEach(() => {
+    novaOnlyProviders.enabled = false
+  })
+
+  async function seedNova(isEnabled: boolean, apiKeys: Array<{ id: string; key: string; isEnabled: boolean }> = []) {
+    await dbh.db.insert(userProviderTable).values({
+      providerId: 'nova',
+      presetProviderId: 'nova',
+      name: 'NOVA',
+      isEnabled,
+      orderKey: generateOrderKeyBetween(null, null),
+      apiKeys
+    })
+  }
+
+  async function isNovaEnabled() {
+    const [row] = await dbh.db.select().from(userProviderTable).where(eq(userProviderTable.providerId, 'nova'))
+    return row?.isEnabled
+  }
+
+  it('switches NOVA on when a hand-pasted key is its first', async () => {
+    await seedNova(false)
+    providerService.addApiKey('nova', 'sk-nova-1')
+    expect(await isNovaEnabled()).toBe(true)
+  })
+
+  it('switches NOVA on when its first keys arrive as a full list', async () => {
+    await seedNova(false)
+    providerService.replaceApiKeys('nova', [{ id: 'k1', key: 'sk-nova-1', isEnabled: true }])
+    expect(await isNovaEnabled()).toBe(true)
+  })
+
+  it('leaves a NOVA provider the user switched off alone when it already had a key', async () => {
+    await seedNova(false, [{ id: 'k0', key: 'sk-old', isEnabled: true }])
+    providerService.addApiKey('nova', 'sk-nova-2')
+    expect(await isNovaEnabled()).toBe(false)
   })
 })

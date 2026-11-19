@@ -8,6 +8,14 @@ export const novaOnlyProviders = { enabled: true }
 
 export const NOVA_PROVIDER_ID = 'nova'
 
+/**
+ * NOVA is the only provider, so its first API key switches it on: a key pasted in by hand (rather than
+ * from signing in) must make the models usable without a second, easily missed toggle.
+ */
+export function enablesOnFirstKey(providerId: string): boolean {
+  return novaOnlyProviders.enabled && providerId === NOVA_PROVIDER_ID
+}
+
 export function isHiddenInNovaStudio(providerId: string | null | undefined, presetProviderId?: string | null): boolean {
   return novaOnlyProviders.enabled && providerId !== NOVA_PROVIDER_ID && presetProviderId !== NOVA_PROVIDER_ID
 }

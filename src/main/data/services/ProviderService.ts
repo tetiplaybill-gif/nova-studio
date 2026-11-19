@@ -48,7 +48,7 @@ import { ProviderBillingSchema } from '@shared/data/types/providerBilling'
 import { maskApiKey } from '@shared/utils/api'
 import { resolveEndpointDialect } from '@shared/utils/provider'
 
-import { isHiddenInNovaStudio, withoutNovaAddressOverrides } from '../novaOnlyProviders'
+import { enablesOnFirstKey, isHiddenInNovaStudio, withoutNovaAddressOverrides } from '../novaOnlyProviders'
 import { isRetiredProvider } from '../retiredProviders'
 
 const logger = loggerService.withContext('DataApi:ProviderService')
@@ -787,10 +787,11 @@ class ProviderService {
       }
 
       const updatedKeys = [...existingKeys, newEntry]
+      const switchOn = existingKeys.length === 0 && enablesOnFirstKey(providerId)
 
       const [updated] = tx
         .update(userProviderTable)
-        .set({ apiKeys: updatedKeys })
+        .set({ apiKeys: updatedKeys, ...(switchOn ? { isEnabled: true } : {}) })
         .where(eq(userProviderTable.providerId, providerId))
         .returning()
         .all()
@@ -818,7 +819,8 @@ class ProviderService {
       const [current] = tx
         .select({
           providerId: userProviderTable.providerId,
-          presetProviderId: userProviderTable.presetProviderId
+          presetProviderId: userProviderTable.presetProviderId,
+          apiKeys: userProviderTable.apiKeys
         })
         .from(userProviderTable)
         .where(eq(userProviderTable.providerId, providerId))
@@ -828,9 +830,10 @@ class ProviderService {
       assertProviderAvailable(current, providerId)
 
       const normalizedApiKeys = normalizeApiKeyEntries(apiKeys)
+      const switchOn = !current?.apiKeys?.length && normalizedApiKeys.length > 0 && enablesOnFirstKey(providerId)
       const [row] = tx
         .update(userProviderTable)
-        .set({ apiKeys: normalizedApiKeys })
+        .set({ apiKeys: normalizedApiKeys, ...(switchOn ? { isEnabled: true } : {}) })
         .where(eq(userProviderTable.providerId, providerId))
         .returning()
         .all()
