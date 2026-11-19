@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 56 56">
+  <style>
+    @media (prefers-color-scheme: dark) { .icon-background { fill: #2B2338; } }
+  </style>
+  <defs>
+    <linearGradient id="body" x1="12" y1="22" x2="42" y2="44" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#7C6CF2"/>
+      <stop offset="1" stop-color="#4C3FC9"/>
+    </linearGradient>
+    <linearGradient id="clap" x1="12" y1="12" x2="42" y2="22" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#3B3552"/>
+      <stop offset="1" stop-color="#26213A"/>
+    </linearGradient>
+  </defs>
+  <path d="M0 0h56v56H0z" class="icon-background" fill="#F1EDFF"/>
+  <rect x="11" y="22" width="34" height="22" rx="4" fill="url(#body)"/>
+  <g transform="rotate(-12 12 21)">
+    <rect x="11" y="13" width="34" height="8" rx="2" fill="url(#clap)"/>
+    <path d="M15 13l4 8M23 13l4 8M31 13l4 8M39 13l4 8" stroke="#FFFFFF" stroke-width="2.4"/>
+  </g>
+  <path d="M25 28.5v9.5c0 .8.9 1.3 1.6.9l7.6-4.8a1 1 0 0 0 0-1.7l-7.6-4.8c-.7-.4-1.6.1-1.6.9z" fill="#FFFFFF"/>
+  <circle cx="40" cy="39" r="1.5" fill="#FFC66B"/>
+</svg>

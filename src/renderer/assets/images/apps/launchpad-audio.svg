@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 56 56">
+  <style>
+    @media (prefers-color-scheme: dark) { .icon-background { fill: #1F3330; } }
+  </style>
+  <defs>
+    <linearGradient id="wave" x1="10" y1="16" x2="46" y2="40" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#4FD1B5"/>
+      <stop offset="1" stop-color="#2A9D8F"/>
+    </linearGradient>
+  </defs>
+  <path d="M0 0h56v56H0z" class="icon-background" fill="#E6FAF5"/>
+  <g stroke="url(#wave)" stroke-width="4" stroke-linecap="round">
+    <path d="M12 25v6"/>
+    <path d="M19 20v16"/>
+    <path d="M26 14v28"/>
+    <path d="M33 19v18"/>
+    <path d="M40 23v10"/>
+  </g>
+  <circle cx="45" cy="28" r="2" fill="#FFB86B"/>
+</svg>

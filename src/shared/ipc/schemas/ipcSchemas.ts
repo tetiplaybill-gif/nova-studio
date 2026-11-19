@@ -29,6 +29,7 @@ import { type MiniAppEventSchemas, miniAppRequestSchemas } from './miniApp'
 import { type NavigationEventSchemas, navigationRequestSchemas } from './navigation'
 import { type NotificationEventSchemas, notificationRequestSchemas } from './notification'
 import { novaRequestSchemas } from './nova'
+import { type NovaMediaEventSchemas, novaMediaRequestSchemas } from './novaMedia'
 import { oauthRequestSchemas } from './oauth'
 import { openclawRequestSchemas } from './openclaw'
 import { ovmsRequestSchemas } from './ovms'
@@ -71,6 +72,7 @@ export const ipcRequestSchemas = {
   ...channelRequestSchemas,
   ...cherryinRequestSchemas,
   ...novaRequestSchemas,
+  ...novaMediaRequestSchemas,
   ...cherryCloudRequestSchemas,
   ...citationRequestSchemas,
   ...codeCliRequestSchemas,
@@ -124,6 +126,7 @@ export type IpcRoute = keyof IpcRequestSchemas
  * its own `*EventSchemas` type here.
  */
 export type IpcEventSchemas = AiEventSchemas &
+  NovaMediaEventSchemas &
   ApiGatewayEventSchemas &
   AppEventSchemas &
   BackupEventSchemas &

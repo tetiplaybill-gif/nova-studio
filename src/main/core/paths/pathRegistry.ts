@@ -277,6 +277,9 @@ export function buildPathRegistry() {
     'feature.notes.data': path.join(appUserDataData, 'Notes'),
     'feature.knowledgebase.data': path.join(appUserDataData, 'KnowledgeBase'),
 
+    // NOVA media: generated videos and speech, their input images and the history index
+    'feature.nova_media.data': path.join(appUserDataData, 'NovaMedia'),
+
     // Mini apps
     // Installed mini app packages, one directory per appId
     'feature.mini_app.packages': path.join(appUserDataData, 'MiniApps', 'packages'),

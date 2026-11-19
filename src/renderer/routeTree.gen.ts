@@ -12,6 +12,8 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as AppAgentsRouteImport } from './routes/app/agents'
+import { Route as AppAnalyzeRouteImport } from './routes/app/analyze'
+import { Route as AppAudioRouteImport } from './routes/app/audio'
 import { Route as AppBrowserRouteImport } from './routes/app/browser'
 import { Route as AppChatRouteImport } from './routes/app/chat'
 import { Route as AppCodeRouteImport } from './routes/app/code'
@@ -24,6 +26,7 @@ import { Route as AppNotesRouteImport } from './routes/app/notes'
 import { Route as AppReleaseNotesRouteImport } from './routes/app/release-notes'
 import { Route as AppScheduledTasksRouteImport } from './routes/app/scheduled-tasks'
 import { Route as AppTranslateRouteImport } from './routes/app/translate'
+import { Route as AppVideoRouteImport } from './routes/app/video'
 import { Route as SettingsIndexRouteImport } from './routes/settings.index'
 import { Route as SettingsAboutRouteImport } from './routes/settings/about'
 import { Route as SettingsApiGatewayRouteImport } from './routes/settings/api-gateway'
@@ -90,6 +93,16 @@ const AppAgentsRoute = AppAgentsRouteImport.update({
   path: '/agents',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAnalyzeRoute = AppAnalyzeRouteImport.update({
+  id: '/analyze',
+  path: '/analyze',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAudioRoute = AppAudioRouteImport.update({
+  id: '/audio',
+  path: '/audio',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppBrowserRoute = AppBrowserRouteImport.update({
   id: '/browser',
   path: '/browser',
@@ -148,6 +161,11 @@ const AppScheduledTasksRoute = AppScheduledTasksRouteImport.update({
 const AppTranslateRoute = AppTranslateRouteImport.update({
   id: '/translate',
   path: '/translate',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppVideoRoute = AppVideoRouteImport.update({
+  id: '/video',
+  path: '/video',
   getParentRoute: () => AppRoute,
 } as any)
 const SettingsIndexRoute = SettingsIndexRouteImport.update({
@@ -410,6 +428,8 @@ export interface FileRoutesByFullPath {
   '/app': typeof AppRouteWithChildren
   '/settings': typeof SettingsRouteWithChildren
   '/app/agents': typeof AppAgentsRoute
+  '/app/analyze': typeof AppAnalyzeRoute
+  '/app/audio': typeof AppAudioRoute
   '/app/browser': typeof AppBrowserRoute
   '/app/chat': typeof AppChatRoute
   '/app/code': typeof AppCodeRoute
@@ -422,6 +442,7 @@ export interface FileRoutesByFullPath {
   '/app/release-notes': typeof AppReleaseNotesRoute
   '/app/scheduled-tasks': typeof AppScheduledTasksRoute
   '/app/translate': typeof AppTranslateRoute
+  '/app/video': typeof AppVideoRoute
   '/settings/about': typeof SettingsAboutRoute
   '/settings/api-gateway': typeof SettingsApiGatewayRoute
   '/settings/appearance': typeof SettingsAppearanceRoute
@@ -476,6 +497,8 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/app': typeof AppRouteWithChildren
   '/app/agents': typeof AppAgentsRoute
+  '/app/analyze': typeof AppAnalyzeRoute
+  '/app/audio': typeof AppAudioRoute
   '/app/browser': typeof AppBrowserRoute
   '/app/chat': typeof AppChatRoute
   '/app/code': typeof AppCodeRoute
@@ -488,6 +511,7 @@ export interface FileRoutesByTo {
   '/app/release-notes': typeof AppReleaseNotesRoute
   '/app/scheduled-tasks': typeof AppScheduledTasksRoute
   '/app/translate': typeof AppTranslateRoute
+  '/app/video': typeof AppVideoRoute
   '/settings/about': typeof SettingsAboutRoute
   '/settings/api-gateway': typeof SettingsApiGatewayRoute
   '/settings/appearance': typeof SettingsAppearanceRoute
@@ -541,6 +565,8 @@ export interface FileRoutesById {
   '/app': typeof AppRouteWithChildren
   '/settings': typeof SettingsRouteWithChildren
   '/app/agents': typeof AppAgentsRoute
+  '/app/analyze': typeof AppAnalyzeRoute
+  '/app/audio': typeof AppAudioRoute
   '/app/browser': typeof AppBrowserRoute
   '/app/chat': typeof AppChatRoute
   '/app/code': typeof AppCodeRoute
@@ -553,6 +579,7 @@ export interface FileRoutesById {
   '/app/release-notes': typeof AppReleaseNotesRoute
   '/app/scheduled-tasks': typeof AppScheduledTasksRoute
   '/app/translate': typeof AppTranslateRoute
+  '/app/video': typeof AppVideoRoute
   '/settings/about': typeof SettingsAboutRoute
   '/settings/api-gateway': typeof SettingsApiGatewayRoute
   '/settings/appearance': typeof SettingsAppearanceRoute
@@ -610,6 +637,8 @@ export interface FileRouteTypes {
     | '/app'
     | '/settings'
     | '/app/agents'
+    | '/app/analyze'
+    | '/app/audio'
     | '/app/browser'
     | '/app/chat'
     | '/app/code'
@@ -622,6 +651,7 @@ export interface FileRouteTypes {
     | '/app/release-notes'
     | '/app/scheduled-tasks'
     | '/app/translate'
+    | '/app/video'
     | '/settings/about'
     | '/settings/api-gateway'
     | '/settings/appearance'
@@ -676,6 +706,8 @@ export interface FileRouteTypes {
   to:
     | '/app'
     | '/app/agents'
+    | '/app/analyze'
+    | '/app/audio'
     | '/app/browser'
     | '/app/chat'
     | '/app/code'
@@ -688,6 +720,7 @@ export interface FileRouteTypes {
     | '/app/release-notes'
     | '/app/scheduled-tasks'
     | '/app/translate'
+    | '/app/video'
     | '/settings/about'
     | '/settings/api-gateway'
     | '/settings/appearance'
@@ -740,6 +773,8 @@ export interface FileRouteTypes {
     | '/app'
     | '/settings'
     | '/app/agents'
+    | '/app/analyze'
+    | '/app/audio'
     | '/app/browser'
     | '/app/chat'
     | '/app/code'
@@ -752,6 +787,7 @@ export interface FileRouteTypes {
     | '/app/release-notes'
     | '/app/scheduled-tasks'
     | '/app/translate'
+    | '/app/video'
     | '/settings/about'
     | '/settings/api-gateway'
     | '/settings/appearance'
@@ -830,6 +866,20 @@ declare module '@tanstack/react-router' {
       path: '/agents'
       fullPath: '/app/agents'
       preLoaderRoute: typeof AppAgentsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/analyze': {
+      id: '/app/analyze'
+      path: '/analyze'
+      fullPath: '/app/analyze'
+      preLoaderRoute: typeof AppAnalyzeRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/audio': {
+      id: '/app/audio'
+      path: '/audio'
+      fullPath: '/app/audio'
+      preLoaderRoute: typeof AppAudioRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/browser': {
@@ -914,6 +964,13 @@ declare module '@tanstack/react-router' {
       path: '/translate'
       fullPath: '/app/translate'
       preLoaderRoute: typeof AppTranslateRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/video': {
+      id: '/app/video'
+      path: '/video'
+      fullPath: '/app/video'
+      preLoaderRoute: typeof AppVideoRouteImport
       parentRoute: typeof AppRoute
     }
     '/settings/': {
@@ -1271,6 +1328,8 @@ declare module '@tanstack/react-router' {
 
 interface AppRouteChildren {
   AppAgentsRoute: typeof AppAgentsRoute
+  AppAnalyzeRoute: typeof AppAnalyzeRoute
+  AppAudioRoute: typeof AppAudioRoute
   AppBrowserRoute: typeof AppBrowserRoute
   AppChatRoute: typeof AppChatRoute
   AppCodeRoute: typeof AppCodeRoute
@@ -1283,6 +1342,7 @@ interface AppRouteChildren {
   AppReleaseNotesRoute: typeof AppReleaseNotesRoute
   AppScheduledTasksRoute: typeof AppScheduledTasksRoute
   AppTranslateRoute: typeof AppTranslateRoute
+  AppVideoRoute: typeof AppVideoRoute
   AppMiniAppAppIdRoute: typeof AppMiniAppAppIdRoute
   AppPaintingsSplatRoute: typeof AppPaintingsSplatRoute
   AppMiniAppIndexRoute: typeof AppMiniAppIndexRoute
@@ -1291,6 +1351,8 @@ interface AppRouteChildren {
 
 const AppRouteChildren: AppRouteChildren = {
   AppAgentsRoute: AppAgentsRoute,
+  AppAnalyzeRoute: AppAnalyzeRoute,
+  AppAudioRoute: AppAudioRoute,
   AppBrowserRoute: AppBrowserRoute,
   AppChatRoute: AppChatRoute,
   AppCodeRoute: AppCodeRoute,
@@ -1303,6 +1365,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppReleaseNotesRoute: AppReleaseNotesRoute,
   AppScheduledTasksRoute: AppScheduledTasksRoute,
   AppTranslateRoute: AppTranslateRoute,
+  AppVideoRoute: AppVideoRoute,
   AppMiniAppAppIdRoute: AppMiniAppAppIdRoute,
   AppPaintingsSplatRoute: AppPaintingsSplatRoute,
   AppMiniAppIndexRoute: AppMiniAppIndexRoute,

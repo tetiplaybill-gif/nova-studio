@@ -7,7 +7,9 @@ import { ScrollArea } from '@cherrystudio/ui'
 import { Sortable } from '@cherrystudio/ui'
 import { usePreference } from '@data/hooks/usePreference'
 import agentsIcon from '@renderer/assets/images/apps/launchpad-agents.svg'
+import analyzeIcon from '@renderer/assets/images/apps/launchpad-analyze.svg'
 import assistantsIcon from '@renderer/assets/images/apps/launchpad-assistants.svg'
+import audioIcon from '@renderer/assets/images/apps/launchpad-audio.svg'
 import codeToolsIcon from '@renderer/assets/images/apps/launchpad-code-tools.svg'
 import filesIcon from '@renderer/assets/images/apps/launchpad-files.svg'
 import knowledgeIcon from '@renderer/assets/images/apps/launchpad-knowledge.svg'
@@ -17,6 +19,7 @@ import notesIcon from '@renderer/assets/images/apps/launchpad-notes.svg'
 import paintingsIcon from '@renderer/assets/images/apps/launchpad-paintings.svg'
 import scheduledTasksIcon from '@renderer/assets/images/apps/launchpad-scheduled-tasks.svg'
 import translateIcon from '@renderer/assets/images/apps/launchpad-translate.svg'
+import videoIcon from '@renderer/assets/images/apps/launchpad-video.svg'
 import { SidebarIcon } from '@renderer/components/app/sidebarIcons'
 import { CommandContextMenu, type CommandContextMenuExtraItem } from '@renderer/components/command'
 import SidebarShortcutIcon from '@renderer/components/icons/SidebarShortcutIcon'
@@ -45,6 +48,9 @@ const APP_ICON_SOURCES: Record<SidebarAppId, string | undefined> = {
   agents: agentsIcon,
   scheduled_tasks: scheduledTasksIcon,
   paintings: paintingsIcon,
+  video: videoIcon,
+  audio: audioIcon,
+  analyze: analyzeIcon,
   marketplace: marketplaceIcon,
   translate: translateIcon,
   mini_app: miniAppIcon,

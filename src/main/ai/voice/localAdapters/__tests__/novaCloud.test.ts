@@ -1,17 +1,30 @@
 import { describe, expect, it } from 'vitest'
 
-import { pcmToWav } from '../novaCloud'
+import type { NovaMediaModel } from '@shared/ipc/schemas/novaMedia'
 
-describe('pcmToWav', () => {
-  it('produces the canonical WAV the playback session accepts', () => {
-    const pcm = new Uint8Array([1, 0, 2, 0, 3, 0, 4])
-    const wav = Buffer.from(pcmToWav(pcm, 24_000))
-    expect(wav.toString('ascii', 0, 4)).toBe('RIFF')
-    expect(wav.toString('ascii', 8, 12)).toBe('WAVE')
-    // The session rejects files whose RIFF size does not match the byte length.
-    expect(wav.readUInt32LE(4) + 8).toBe(wav.length)
-    expect(wav.readUInt32LE(24)).toBe(24_000)
-    // A trailing half sample is dropped so the data chunk holds whole 16-bit samples.
-    expect(wav.readUInt32LE(40)).toBe(6)
+import { pickSpeechModel } from '../novaCloud'
+
+const speech = (id: string, voices: string[] = []): NovaMediaModel => ({
+  id,
+  name: id,
+  type: 'speech',
+  endpoints: ['/v1/audio/speech'],
+  inputModalities: [],
+  pricing: {},
+  voices,
+  video: null
+})
+
+describe('pickSpeechModel', () => {
+  const catalog = [speech('vendor/plain'), speech('openai/gpt-4o-mini-tts', ['alloy']), speech('other/voiced', ['x'])]
+
+  it('reads aloud with the model chosen on the Speech page', () => {
+    expect(pickSpeechModel(catalog, 'other/voiced')?.id).toBe('other/voiced')
+  })
+
+  it('falls back to a dependable default when nothing (or a removed model) was chosen', () => {
+    expect(pickSpeechModel(catalog, '')?.id).toBe('openai/gpt-4o-mini-tts')
+    expect(pickSpeechModel(catalog, 'gone/model')?.id).toBe('openai/gpt-4o-mini-tts')
+    expect(pickSpeechModel([speech('vendor/plain')], '')).toBeNull()
   })
 })

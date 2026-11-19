@@ -1,7 +1,9 @@
 import type { SpeechModelV3, TranscriptionModelV3 } from '@ai-sdk/provider'
 
+import { application } from '@application'
 import type { SpeechOptions, TranscriptionOptions } from '@cherrystudio/ai-core'
 import { providerService } from '@main/data/services/ProviderService'
+import { voiceLocale } from '@main/services/nova/novaMediaFormat'
 import {
   DEFAULT_SPEECH_SPEED,
   LOCAL_VOICE_MODELS,
@@ -12,7 +14,7 @@ import {
   VoiceModelSupport,
   type LocalSpeechVoice
 } from '@shared/ai/localVoice'
-import { NOVA_API_BASE_URL, NOVA_SPEECH_VOICES, NOVA_TRANSCRIPTION_MODEL } from '@shared/data/presets/nova'
+import type { NovaMediaModel } from '@shared/ipc/schemas/novaMedia'
 
 import type { LocalVoiceStatus, SpeechModelDefinition, TranscriptionModelDefinition } from '../voiceModelTypes'
 import { checkAbort, VoiceRuntimeError } from '../VoiceRuntimeError'
@@ -20,8 +22,11 @@ import { completeSpeechOperation, completeTranscriptionOperation } from './sdkOp
 
 /**
  * NOVA cloud voice: speech recognition and speech synthesis through the NOVA API with the key
- * the NOVA account panel created for this computer. Billed to the user's NOVA balance.
+ * the NOVA account panel created for this computer. Billed to the user's NOVA balance. The models
+ * and voice come from the NOVA voice settings (Create → Speech / Transcription).
  */
+
+const media = () => application.get('NovaMediaService')
 
 function novaKey(): string | null {
   try {
@@ -37,36 +42,25 @@ function novaStatus(signal?: AbortSignal): LocalVoiceStatus {
   return novaKey() ? { status: 'ready' } : { status: 'not_installed', reason: 'model_required' }
 }
 
-async function novaFetch(path: string, init: RequestInit, signal?: AbortSignal): Promise<Response> {
-  const key = novaKey()
-  if (!key) throw new VoiceRuntimeError('model_required')
-  const timeout = AbortSignal.timeout(120_000)
-  const combined = signal ? AbortSignal.any([timeout, signal]) : timeout
-  let response: Response
+/** Runs a NOVA call, turning its failures into the voice runtime's errors. */
+async function voiceCall<T>(signal: AbortSignal | undefined, call: () => Promise<T>): Promise<T> {
+  if (!novaKey()) throw new VoiceRuntimeError('model_required')
   try {
-    response = await fetch(`${NOVA_API_BASE_URL}${path}`, {
-      ...init,
-      headers: { ...(init.headers as Record<string, string>), Authorization: `Bearer ${key}` },
-      signal: combined
-    })
+    const result = await call()
+    checkAbort(signal)
+    return result
   } catch (error) {
     checkAbort(signal)
-    if (timeout.aborted) throw new VoiceRuntimeError('timeout')
     throw error instanceof VoiceRuntimeError ? error : new VoiceRuntimeError('operation_failed')
   }
-  if (!response.ok) throw new VoiceRuntimeError('operation_failed')
-  return response
 }
 
-function sniffAudio(audio: Uint8Array, mediaType?: string): { name: string; type: string } {
+function sniffAudio(audio: Uint8Array): string {
   const head = String.fromCharCode(...audio.subarray(0, 4))
-  if (head === 'RIFF') return { name: 'audio.wav', type: 'audio/wav' }
-  if (head === 'OggS') return { name: 'audio.ogg', type: 'audio/ogg' }
-  if (audio[0] === 0x1a && audio[1] === 0x45 && audio[2] === 0xdf && audio[3] === 0xa3)
-    return { name: 'audio.webm', type: 'audio/webm' }
-  if (head.startsWith('ID3') || (audio[0] === 0xff && (audio[1] & 0xe0) === 0xe0))
-    return { name: 'audio.mp3', type: 'audio/mpeg' }
-  return { name: 'audio.wav', type: mediaType || 'audio/wav' }
+  if (head === 'OggS') return 'audio.ogg'
+  if (audio[0] === 0x1a && audio[1] === 0x45 && audio[2] === 0xdf && audio[3] === 0xa3) return 'audio.webm'
+  if (head.startsWith('ID3') || (audio[0] === 0xff && (audio[1] & 0xe0) === 0xe0)) return 'audio.mp3'
+  return 'audio.wav'
 }
 
 export function createNovaTranscriptionModel(options: TranscriptionOptions): TranscriptionModelV3 {
@@ -77,53 +71,42 @@ export function createNovaTranscriptionModel(options: TranscriptionOptions): Tra
     async doGenerate(input) {
       checkAbort(input.abortSignal)
       const audio = typeof input.audio === 'string' ? Uint8Array.from(Buffer.from(input.audio, 'base64')) : input.audio
-      const file = sniffAudio(audio, input.mediaType)
-      const form = new FormData()
-      form.append('model', NOVA_TRANSCRIPTION_MODEL)
-      const language = options.language?.split('-')[0]
-      if (language) form.append('language', language)
-      form.append('file', new Blob([new Uint8Array(audio)], { type: file.type }), file.name)
-      const response = await novaFetch('/audio/transcriptions', { method: 'POST', body: form }, input.abortSignal)
-      const body = (await response.json()) as { text?: unknown; language?: unknown; duration?: unknown }
-      const text = typeof body.text === 'string' ? body.text : ''
+      const model = media().voiceSettings().transcriptionModel
+      const result = await voiceCall(input.abortSignal, () =>
+        media().transcribeAudio(model, audio, sniffAudio(audio), options.language?.split('-')[0])
+      )
       return {
-        text,
+        text: result.text,
         segments: [],
-        language: typeof body.language === 'string' ? body.language : undefined,
-        durationInSeconds: typeof body.duration === 'number' ? body.duration : undefined,
+        language: result.language ?? undefined,
+        durationInSeconds: result.durationSeconds ?? undefined,
         warnings: [],
-        response: { timestamp: new Date(), modelId: NOVA_TRANSCRIPTION_MODEL }
+        response: { timestamp: new Date(), modelId: model }
       }
     }
   }
 }
 
-/** Wraps raw 16-bit mono PCM in a WAV header. */
-export function pcmToWav(pcm: Uint8Array, sampleRate: number): Uint8Array {
-  const data = Buffer.from(pcm.buffer, pcm.byteOffset, pcm.byteLength - (pcm.byteLength % 2))
-  const header = Buffer.alloc(44)
-  header.write('RIFF', 0, 'ascii')
-  header.writeUInt32LE(36 + data.length, 4)
-  header.write('WAVE', 8, 'ascii')
-  header.write('fmt ', 12, 'ascii')
-  header.writeUInt32LE(16, 16)
-  header.writeUInt16LE(1, 20)
-  header.writeUInt16LE(1, 22)
-  header.writeUInt32LE(sampleRate, 24)
-  header.writeUInt32LE(sampleRate * 2, 28)
-  header.writeUInt16LE(2, 32)
-  header.writeUInt16LE(16, 34)
-  header.write('data', 36, 'ascii')
-  header.writeUInt32LE(data.length, 40)
-  return Uint8Array.from(Buffer.concat([header, data]))
+/** The speech model read-aloud uses: the one picked in Create → Speech, else a sensible default. */
+export function pickSpeechModel(models: NovaMediaModel[], preferred: string): NovaMediaModel | null {
+  const speech = models.filter((model) => model.type === 'speech')
+  return (
+    speech.find((model) => model.id === preferred) ??
+    speech.find((model) => model.id.includes('gpt-4o-mini-tts')) ??
+    speech.find((model) => model.voices.length > 0) ??
+    null
+  )
 }
 
-const VOICES: LocalSpeechVoice[] = NOVA_SPEECH_VOICES.map((voice) => ({
-  id: voice.id,
-  name: voice.name,
-  locale: voice.locale,
-  languages: voice.languages
-}))
+async function readAloudVoices(): Promise<{ model: NovaMediaModel | null; voices: LocalSpeechVoice[] }> {
+  const catalog = await media().catalog()
+  const model = catalog.ok ? pickSpeechModel(catalog.data, media().voiceSettings().speechModel) : null
+  const voices = (model?.voices ?? []).map((voice) => {
+    const locale = voiceLocale(voice)
+    return { id: voice, name: voice, locale, languages: locale ? [locale.split('-')[0]] : [] }
+  })
+  return { model, voices }
+}
 
 export function createNovaSpeechModel(options: SpeechOptions): SpeechModelV3 {
   return {
@@ -132,40 +115,22 @@ export function createNovaSpeechModel(options: SpeechOptions): SpeechModelV3 {
     modelId: NOVA_TTS_MODEL_ID,
     async doGenerate(input) {
       checkAbort(input.abortSignal)
-      const voice =
-        NOVA_SPEECH_VOICES.find((entry) => entry.id === (options.voice ?? input.voice)) ?? NOVA_SPEECH_VOICES[0]
       const speed = options.speed ?? DEFAULT_SPEECH_SPEED
       if (
-        !voice ||
         !Number.isFinite(speed) ||
         speed < MIN_SPEECH_SPEED ||
         speed > MAX_SPEECH_SPEED ||
         (input.outputFormat !== undefined && input.outputFormat !== 'wav')
       )
         throw new VoiceRuntimeError('invalid_request')
-      const response = await novaFetch(
-        '/audio/speech',
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            model: voice.model,
-            voice: voice.voice,
-            input: input.text,
-            response_format: 'pcm',
-            ...(speed !== DEFAULT_SPEECH_SPEED && { speed })
-          })
-        },
-        input.abortSignal
+      const { model, voices } = await voiceCall(input.abortSignal, readAloudVoices)
+      if (!model) throw new VoiceRuntimeError('model_required')
+      const wanted = options.voice ?? input.voice ?? media().voiceSettings().speechVoice
+      const voice = voices.find((entry) => entry.id === wanted)?.id ?? voices[0]?.id ?? ''
+      const audio = await voiceCall(input.abortSignal, () =>
+        media().speechAudio({ model: model.id, voice, text: input.text, speed, format: 'wav' })
       )
-      const pcm = new Uint8Array(await response.arrayBuffer())
-      checkAbort(input.abortSignal)
-      if (pcm.length < 2) throw new VoiceRuntimeError('operation_failed')
-      return {
-        audio: pcmToWav(pcm, voice.sampleRate),
-        warnings: [],
-        response: { timestamp: new Date(), modelId: voice.model }
-      }
+      return { audio, warnings: [], response: { timestamp: new Date(), modelId: model.id } }
     }
   }
 }
@@ -195,15 +160,18 @@ export const novaSpeechDefinition: SpeechModelDefinition = {
   speechOperations: [completeSpeechOperation(createNovaSpeechModel)],
   voices: async (signal) => {
     checkAbort(signal)
-    return VOICES
+    return (await readAloudVoices()).voices
   },
   getDefaultVoice: async (language, signal) => {
     checkAbort(signal)
+    const { voices } = await readAloudVoices()
+    const chosen = media().voiceSettings().speechVoice
     const base = language?.split('-')[0]
     return (
-      VOICES.find((voice) => voice.locale === language) ??
-      VOICES.find((voice) => voice.locale.split('-')[0] === base) ??
-      VOICES[0] ??
+      voices.find((voice) => voice.id === chosen) ??
+      voices.find((voice) => voice.locale === language) ??
+      voices.find((voice) => voice.locale.split('-')[0] === base) ??
+      voices[0] ??
       null
     )
   }

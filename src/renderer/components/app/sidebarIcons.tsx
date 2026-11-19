@@ -1,6 +1,8 @@
 import type { LucideProps } from 'lucide-react'
 import {
+  AudioLines,
   BotMessageSquare,
+  Clapperboard,
   Clock,
   Code,
   Database,
@@ -16,6 +18,7 @@ import {
   NotepadText,
   Package,
   Palette,
+  ScanSearch,
   Store
 } from 'lucide-react'
 import type { ReactNode } from 'react'
@@ -37,6 +40,9 @@ export const SIDEBAR_ICON_COMPONENTS = {
   agents: MousePointerClick,
   scheduled_tasks: Clock,
   paintings: Palette,
+  video: Clapperboard,
+  audio: AudioLines,
+  analyze: ScanSearch,
   marketplace: Store,
   translate: Languages,
   mini_app: LayoutGrid,

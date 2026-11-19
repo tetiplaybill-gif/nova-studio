@@ -66,6 +66,7 @@ import { MainWindowService } from '@main/services/MainWindowService'
 import { MediaProtocolService } from '@main/services/mediaProtocol'
 import { NetworkService } from '@main/services/network'
 import { NotificationService } from '@main/services/NotificationService'
+import { NovaMediaService } from '@main/services/nova/NovaMediaService'
 import { OAuthRuntimeService } from '@main/services/oauth/runtime/OAuthRuntimeService'
 import { OfficialAnnouncementService } from '@main/services/OfficialAnnouncementService'
 import { OpenClawService } from '@main/services/OpenClawService'
@@ -117,6 +118,7 @@ import { WebviewService } from '@main/services/webview'
  */
 export const services = {
   ComputerUseService,
+  NovaMediaService,
   AutomationReplService,
   RemoteAccessService,
   MainNetworkDevtoolsService,
