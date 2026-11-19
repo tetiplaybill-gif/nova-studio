@@ -12,7 +12,7 @@ import { ipcApi } from '@renderer/ipc'
 import { toast } from '@renderer/services/toast'
 import { openExternalWebsite } from '@renderer/services/website'
 import { cn } from '@renderer/utils/style'
-import { NOVA_WEBSITE_URL } from '@shared/data/presets/nova'
+import { NOVA_PROVIDER_ID, NOVA_WEBSITE_URL } from '@shared/data/presets/nova'
 import type { NovaVideoJob } from '@shared/ipc/schemas/novaMedia'
 import { conversationRouteUrl } from '@shared/utils/conversationRoute'
 
@@ -42,13 +42,15 @@ const StartPage: FC = () => {
   const [mode, setMode] = useState<Mode>('chat')
   const [text, setText] = useState('')
   const [busy, setBusy] = useState(false)
-  const { balance } = useNovaBalance()
+  const { balance, loaded } = useNovaBalance()
   const { createTopic } = useTopicMutations()
   const { topics } = useTopics({ pageSize: 5 })
   const [videos, setVideos] = useState<NovaVideoJob[]>([])
 
   useEffect(() => {
-    void ipcApi.request('nova.video.list').then((jobs) => setVideos(jobs.filter((job) => job.status === 'completed').slice(0, 3)))
+    void ipcApi
+      .request('nova.video.list')
+      .then((jobs) => setVideos(jobs.filter((job) => job.status === 'completed').slice(0, 3)))
   }, [])
 
   const openCreate = (tab: CreateTab, prompt?: string) =>
@@ -68,7 +70,10 @@ const StartPage: FC = () => {
           mentionedModelIds: [],
           modelMultiSelectMode: false
         })
-        const url = new URL(conversationRouteUrl({ conversationType: 'assistant', conversationId: topic.id }), 'app://x')
+        const url = new URL(
+          conversationRouteUrl({ conversationType: 'assistant', conversationId: topic.id }),
+          'app://x'
+        )
         await navigate({ to: url.pathname, search: Object.fromEntries(url.searchParams.entries()) })
       } catch {
         toast.error(t('common.error'))
@@ -95,8 +100,17 @@ const StartPage: FC = () => {
   return (
     <div className="flex h-full min-h-0 w-full flex-col overflow-y-auto">
       <header className="flex shrink-0 items-center gap-3 px-7 py-4">
-        <span className="font-[family-name:var(--font-family-display)] font-semibold text-[15px] tracking-wide">NOVA Studio</span>
+        <span className="font-[family-name:var(--font-family-display)] font-semibold text-[15px] tracking-wide">
+          NOVA Studio
+        </span>
         <div className="flex-1" />
+        {loaded && balance === null && (
+          <Button
+            size="sm"
+            onClick={() => void navigate({ to: '/settings/provider', search: { id: NOVA_PROVIDER_ID } })}>
+            {t('nova_ui.home.sign_in')}
+          </Button>
+        )}
         {balance !== null && (
           <button
             type="button"
@@ -188,7 +202,10 @@ const StartPage: FC = () => {
                 key={topic.id}
                 type="button"
                 onClick={() => {
-                  const url = new URL(conversationRouteUrl({ conversationType: 'assistant', conversationId: topic.id }), 'app://x')
+                  const url = new URL(
+                    conversationRouteUrl({ conversationType: 'assistant', conversationId: topic.id }),
+                    'app://x'
+                  )
                   void navigate({ to: url.pathname, search: Object.fromEntries(url.searchParams.entries()) })
                 }}
                 className="flex items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left text-[13px] transition-colors hover:bg-accent focus-visible:bg-accent focus-visible:outline-none">
@@ -201,7 +218,9 @@ const StartPage: FC = () => {
           )}
         </div>
         <div className="flex min-w-[280px] max-w-[372px] flex-1 flex-col gap-1.5">
-          <h2 className="m-0 mb-1 font-semibold text-[13px] text-muted-foreground">{t('nova_ui.home.recent_creations')}</h2>
+          <h2 className="m-0 mb-1 font-semibold text-[13px] text-muted-foreground">
+            {t('nova_ui.home.recent_creations')}
+          </h2>
           {videos.length === 0 ? (
             <p className="text-foreground-tertiary text-xs">{t('nova_ui.home.no_creations')}</p>
           ) : (
@@ -213,7 +232,9 @@ const StartPage: FC = () => {
                 className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-left text-[13px] transition-colors hover:bg-accent focus-visible:bg-accent focus-visible:outline-none">
                 <Clapperboard className="size-4 shrink-0 text-muted-foreground" />
                 <span className="truncate">{job.request.prompt || job.request.modelName}</span>
-                <span className="ml-auto shrink-0 text-foreground-tertiary text-xs">{job.request.duration ? `${job.request.duration}s` : ''}</span>
+                <span className="ml-auto shrink-0 text-foreground-tertiary text-xs">
+                  {job.request.duration ? `${job.request.duration}s` : ''}
+                </span>
               </button>
             ))
           )}

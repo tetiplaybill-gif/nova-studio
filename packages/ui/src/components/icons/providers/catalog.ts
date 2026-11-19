@@ -121,6 +121,7 @@ import { NewapiIcon } from './newapi'
 import { NomicIcon } from './nomic'
 import { NotebooklmIcon } from './notebooklm'
 import { NousresearchIcon } from './nousresearch'
+import { NovaIcon } from './nova'
 import { NvidiaIcon } from './nvidia'
 import { OcoolaiIcon } from './ocoolai'
 import { OllamaIcon } from './ollama'
@@ -298,6 +299,7 @@ export const PROVIDER_ICON_CATALOG = {
   nomic: NomicIcon,
   notebooklm: NotebooklmIcon,
   nousresearch: NousresearchIcon,
+  nova: NovaIcon,
   nvidia: NvidiaIcon,
   ocoolai: OcoolaiIcon,
   ollama: OllamaIcon,

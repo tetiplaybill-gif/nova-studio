@@ -118,6 +118,7 @@ import { meta as newapiMeta } from './newapi/meta'
 import { meta as nomicMeta } from './nomic/meta'
 import { meta as notebooklmMeta } from './notebooklm/meta'
 import { meta as nousresearchMeta } from './nousresearch/meta'
+import { meta as novaMeta } from './nova/meta'
 import { meta as nvidiaMeta } from './nvidia/meta'
 import { meta as ocoolaiMeta } from './ocoolai/meta'
 import { meta as ollamaMeta } from './ollama/meta'
@@ -295,6 +296,7 @@ export const PROVIDER_ICON_META_CATALOG = {
   nomic: nomicMeta,
   notebooklm: notebooklmMeta,
   nousresearch: nousresearchMeta,
+  nova: novaMeta,
   nvidia: nvidiaMeta,
   ocoolai: ocoolaiMeta,
   ollama: ollamaMeta,

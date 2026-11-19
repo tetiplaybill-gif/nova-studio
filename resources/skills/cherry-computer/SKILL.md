@@ -4,7 +4,7 @@ description: 'Drive native apps via Computer Use: open, inspect, type, click, sc
 version: 1.0.1
 ---
 
-# Cherry Computer
+# NOVA Computer
 
 Use the live Automation REPL (`automation_repl` in chat, `automation` server's `js`
 in Agent sessions; runtime names may differ). Code Mode is not required. The REPL

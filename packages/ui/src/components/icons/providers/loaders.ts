@@ -121,6 +121,7 @@ export const PROVIDER_ICON_LOADERS = {
   nomic: () => import('./nomic').then(({ NomicIcon }) => NomicIcon),
   notebooklm: () => import('./notebooklm').then(({ NotebooklmIcon }) => NotebooklmIcon),
   nousresearch: () => import('./nousresearch').then(({ NousresearchIcon }) => NousresearchIcon),
+  nova: () => import('./nova').then(({ NovaIcon }) => NovaIcon),
   nvidia: () => import('./nvidia').then(({ NvidiaIcon }) => NvidiaIcon),
   ocoolai: () => import('./ocoolai').then(({ OcoolaiIcon }) => OcoolaiIcon),
   ollama: () => import('./ollama').then(({ OllamaIcon }) => OllamaIcon),

@@ -29,7 +29,6 @@ import { useIsPrivacyUpdateRequired } from '@renderer/hooks/useIsPrivacyUpdateRe
 import { useStorageMonitorNotification } from '@renderer/hooks/useStorageMonitorNotification'
 import { useWindowRuntime } from '@renderer/hooks/useWindowRuntime'
 import { registerImageModeChooser } from '@renderer/services/imageExportModeChooser'
-import { getSidebarDefaultLandingUrl } from '@renderer/utils/sidebar'
 import { WindowFileEditRecovery } from '@renderer/windows/WindowFileEditRecovery'
 import type { Tab } from '@shared/data/cache/cacheValueTypes'
 
@@ -101,8 +100,6 @@ function MainWindowRuntime(): null {
 
 export function MainWindowContent(): React.ReactElement {
   const [providerSetupStatus] = usePreference('app.onboarding.provider_setup.status')
-  const [sidebarShortcuts] = usePreference('ui.sidebar_shortcut')
-  const [defaultPaintingProvider] = usePreference('feature.paintings.default_provider')
   const sidebarShortcutRegistry = useMemo(() => new SidebarShortcutRegistry(CORE_SIDEBAR_SHORTCUT_PROVIDERS), [])
   const privacyUpdateRequired = useIsPrivacyUpdateRequired()
   // Onboarding collects privacy consent itself, so the gate only owns the window afterwards.
@@ -112,12 +109,13 @@ export function MainWindowContent(): React.ReactElement {
     () => ({
       id: 'home',
       type: 'route',
-      url: getSidebarDefaultLandingUrl(sidebarShortcuts, defaultPaintingProvider) || '/app/launchpad',
+      // NOVA Studio always opens on Home.
+      url: '/app/home',
       title: '',
       lastAccessTime: Date.now(),
       isDormant: false
     }),
-    [defaultPaintingProvider, sidebarShortcuts]
+    []
   )
 
   return (

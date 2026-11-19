@@ -99,14 +99,13 @@ describe('MainWindowContent', () => {
     expect(document.getElementById('spinner')).toBeNull()
   })
 
-  it('passes the first visible sidebar app as the startup landing tab', () => {
+  it('opens on Home whatever the sidebar shortcuts are', () => {
     MockUsePreferenceUtils.setPreferenceValue('app.onboarding.provider_setup.status', 'completed')
     MockUsePreferenceUtils.setPreferenceValue('ui.sidebar_shortcut', [appShortcut('agents'), appShortcut('translate')])
-    MockUsePreferenceUtils.setPreferenceValue('feature.paintings.default_provider', 'zhipu')
 
     render(<MainWindowContent />)
 
-    expect(tabsProviderMock.lastInitialDefaultTab).toMatchObject({ url: '/app/agents' })
+    expect(tabsProviderMock.lastInitialDefaultTab).toMatchObject({ url: '/app/home' })
   })
 })
 

@@ -1,16 +1,16 @@
 ---
 name: cherry-tool-guide
-description: 'Cherry tool routing: bun, uv, rg, knowledge, memory, schedules, skills, MCP, web. Read before shell workarounds.'
+description: 'Tool routing: bun, uv, rg, knowledge, memory, schedules, skills, MCP, web. Read before shell workarounds.'
 version: 1.8.0
 ---
 
-# Cherry Tool Guide
+# NOVA Tool Guide
 
-Cherry Studio provides first-party tools through four MCP servers: `cherry-tools`,
+NOVA Studio provides first-party tools through four MCP servers: `cherry-tools`,
 `agent-memory`, `skills`, and `mcp-manager`. Which tools mount depends on the session.
 Shell-capable general agents also get bundled runtimes for local execution. The MCP
 tools act on the running app — the user's knowledge bases, IM channels, schedules,
-managed CLIs, skill library, and MCP server registry — through boundaries only Cherry
+managed CLIs, skill library, and MCP server registry — through boundaries only NOVA
 owns. Shell and file tools cannot reach those app boundaries correctly; use the bundled
 runtimes only for the local execution cases routed below.
 
@@ -41,7 +41,7 @@ parameter names, enums, and required fields. Read it before every call.
   and report the capability absent. If discovery is unavailable or fails, report that
   limitation instead of asserting nonexistence. Never pretend a call succeeded or
   fabricate a result.
-- **Don't reach around Cherry's mutation boundaries.** Knowledge bases, IM channels,
+- **Don't reach around NOVA's mutation boundaries.** Knowledge bases, IM channels,
   schedules, managed CLIs, skills, and registered MCP servers are mutated only through
   these tools. Do not shell out to `npm install`, `git clone`, `crontab`, or hand-edit
   knowledge or MCP settings files to accomplish these — the tool does bookkeeping (registration, scoping, approval, sync)
@@ -69,7 +69,7 @@ parameter names, enums, and required fields. Read it before every call.
 | Read or convert a local document | `mcp__cherry-tools__to_markdown` → read the returned temporary Markdown path as needed | [documents.md](references/documents.md) |
 | Recall a past fact, correction, or preference | Server `agent-memory`, tool `memory` (`search`) before re-asking; resolve callable name above | [memory.md](references/memory.md) |
 | Save durable knowledge vs. a one-off event | Server `agent-memory`, tool `memory` (`update` vs. `append`); resolve callable name above | [memory.md](references/memory.md) |
-| Schedule a recurring / future task | `mcp__cherry-tools__cron` (Cherry scheduling only) | [autonomy.md](references/autonomy.md) |
+| Schedule a recurring / future task | `mcp__cherry-tools__cron` (NOVA scheduling only) | [autonomy.md](references/autonomy.md) |
 | Proactively message the user or send a file | `mcp__cherry-tools__notify` (needs configured recipients) | [autonomy.md](references/autonomy.md) |
 | Inspect / connect / repair IM channels, rename agent | `mcp__cherry-tools__config` | [autonomy.md](references/autonomy.md) |
 | Rename the current or another Agent Session | `mcp__cherry-tools__session_rename` | [sessions.md](references/sessions.md) |
@@ -110,5 +110,5 @@ Not covered here: SDK-native `Read`/`Edit`/`Bash` and orchestration tools; *call
 tools of a third-party (user-configured) MCP server — only registering one is in scope,
 see [mcp.md](references/mcp.md); the AI-SDK chat `read_file` attachment reader (a
 chat-path tool, not exposed on this MCP surface); and the role-specific
-`mcp__assistant__*` navigation/diagnosis tools, which belong to the Cherry Assistant and
+`mcp__assistant__*` navigation/diagnosis tools, which belong to the NOVA Helper and
 its own guide.

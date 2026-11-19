@@ -43,14 +43,16 @@ export function useNovaCatalog(filter: NovaMediaModelType | ((model: NovaMediaMo
 /** The NOVA balance in USD, refreshed on demand (after each paid job). */
 export function useNovaBalance() {
   const [balance, setBalance] = useState<number | null>(null)
+  const [loaded, setLoaded] = useState(false)
   const refresh = useCallback(async () => {
     const summary = await ipcApi.request('nova.summary').catch(() => null)
     setBalance(summary?.keyActive ? summary.balanceUsd : null)
+    setLoaded(true)
   }, [])
   useEffect(() => {
     void refresh()
   }, [refresh])
-  return { balance, refresh }
+  return { balance, loaded, refresh }
 }
 
 /** One sentence explaining a failed NOVA media request. */

@@ -4,7 +4,7 @@ description: 'Control the user''s visible Agent browser: navigate, click, type, 
 version: 2.0.0
 ---
 
-# Cherry Browser
+# NOVA Browser
 
 Use the live Automation REPL (`automation_repl` in chat, `automation` server's `js`
 in Agent sessions; runtime names may differ). It works without Code Mode and controls
