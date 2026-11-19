@@ -22,9 +22,9 @@
   /* Background & Foreground */
   --cs-background: var(--cs-white);
   --cs-background-subtle: oklch(0 0 0 / 0.02);
-  --cs-foreground: oklch(0.213 0 0);
-  --cs-muted-foreground: oklch(0.556 0 0);
-  --cs-foreground-tertiary: oklch(0.669 0 0);
+  --cs-foreground: oklch(0.19 0.008 270);
+  --cs-muted-foreground: oklch(0.5 0.015 265);
+  --cs-foreground-tertiary: oklch(0.56 0.015 265);
   --cs-foreground-disabled: var(--cs-foreground-tertiary);
 
   /* Card & Popover */
@@ -38,7 +38,7 @@
   --cs-border-selected: oklch(0 0 0 / 0.3);
 
   /* Ring (Focus) */
-  --cs-ring: color-mix(in srgb, var(--cs-primary) 40%, transparent);
+  --cs-ring: color-mix(in srgb, var(--cs-primary) 45%, transparent);
 
   /* UI Element Colors */
   --cs-secondary: oklch(0 0 0 / 0.05); /* Secondary Button Background */
@@ -49,17 +49,19 @@
   --cs-ghost-active: oklch(0 0 0 / 0.1); /* Ghost Button Active */
 
   /* Sidebar */
-  --cs-sidebar: oklch(0.9672 0 0);
-  --cs-sidebar-accent: oklch(0.97 0 0);
+  /* NOVA: the ground the floating panels sit on. */
+  --cs-sidebar: oklch(0.95 0.004 270);
+  --cs-sidebar-accent: oklch(0.92 0.005 270);
 
   /* Surface-paired foregrounds */
-  --cs-card-foreground: oklch(0.145 0 0);
-  --cs-popover-foreground: oklch(0.145 0 0);
+  --cs-card-foreground: oklch(0.19 0.008 270);
+  --cs-popover-foreground: oklch(0.19 0.008 270);
   --cs-secondary-foreground: oklch(0.205 0 0);
   --cs-accent-foreground: oklch(0.205 0 0);
 
   /* Foregrounds used on solid colored fills */
-  --cs-primary-foreground: oklch(0.985 0 0);
+  /* Dark ink on Solar orange: 8:1 contrast. */
+  --cs-primary-foreground: oklch(0.2 0.04 45);
   --cs-destructive-foreground: var(--cs-white);
 
   /* Input border — shares the neutral border role so it composites against
@@ -69,11 +71,11 @@
   --cs-input: var(--cs-border);
 
   /* Sidebar sub-palette */
-  --cs-sidebar-foreground: oklch(0.145 0 0);
-  --cs-sidebar-primary: oklch(0.205 0 0);
-  --cs-sidebar-primary-foreground: oklch(0.985 0 0);
+  --cs-sidebar-foreground: oklch(0.19 0.008 270);
+  --cs-sidebar-primary: var(--cs-brand-500);
+  --cs-sidebar-primary-foreground: oklch(0.2 0.04 45);
   --cs-sidebar-accent-foreground: oklch(0.205 0 0);
-  --cs-sidebar-border: oklch(0.922 0 0);
+  --cs-sidebar-border: oklch(0.9 0.005 270);
   --cs-sidebar-ring: oklch(0.708 0 0);
 
   /* Canonical Cherry Studio feedback contract.
@@ -103,16 +105,17 @@
   --cs-info: var(--cs-blue-400);
 
   /* Background & Foreground */
-  --cs-background: oklch(0.209 0 0 / 0.55);
+  /* NOVA graphite: panels on a near-black ground. */
+  --cs-background: oklch(0.205 0.008 270);
   --cs-background-subtle: oklch(1 0 0 / 0.02);
-  --cs-foreground: oklch(0.931 0 0);
-  --cs-muted-foreground: oklch(0.708 0 0);
-  --cs-foreground-tertiary: oklch(0.559 0 0);
+  --cs-foreground: oklch(0.96 0.003 270);
+  --cs-muted-foreground: oklch(0.72 0.018 265);
+  --cs-foreground-tertiary: oklch(0.62 0.02 265);
 
   /* Card & Popover — surfaces stack via color (DESIGN.md): the higher the
    * layer, the lighter the surface, so popovers sit ABOVE cards, not below. */
-  --cs-card: var(--cs-neutral-900);
-  --cs-popover: var(--cs-neutral-800);
+  --cs-card: oklch(0.235 0.012 265);
+  --cs-popover: oklch(0.27 0.014 265);
 
   /* Border */
   --cs-border: oklch(1 0 0 / 0.1);
@@ -121,7 +124,7 @@
   --cs-border-selected: oklch(1 0 0 / 0.3);
 
   /* Ring (Focus) - 保持不变 */
-  --cs-ring: oklch(0.76 0.204 131 / 0.4);
+  --cs-ring: color-mix(in srgb, var(--cs-primary) 45%, transparent);
 
   /* UI Element Colors - Dark Mode */
   --cs-secondary: oklch(1 0 0 / 0.1); /* Secondary Button Background */
@@ -132,8 +135,8 @@
   --cs-ghost-active: oklch(1 0 0 / 0.15); /* Ghost Button Active */
 
   /* Sidebar */
-  --cs-sidebar: oklch(0.2393 0 0);
-  --cs-sidebar-accent: oklch(0.269 0 0);
+  --cs-sidebar: oklch(0.155 0.005 270);
+  --cs-sidebar-accent: oklch(0.235 0.012 265);
 
   /* Surface-paired foregrounds */
   --cs-card-foreground: oklch(0.985 0 0);
@@ -142,7 +145,7 @@
   --cs-accent-foreground: oklch(0.985 0 0);
 
   /* Foregrounds used on solid colored fills */
-  --cs-primary-foreground: oklch(0.205 0 0);
+  --cs-primary-foreground: oklch(0.2 0.04 45);
   --cs-destructive-foreground: var(--cs-white);
 
   /* Input border — see the light-mode note. The old fixed oklch(0.269) was
@@ -152,10 +155,10 @@
 
   /* Sidebar sub-palette */
   --cs-sidebar-foreground: oklch(0.985 0 0);
-  --cs-sidebar-primary: oklch(0.488 0.243 264.376);
-  --cs-sidebar-primary-foreground: oklch(0.985 0 0);
+  --cs-sidebar-primary: var(--cs-brand-500);
+  --cs-sidebar-primary-foreground: oklch(0.2 0.04 45);
   --cs-sidebar-accent-foreground: oklch(0.985 0 0);
-  --cs-sidebar-border: oklch(0.269 0 0);
+  --cs-sidebar-border: oklch(0.26 0.012 265);
   --cs-sidebar-ring: oklch(0.439 0 0);
 
   /* Canonical Cherry Studio feedback contract */

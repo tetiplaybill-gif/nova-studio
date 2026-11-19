@@ -135,7 +135,7 @@ export function FindBar({
           onChange={(event) => setState((current) => ({ ...current, query: event.target.value }))}
           onKeyDown={handleInputKeyDown}
           placeholder={t('chat.assistant.search.placeholder')}
-          className="w-full flex-1 border-none bg-transparent px-[5px] py-0 font-[Ubuntu] text-[14px] leading-5 text-foreground outline-none"
+          className="w-full flex-1 border-none bg-transparent px-[5px] py-0 font-sans text-[14px] leading-5 text-foreground outline-none"
         />
         <div className="flex flex-row items-center">
           {showUserToggle && (
@@ -179,7 +179,7 @@ export function FindBar({
         </div>
       </div>
       <div className="mx-[2px] h-[1.5em] w-px flex-[0_0_auto] bg-border" />
-      <div className="mx-[2px] flex w-20 flex-[0_0_auto] justify-center font-[Ubuntu] text-[14px] text-foreground">
+      <div className="mx-[2px] flex w-20 flex-[0_0_auto] justify-center font-sans text-[14px] text-foreground">
         {matchCount > 0 ? (
           <>
             <span>{currentIndex + 1}</span>

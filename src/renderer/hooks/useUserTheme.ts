@@ -3,8 +3,13 @@ import Color from 'color'
 import { usePreference } from '@data/hooks/usePreference'
 import { getForegroundColor } from '@renderer/utils/style'
 
+/** Cherry Studio's default accent; installs that never picked a color get NOVA's instead. */
+const LEGACY_DEFAULT_PRIMARY = '#00b96b'
+const NOVA_PRIMARY = '#ff6a2b'
+
 export default function useUserTheme() {
-  const [colorPrimary, setColorPrimary] = usePreference('ui.theme_user.color_primary')
+  const [storedPrimary, setColorPrimary] = usePreference('ui.theme_user.color_primary')
+  const colorPrimary = storedPrimary?.toLowerCase() === LEGACY_DEFAULT_PRIMARY ? NOVA_PRIMARY : storedPrimary
   const [userFontFamily, setUserFontFamily] = usePreference('ui.theme_user.font_family')
   const [userCodeFontFamily, setUserCodeFontFamily] = usePreference('ui.theme_user.code_font_family')
 

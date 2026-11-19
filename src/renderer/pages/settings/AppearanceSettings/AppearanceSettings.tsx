@@ -44,7 +44,7 @@ import { hasV1CustomCssMarker } from '@shared/utils/customCssMigration'
 
 import ThemeColorPicker from './components/ThemeColorPicker'
 
-const DEFAULT_COLOR_PRIMARY = '#00b96b'
+const DEFAULT_COLOR_PRIMARY = '#ff6a2b'
 const DEFAULT_ZOOM_FACTOR = 1
 const THEME_COLOR_PRESETS = [
   DEFAULT_COLOR_PRIMARY,
@@ -69,7 +69,7 @@ type ThemePreviewOption = {
   value: ThemeMode
 }
 
-const defaultFontPreviewFamily = 'Ubuntu, -apple-system, system-ui, Arial, sans-serif'
+const defaultFontPreviewFamily = "'Inter Variable', -apple-system, system-ui, Arial, sans-serif"
 const fontComboboxClassName = 'h-8 rounded-md border-border bg-transparent pl-3 pr-8 text-sm dark:bg-input/30'
 const logger = loggerService.withContext('AppearanceSettings')
 

@@ -19,12 +19,12 @@ import {
   type VideoDraft
 } from './videoDraft'
 
-const VideoPage: FC = () => {
+const VideoPage: FC<{ initialPrompt?: string }> = ({ initialPrompt }) => {
   const { t } = useTranslation()
   const { models, loading } = useNovaCatalog('video')
   const { balance, refresh: refreshBalance } = useNovaBalance()
   const { jobs, remove, setFavorite } = useVideoJobs()
-  const [draft, setDraft] = useState<VideoDraft>(EMPTY_DRAFT)
+  const [draft, setDraft] = useState<VideoDraft>(() => ({ ...EMPTY_DRAFT, prompt: initialPrompt ?? '' }))
   const [sourceSeconds, setSourceSeconds] = useState<number | undefined>()
   const [submitting, setSubmitting] = useState(false)
   const [enhancing, setEnhancing] = useState(false)

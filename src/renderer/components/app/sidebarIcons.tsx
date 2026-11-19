@@ -9,6 +9,7 @@ import {
   FileSearch,
   FileText,
   Folder,
+  House,
   Icon,
   Languages,
   LayoutGrid,
@@ -19,6 +20,7 @@ import {
   Package,
   Palette,
   ScanSearch,
+  Sparkles,
   Store
 } from 'lucide-react'
 import type { ReactNode } from 'react'
@@ -36,6 +38,9 @@ const CodeMateIcon: SidebarIconComponent = (props) => <Code {...props} viewBox="
  * components; the navigation data and logic live in `@renderer/utils/sidebar`.
  */
 export const SIDEBAR_ICON_COMPONENTS = {
+  home: House,
+  create: Sparkles,
+  apps: LayoutGrid,
   assistants: MessageSquare,
   agents: MousePointerClick,
   scheduled_tasks: Clock,

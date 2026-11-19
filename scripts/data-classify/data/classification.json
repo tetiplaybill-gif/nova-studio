@@ -994,14 +994,14 @@
         {
           "originalKey": "userTheme",
           "type": "unknown",
-          "defaultValue": "{ colorPrimary: '#00b96b', userFontFamily: '', userCodeFontFamily: '' }",
+          "defaultValue": "{ colorPrimary: '#ff6a2b', userFontFamily: '', userCodeFontFamily: '' }",
           "status": "pending",
           "category": null,
           "targetKey": null,
           "children": [
             {
               "category": "preferences",
-              "defaultValue": "#00b96b",
+              "defaultValue": "#ff6a2b",
               "originalKey": "colorPrimary",
               "status": "classified",
               "targetKey": "ui.theme_user.color_primary",

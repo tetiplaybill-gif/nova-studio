@@ -145,6 +145,9 @@ export type AgentSessionDisplayMode = 'time' | 'agent' | 'workdir'
 export type BrowserStartPageMode = 'blank' | 'last' | 'custom'
 
 export const SIDEBAR_FAVORITES = [
+  'home',
+  'create',
+  'apps',
   'assistants',
   'agents',
   'scheduled_tasks',

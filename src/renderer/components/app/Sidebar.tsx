@@ -22,10 +22,17 @@ import { usePreference } from '@data/hooks/usePreference'
 import useAvatar from '@renderer/hooks/useAvatar'
 import { useCherryCloudSubscribeReminder } from '@renderer/hooks/useCherryCloudPlans'
 import { useSidebarShortcuts } from '@renderer/hooks/useSidebarShortcuts'
+import { getSidebarIconLabelKey } from '@renderer/i18n/label'
 import { trackSubscriptionEntryView } from '@renderer/services/cherryCloudSubscriptionAnalytics'
 import { openSettingsTab } from '@renderer/services/mainWindowNavigation'
 import { toast } from '@renderer/services/toast'
 import { isMac } from '@renderer/utils/platform'
+import {
+  CORE_SIDEBAR_APP_IDS,
+  createSidebarShortcutTarget,
+  SIDEBAR_SHORTCUT_PROVIDER_IDS,
+  type SidebarAppId
+} from '@renderer/utils/sidebar'
 import { cherryServices } from '@shared/data/presets/nova'
 
 import { HelpMenu } from '../layout/HelpMenu'
@@ -42,6 +49,8 @@ import {
   Sidebar as UISidebar
 } from '../Sidebar'
 import { UserAccountPanel } from '../UserAccountPanel'
+import { NovaMark } from './NovaMark'
+import { SidebarIcon } from './sidebarIcons'
 import {
   useResolvedSidebarShortcuts,
   useSidebarNavigationSnapshot,
@@ -199,73 +208,120 @@ export default function Sidebar({
       </PopoverContent>
     ) : null
 
-  const resolvedEntries = useMemo(
+  const coreEntries = useMemo<ResolvedSidebarEntry[]>(
     () =>
-      resolutions.map((resolution) => {
-        const { shortcut } = resolution
-        const provider = registry.resolve(shortcut.target)
-        const isResolved = resolution.status === 'resolved'
-        const label = isResolved
-          ? resolution.resource.label
-          : shortcut.fallbackLabel || shortcut.target.locator.resourceId
-        const renderIcon = isResolved
-          ? resolution.resource.renderIcon
-          : ({ glyphSize }: SidebarIconPresentation) => {
-              const Icon =
-                resolution.status === 'loading' ? LoaderCircle : resolution.status === 'missing' ? CircleOff : WifiOff
-              return (
-                <Icon
-                  size={glyphSize}
-                  strokeWidth={1.6}
-                  className={resolution.status === 'loading' ? 'animate-spin' : undefined}
-                />
-              )
-            }
-        const activate = (inNewTab = false) => {
-          if (!isResolved || !provider) return
-          void activateShortcut(provider, shortcut.target, resolution.resource, inNewTab).catch(() =>
-            toast.error(t('common.error'))
-          )
-        }
-        const activateInNewTab =
-          isResolved && provider && resolution.resource.supportsNewTab ? () => activate(true) : undefined
-
-        return {
-          key: shortcut.id,
+      CORE_SIDEBAR_APP_IDS.map((id: SidebarAppId) => {
+        const target = createSidebarShortcutTarget(SIDEBAR_SHORTCUT_PROVIDER_IDS.APP, id)
+        const provider = registry.resolve(target)
+        const label = t(getSidebarIconLabelKey(id))
+        const resource = {
           label,
-          renderIcon,
-          disabled: !isResolved || !provider,
-          isActive: !!provider?.isActive?.(shortcut.target, navigation),
-          statusLabel: isResolved
-            ? undefined
-            : resolution.status === 'loading'
-              ? t('common.loading')
-              : resolution.status === 'missing'
-                ? t('sidebar.resource_missing')
-                : t('sidebar.resource_unavailable'),
-          onOpen: () => activate(),
-          onOpenNewTab: activateInNewTab,
+          renderIcon: ({ glyphSize, active }: SidebarIconPresentation) => (
+            <SidebarIcon icon={id} active={active} size={glyphSize} strokeWidth={1.6} />
+          ),
+          supportsNewTab: true
+        }
+        const activate = (inNewTab: boolean) => {
+          if (!provider) return
+          void activateShortcut(provider, target, resource, inNewTab).catch(() => toast.error(t('common.error')))
+        }
+        return {
+          key: `core.${id}`,
+          label,
+          renderIcon: resource.renderIcon,
+          isActive: !!provider?.isActive?.(target, navigation),
+          disabled: !provider,
+          onOpen: () => activate(false),
+          onOpenNewTab: () => activate(true),
           contextMenuItems: [
-            ...(activateInNewTab
-              ? [
-                  {
-                    type: 'item' as const,
-                    id: `sidebar.open-in-new-tab.${shortcut.id}`,
-                    label: t('common.open_in_new_tab'),
-                    onSelect: activateInNewTab
-                  }
-                ]
-              : []),
             {
               type: 'item' as const,
-              id: `sidebar.remove.${shortcut.id}`,
-              label: t('launchpad.unpin_from_sidebar'),
-              onSelect: () => remove(shortcut.target)
+              id: `sidebar.open-in-new-tab.core.${id}`,
+              label: t('common.open_in_new_tab'),
+              onSelect: () => activate(true)
             }
           ]
         }
       }),
-    [activateShortcut, navigation, registry, remove, resolutions, shortcuts, t]
+    [activateShortcut, navigation, registry, t]
+  )
+
+  const resolvedEntries = useMemo(
+    () =>
+      resolutions
+        // A pinned shortcut to a rail destination would show it twice.
+        .filter(
+          ({ shortcut }) =>
+            !(
+              shortcut.target.locator.providerId === SIDEBAR_SHORTCUT_PROVIDER_IDS.APP &&
+              (CORE_SIDEBAR_APP_IDS as readonly string[]).includes(shortcut.target.locator.resourceId)
+            )
+        )
+        .map((resolution) => {
+          const { shortcut } = resolution
+          const provider = registry.resolve(shortcut.target)
+          const isResolved = resolution.status === 'resolved'
+          const label = isResolved
+            ? resolution.resource.label
+            : shortcut.fallbackLabel || shortcut.target.locator.resourceId
+          const renderIcon = isResolved
+            ? resolution.resource.renderIcon
+            : ({ glyphSize }: SidebarIconPresentation) => {
+                const Icon =
+                  resolution.status === 'loading' ? LoaderCircle : resolution.status === 'missing' ? CircleOff : WifiOff
+                return (
+                  <Icon
+                    size={glyphSize}
+                    strokeWidth={1.6}
+                    className={resolution.status === 'loading' ? 'animate-spin' : undefined}
+                  />
+                )
+              }
+          const activate = (inNewTab = false) => {
+            if (!isResolved || !provider) return
+            void activateShortcut(provider, shortcut.target, resolution.resource, inNewTab).catch(() =>
+              toast.error(t('common.error'))
+            )
+          }
+          const activateInNewTab =
+            isResolved && provider && resolution.resource.supportsNewTab ? () => activate(true) : undefined
+
+          return {
+            key: shortcut.id,
+            label,
+            renderIcon,
+            disabled: !isResolved || !provider,
+            isActive: !!provider?.isActive?.(shortcut.target, navigation),
+            statusLabel: isResolved
+              ? undefined
+              : resolution.status === 'loading'
+                ? t('common.loading')
+                : resolution.status === 'missing'
+                  ? t('sidebar.resource_missing')
+                  : t('sidebar.resource_unavailable'),
+            onOpen: () => activate(),
+            onOpenNewTab: activateInNewTab,
+            contextMenuItems: [
+              ...(activateInNewTab
+                ? [
+                    {
+                      type: 'item' as const,
+                      id: `sidebar.open-in-new-tab.${shortcut.id}`,
+                      label: t('common.open_in_new_tab'),
+                      onSelect: activateInNewTab
+                    }
+                  ]
+                : []),
+              {
+                type: 'item' as const,
+                id: `sidebar.remove.${shortcut.id}`,
+                label: t('launchpad.unpin_from_sidebar'),
+                onSelect: () => remove(shortcut.target)
+              }
+            ]
+          }
+        }),
+    [activateShortcut, navigation, registry, remove, resolutions, t]
   )
   const [entries, setOptimisticEntryOrder] = useOptimistic(resolvedEntries, applyEntryOrder)
 
@@ -294,6 +350,8 @@ export default function Sidebar({
   const sidebarProps = {
     isFullscreen,
     entries,
+    coreEntries,
+    brand: <NovaMark />,
     emptyHint: t('sidebar.empty_hint', { launchpad: t('title.launchpad') }),
     user: sidebarUser,
     actions: !showUserInFooter

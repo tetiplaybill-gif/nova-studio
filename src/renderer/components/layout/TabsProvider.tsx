@@ -29,7 +29,7 @@ const logger = loggerService.withContext('TabsProvider')
 const DEFAULT_TAB: Tab = {
   id: 'home',
   type: 'route',
-  url: '/app/chat',
+  url: '/app/home',
   title: '',
   lastAccessTime: Date.now(),
   isDormant: false

@@ -200,6 +200,9 @@ export const getThemeModeLabelKey = (key: string): string => {
 }
 
 const sidebarIconKeyMap = {
+  home: 'nova_ui.nav.home',
+  create: 'nova_ui.nav.create',
+  apps: 'nova_ui.nav.apps',
   scheduled_tasks: 'settings.scheduledTasks.title',
   assistants: 'title.chat',
   agents: 'title.work',

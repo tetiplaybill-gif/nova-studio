@@ -49,6 +49,18 @@ function getConversationSearchParamFromUrl(url: string, name: string): string | 
  */
 const SIDEBAR_APP_DEFINITIONS = [
   {
+    id: 'home',
+    routePrefix: '/app/home'
+  },
+  {
+    id: 'create',
+    routePrefix: '/app/create'
+  },
+  {
+    id: 'apps',
+    routePrefix: '/app/launchpad'
+  },
+  {
     id: 'agents',
     routePrefix: '/app/agents',
     conversationRoute: {
@@ -122,6 +134,17 @@ export type SidebarAppId = (typeof SIDEBAR_APP_DEFINITIONS)[number]['id']
 export type SidebarApp = SidebarAppDefinition<SidebarAppId>
 
 export const SIDEBAR_APPS: readonly SidebarApp[] = SIDEBAR_APP_DEFINITIONS
+
+/** NOVA's fixed rail destinations, always shown above the user's own shortcuts and never in the launchpad. */
+export const CORE_SIDEBAR_APP_IDS = [
+  'home',
+  'assistants',
+  'create',
+  'knowledge',
+  'agents',
+  'apps'
+] as const satisfies readonly SidebarAppId[]
+const RAIL_ONLY_APP_IDS = new Set<SidebarAppId>(['home', 'create', 'apps'])
 
 const SIDEBAR_APP_BY_ID: Record<SidebarAppId, SidebarApp> = SIDEBAR_APPS.reduce(
   (acc, app) => {
@@ -417,13 +440,13 @@ export function getOrderedLaunchpadApps(stored: readonly string[] | undefined): 
   const ordered: SidebarAppId[] = []
 
   for (const id of stored ?? []) {
-    if (isSidebarAppId(id) && !seen.has(id)) {
+    if (isSidebarAppId(id) && !RAIL_ONLY_APP_IDS.has(id) && !seen.has(id)) {
       seen.add(id)
       ordered.push(id)
     }
   }
   for (const id of SIDEBAR_FAVORITE_ORDER) {
-    if (!seen.has(id)) {
+    if (!RAIL_ONLY_APP_IDS.has(id) && !seen.has(id)) {
       seen.add(id)
       if (id === 'marketplace' && ordered.includes('paintings')) {
         ordered.splice(ordered.indexOf('paintings') + 1, 0, id)

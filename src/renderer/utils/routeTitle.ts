@@ -7,6 +7,11 @@ const pathnameOf = (url: string) => parseAppRouteUrl(url)?.pathname ?? ''
  * Route to i18n key mapping for default tab titles
  */
 const routeTitleKeys: Record<string, string> = {
+  '/app/home': 'nova_ui.nav.home',
+  '/app/create': 'nova_ui.nav.create',
+  '/app/video': 'nova_media.video.title',
+  '/app/audio': 'nova_media.audio.title',
+  '/app/analyze': 'nova_media.analyze.title',
   '/app/chat': 'agent.session.group.conversation',
   '/app/agents': 'title.work',
   '/app/scheduled-tasks': 'settings.scheduledTasks.title',

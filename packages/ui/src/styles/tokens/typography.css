@@ -5,8 +5,8 @@
 
 :root {
   /* Font Families */
-  --cs-font-family-heading: Inter;
-  --cs-font-family-body: Inter;
+  --cs-font-family-heading: 'Space Grotesk Variable', Inter, sans-serif;
+  --cs-font-family-body: 'Inter Variable', Inter, sans-serif;
 
   /* Font Weights (修正单位错误) */
   --cs-font-weight-regular: 400;

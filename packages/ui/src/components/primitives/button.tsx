@@ -17,8 +17,7 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default:
-          'bg-neutral-900 text-white hover:bg-neutral-800 focus-visible:bg-neutral-800 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-200 dark:focus-visible:bg-neutral-200',
+        default: 'bg-primary text-primary-foreground hover:bg-primary/90 focus-visible:bg-primary/90',
         destructive: 'bg-destructive text-white hover:bg-destructive-hover focus-visible:bg-destructive-hover',
         outline:
           'border border-border bg-transparent text-foreground shadow-none hover:bg-accent focus-visible:border-primary focus-visible:bg-accent',
@@ -26,10 +25,10 @@ const buttonVariants = cva(
           'rounded-lg bg-secondary text-secondary-foreground shadow-none hover:bg-secondary-hover focus-visible:bg-secondary-hover',
         /** Dialog primary action style: same color hierarchy as default, with a flatter v2 shell. */
         emphasis:
-          'rounded-lg bg-neutral-900 text-white shadow-none hover:bg-neutral-800 focus-visible:bg-neutral-800 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-200 dark:focus-visible:bg-neutral-200',
+          'rounded-lg bg-primary text-primary-foreground shadow-none hover:bg-primary/90 focus-visible:bg-primary/90',
         ghost:
           'text-foreground shadow-none hover:bg-accent hover:text-accent-foreground focus-visible:bg-accent focus-visible:text-accent-foreground',
-        link: 'text-neutral-900 underline-offset-4 hover:text-neutral-700 hover:underline focus-visible:text-neutral-700 focus-visible:underline dark:text-neutral-100 dark:hover:text-neutral-300 dark:focus-visible:text-neutral-300'
+        link: 'text-link underline-offset-4 hover:underline focus-visible:underline'
       },
       size: {
         default: 'min-h-7.5 gap-1.5 px-2.5 text-[13px]',

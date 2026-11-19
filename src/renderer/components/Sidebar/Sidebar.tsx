@@ -20,6 +20,10 @@ export interface SidebarProps {
   width: number
   setWidth: (width: number) => void
   entries: ResolvedSidebarEntry[]
+  /** Fixed destinations shown above the user's shortcuts; not reorderable or removable. */
+  coreEntries?: ResolvedSidebarEntry[]
+  /** The product mark at the top of the rail. */
+  brand?: React.ReactNode
   emptyHint?: string
   user?: SidebarUser
   isFloating?: boolean
@@ -41,6 +45,8 @@ export function Sidebar({
   width,
   setWidth,
   entries,
+  coreEntries = [],
+  brand,
   emptyHint,
   user,
   isFloating = false,
@@ -131,8 +137,30 @@ export function Sidebar({
   const windowDragClassName = contextMenuOpen ? '[-webkit-app-region:no-drag]' : '[-webkit-app-region:drag]'
   const contentLayout = isFloating ? 'full' : layout
   const showHeaderDivider = !showUserInFooter && contentLayout === 'icon' && (isFullscreen || !hasLeadingWindowControls)
+  const coreList =
+    coreEntries.length > 0 ? (
+      <>
+        <SidebarList
+          layout={contentLayout === 'hidden' ? 'icon' : contentLayout}
+          entries={coreEntries}
+          onContextMenuOpenChange={handleContextMenuOpenChange}
+        />
+        {entries.length > 0 && (
+          <Separator className="mx-auto my-2 data-[orientation=horizontal]:w-6" aria-hidden="true" />
+        )}
+      </>
+    ) : null
+  const brandMark = brand ? (
+    <div
+      className={cn(
+        'flex shrink-0 py-2 [-webkit-app-region:no-drag]',
+        contentLayout === 'full' ? 'px-3' : 'justify-center'
+      )}>
+      {brand}
+    </div>
+  ) : null
   const emptyState =
-    entries.length === 0 && contentLayout === 'full' && emptyHint ? (
+    entries.length === 0 && coreEntries.length === 0 && contentLayout === 'full' && emptyHint ? (
       <p className="px-4 py-3 text-xs text-muted-foreground [-webkit-app-region:no-drag]">{emptyHint}</p>
     ) : null
 
@@ -228,7 +256,9 @@ export function Sidebar({
             </div>
           )}
 
+          {brandMark}
           <div className="min-h-0 flex-1 overflow-y-auto py-1 [&::-webkit-scrollbar]:hidden">
+            {coreList}
             <SidebarList layout="full" {...listProps} />
             {emptyState}
           </div>
@@ -282,6 +312,7 @@ export function Sidebar({
         isMacTransparentWindow ? 'bg-transparent' : 'bg-sidebar'
       )}>
       {header}
+      {brandMark}
       {/* Search */}
       {showSearch &&
         (layout === 'full' ? (
@@ -315,6 +346,7 @@ export function Sidebar({
       {/* Content */}
       <div
         className={cn('min-h-0 flex-1 overflow-y-auto pb-1 [&::-webkit-scrollbar]:hidden', showUserInFooter && 'pt-1')}>
+        {coreList}
         <SidebarList layout={layout} {...listProps} />
         {emptyState}
       </div>
