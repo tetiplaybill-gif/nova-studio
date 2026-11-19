@@ -22,6 +22,10 @@ export const cherryServices = { enabled: false }
 /** The NOVA website, where accounts, top-ups, docs and downloads live. */
 export const NOVA_WEBSITE_URL = 'https://cdkai.cc'
 export const NOVA_DOCS_URL = 'https://cdkai.cc/docs'
+/** The NOVA website. Sign-in, keys, balance and top-ups all live here. */
+export const NOVA_ORIGIN = NOVA_WEBSITE_URL
+/** Label of the API key NOVA Studio creates for this computer, so it can find and replace its own key. */
+export const NOVA_KEY_LABEL = 'NOVA Studio'
 /** Corresponding source for each release, as the AGPL-3.0 requires; published next to the installers. */
 export const NOVA_SOURCE_URL = 'https://cdkai.cc/downloads/nova-studio/source'
 /** The project NOVA Studio is based on. */

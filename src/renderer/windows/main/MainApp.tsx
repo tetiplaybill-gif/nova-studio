@@ -103,7 +103,8 @@ export function MainWindowContent(): React.ReactElement {
   const sidebarShortcutRegistry = useMemo(() => new SidebarShortcutRegistry(CORE_SIDEBAR_SHORTCUT_PROVIDERS), [])
   const privacyUpdateRequired = useIsPrivacyUpdateRequired()
   // Onboarding collects privacy consent itself, so the gate only owns the window afterwards.
-  const privacyGateOpen = providerSetupStatus !== 'pending' && privacyUpdateRequired
+  const showOnboarding = providerSetupStatus === 'pending' || providerSetupStatus === 'signed_out'
+  const privacyGateOpen = !showOnboarding && privacyUpdateRequired
 
   const initialDefaultTab = useMemo<Tab>(
     () => ({
@@ -122,7 +123,7 @@ export function MainWindowContent(): React.ReactElement {
     <TabsProvider initialDefaultTab={initialDefaultTab}>
       <SidebarShortcutRegistryProvider registry={sidebarShortcutRegistry}>
         <MandatoryGateProvider open={privacyGateOpen}>
-          {providerSetupStatus === 'pending' ? (
+          {showOnboarding ? (
             <Suspense fallback={<BootFallback />}>
               <OnboardingPage />
             </Suspense>
@@ -137,7 +138,7 @@ export function MainWindowContent(): React.ReactElement {
           <WindowFileEditRecovery />
           <DictationShortcutHost />
           <VoicePlaybackHost />
-          {providerSetupStatus === 'pending' ? null : <PrivacyPolicyUpdateGate />}
+          {showOnboarding ? null : <PrivacyPolicyUpdateGate />}
         </MandatoryGateProvider>
       </SidebarShortcutRegistryProvider>
     </TabsProvider>

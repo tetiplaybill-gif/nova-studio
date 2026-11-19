@@ -1,3 +1,4 @@
+import { MockUsePreferenceUtils } from '@test-mocks/renderer/usePreference'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { ComponentProps, ReactNode } from 'react'
@@ -183,5 +184,9 @@ describe('NovaAccount', () => {
     expect(deleteApiKey).not.toHaveBeenCalledWith('manual')
     expect(requestMock).toHaveBeenCalledWith('nova.sign_out')
     expect(await screen.findByLabelText('settings.provider.nova.email')).toBeInTheDocument()
+    // Back to the welcome screen, nothing else reset.
+    await waitFor(() =>
+      expect(MockUsePreferenceUtils.getPreferenceValue('app.onboarding.provider_setup.status')).toBe('signed_out')
+    )
   })
 })

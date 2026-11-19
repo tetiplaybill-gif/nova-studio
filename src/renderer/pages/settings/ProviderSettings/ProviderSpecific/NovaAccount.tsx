@@ -14,13 +14,8 @@ import { popup } from '@renderer/services/popup'
 import { toast } from '@renderer/services/toast'
 import { openExternalWebsite } from '@renderer/services/website'
 import { cn } from '@renderer/utils/style'
-import {
-  NOVA_KEY_LABEL,
-  NOVA_ORIGIN,
-  type NovaAccountSummary,
-  type NovaKeyResult,
-  type NovaSignInResult
-} from '@shared/ipc/schemas/nova'
+import { NOVA_KEY_LABEL, NOVA_ORIGIN } from '@shared/data/presets/nova'
+import type { NovaAccountSummary, NovaKeyResult, NovaSignInResult } from '@shared/ipc/schemas/nova'
 
 const logger = loggerService.withContext('NovaAccount')
 
@@ -70,6 +65,7 @@ const NovaAccount: FC<NovaAccountProps> = ({ providerId }) => {
 
   // The profile shows the NOVA account's name until the user picks their own.
   const [userName, setUserName] = usePreference('app.user.name')
+  const [, setProviderSetupStatus] = usePreference('app.onboarding.provider_setup.status')
   useEffect(() => {
     if (account?.name && !userName?.trim()) void setUserName(account.name)
   }, [account?.name, setUserName, userName])
@@ -224,13 +220,15 @@ const NovaAccount: FC<NovaAccountProps> = ({ providerId }) => {
       setSummary(null)
       setKeyError(null)
       toast.success(t('settings.provider.nova.signed_out'))
+      // Back to the welcome screen; signing in there returns to the app with every setting intact.
+      await setProviderSetupStatus('signed_out')
     } catch (error) {
       logger.error('NOVA sign-out failed', error as Error)
       toast.warning(t('settings.provider.nova.error.unavailable'))
     } finally {
       setBusy(false)
     }
-  }, [deleteApiKey, novaKeys, t])
+  }, [deleteApiKey, novaKeys, setProviderSetupStatus, t])
 
   const openSite = useCallback((path: string) => {
     if (path === '/console') toppingUp.current = true

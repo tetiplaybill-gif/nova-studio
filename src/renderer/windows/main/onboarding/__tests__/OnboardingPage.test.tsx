@@ -40,6 +40,7 @@ const i18nMock = vi.hoisted(() => ({
   resolvedLanguage: 'en-US'
 }))
 const enabledProvidersMock: Array<{ id: string; isEnabled: boolean }> = []
+const novaProviderMock: { provider?: { id: string; apiKeys: Array<{ id: string; label?: string }> } } = {}
 const enabledModelsMock: Array<{ id: string; providerId: string; isEnabled: boolean; capabilities: string[] }> = []
 const selectedModelsMock: {
   defaultModel?: { id: string; providerId: string; capabilities: string[] }
@@ -99,7 +100,8 @@ vi.mock('@renderer/ipc', () => {
 })
 
 vi.mock('@renderer/hooks/useProvider', () => ({
-  useProvider: () => ({
+  useProvider: (providerId: string) => ({
+    provider: providerId === 'nova' ? novaProviderMock.provider : undefined,
     addApiKey: addApiKeyMock,
     updateProvider: updateProviderMock
   }),
@@ -228,6 +230,7 @@ describe('OnboardingPage', () => {
     selectedModelsMock.defaultModel = { id: 'default-model', providerId: 'openai', capabilities: [] }
     selectedModelsMock.quickModel = { id: 'quick-model', providerId: 'openai', capabilities: [] }
     selectedModelsMock.translateModel = { id: 'translate-model', providerId: 'openai', capabilities: [] }
+    novaProviderMock.provider = undefined
     MockUsePreferenceUtils.setPreferenceValue('app.onboarding.provider_setup.status', 'pending')
     MockUsePreferenceUtils.setPreferenceValue('app.privacy.data_collection.enabled', true)
     MockUsePreferenceUtils.setPreferenceValue('app.privacy.policy_version', LATEST_PRIVACY_POLICY_VERSION)
@@ -551,6 +554,31 @@ describe('OnboardingPage', () => {
     })
 
     expect(dataApiMocks.patch).not.toHaveBeenCalled()
+  })
+
+  it('returns a signed-out user to the app with their settings once they sign in to NOVA again', async () => {
+    MockUsePreferenceUtils.setPreferenceValue('app.onboarding.provider_setup.status', 'signed_out')
+    novaProviderMock.provider = { id: 'nova', apiKeys: [] }
+    const view = render(<OnboardingPage />)
+
+    await new Promise((resolve) => setTimeout(resolve, 30))
+    expect(MockUsePreferenceUtils.getPreferenceValue('app.onboarding.provider_setup.status')).toBe('signed_out')
+
+    novaProviderMock.provider = { id: 'nova', apiKeys: [{ id: 'k', label: 'NOVA Studio' }] }
+    view.rerender(<OnboardingPage />)
+
+    await waitFor(() =>
+      expect(MockUsePreferenceUtils.getPreferenceValue('app.onboarding.provider_setup.status')).toBe('completed')
+    )
+    expect(screen.queryByRole('heading', { name: 'onboarding.select_model.title' })).not.toBeInTheDocument()
+  })
+
+  it('does not resume on its own during first-run setup, even with a NOVA key', async () => {
+    novaProviderMock.provider = { id: 'nova', apiKeys: [{ id: 'k', label: 'NOVA Studio' }] }
+    render(<OnboardingPage />)
+
+    await new Promise((resolve) => setTimeout(resolve, 30))
+    expect(MockUsePreferenceUtils.getPreferenceValue('app.onboarding.provider_setup.status')).toBe('pending')
   })
 
   it('records a skipped status when the user skips onboarding', async () => {

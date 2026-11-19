@@ -99,6 +99,16 @@ describe('MainWindowContent', () => {
     expect(document.getElementById('spinner')).toBeNull()
   })
 
+  it('shows the welcome screen again after the user signs out of NOVA', async () => {
+    MockUsePreferenceUtils.setPreferenceValue('app.onboarding.provider_setup.status', 'signed_out')
+
+    render(<MainWindowContent />)
+
+    expect(await screen.findByTestId('onboarding-page')).toBeInTheDocument()
+    expect(screen.queryByTestId('app-shell')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('privacy-policy-gate')).not.toBeInTheDocument()
+  })
+
   it('opens on Home whatever the sidebar shortcuts are', () => {
     MockUsePreferenceUtils.setPreferenceValue('app.onboarding.provider_setup.status', 'completed')
     MockUsePreferenceUtils.setPreferenceValue('ui.sidebar_shortcut', [appShortcut('agents'), appShortcut('translate')])

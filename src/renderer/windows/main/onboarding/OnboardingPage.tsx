@@ -39,7 +39,12 @@ import { isWin } from '@renderer/utils/platform'
 import { isProtectedBuiltinAgentRole } from '@shared/ai/builtinAgent'
 import type { OnboardingProviderSetupStatus } from '@shared/data/preference/preferenceTypes'
 import { isManagedCherryProviderId } from '@shared/data/presets/cherryai'
-import { cherryServices, NOVA_DEFAULT_UNIQUE_MODEL_ID } from '@shared/data/presets/nova'
+import {
+  cherryServices,
+  NOVA_DEFAULT_UNIQUE_MODEL_ID,
+  NOVA_KEY_LABEL,
+  NOVA_PROVIDER_ID
+} from '@shared/data/presets/nova'
 import type { Model, UniqueModelId } from '@shared/data/types/model'
 import type { CherryCloudStatus } from '@shared/ipc/schemas/cherryCloud'
 import { LATEST_PRIVACY_POLICY_VERSION } from '@shared/utils/constants'
@@ -49,7 +54,7 @@ import { isNonChatModel } from '@shared/utils/model'
 import { PrivacyPolicyDialog } from '../privacy/PrivacyPolicyDialog'
 
 type OnboardingStep = 'welcome' | 'provider' | 'select-model'
-type OnboardingCompletionStatus = Exclude<OnboardingProviderSetupStatus, 'pending'>
+type OnboardingCompletionStatus = Exclude<OnboardingProviderSetupStatus, 'pending' | 'signed_out'>
 type PrivacyChoiceAction = () => void | Promise<void>
 interface OnboardingPageProps {
   enableCherryAccountLogin?: boolean
@@ -82,7 +87,7 @@ export default function OnboardingPage({
   const { t } = useTranslation()
   const appEdition = getAppEdition()
   const [language, setLanguage] = usePreference('app.language')
-  const [{ policyVersion }, updateOnboardingPreferences] = useMultiplePreferences(
+  const [{ policyVersion, providerSetupStatus }, updateOnboardingPreferences] = useMultiplePreferences(
     ONBOARDING_PREFERENCE_KEYS,
     PESSIMISTIC_PREFERENCE_OPTIONS
   )
@@ -253,6 +258,17 @@ export default function OnboardingPage({
     },
     [defaultModel, persistPrivacyChoice, t, updateOnboardingPreferences, updateSeededResourceModels]
   )
+
+  // A user who signed out of NOVA comes back here; once they sign in again their models are still
+  // configured, so the app reopens as they left it instead of asking them to set it up again.
+  const { provider: novaProvider } = useProvider(NOVA_PROVIDER_ID)
+  const hasNovaSignIn = novaProvider?.apiKeys.some((key) => key.label === NOVA_KEY_LABEL) ?? false
+  const resumedRef = useRef(false)
+  useEffect(() => {
+    if (providerSetupStatus !== 'signed_out' || !hasNovaSignIn || !canCompleteModelSetup || resumedRef.current) return
+    resumedRef.current = true
+    void complete('completed')
+  }, [canCompleteModelSetup, complete, hasNovaSignIn, providerSetupStatus])
 
   const completeWithCloudAgentModel = useCallback(
     async (modelId: UniqueModelId, expectedStatus: CherryCloudStatus) => {

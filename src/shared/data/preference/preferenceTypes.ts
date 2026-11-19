@@ -42,7 +42,8 @@ export type AgentFilePaneTreePosition = 'left' | 'right'
 
 export type AgentDetailsSectionConfig = { id: string; visible: boolean }
 
-export type OnboardingProviderSetupStatus = 'pending' | 'completed' | 'skipped'
+/** `signed_out`: the user signed out of NOVA; the welcome screen returns and every other setting is kept. */
+export type OnboardingProviderSetupStatus = 'pending' | 'completed' | 'skipped' | 'signed_out'
 
 export type RetryFallbackModelId = UniqueModelId
 

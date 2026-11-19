@@ -8,10 +8,7 @@ import { defineRoute } from '../define'
  * balance and (once, on creation) the new API key reach the renderer.
  */
 
-/** The NOVA website. Sign-in, keys, balance and top-ups all live here. */
-export const NOVA_ORIGIN = 'https://cdkai.cc'
-/** Label of the API key NOVA Studio creates for this computer, so it can find and replace its own key. */
-export const NOVA_KEY_LABEL = 'NOVA Studio'
+export { NOVA_KEY_LABEL, NOVA_ORIGIN } from '../../data/presets/nova'
 
 const novaStatusSchema = z.discriminatedUnion('signedIn', [
   z.object({ signedIn: z.literal(false) }),
