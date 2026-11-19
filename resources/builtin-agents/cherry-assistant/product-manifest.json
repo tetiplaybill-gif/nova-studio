@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "package": {
     "name": "NOVAStudio",
-    "version": "2.2.3",
+    "version": "2.3.0",
     "description": "NOVA Studio, the desktop client for NOVA API (based on Cherry Studio, AGPL-3.0).",
     "homepage": "https://cdkai.cc/download"
   },
