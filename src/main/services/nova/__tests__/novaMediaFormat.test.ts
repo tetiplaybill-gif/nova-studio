@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { parseCatalog, pcmFormat, pcmToWav, providerOptions, voiceLocale } from '../novaMediaFormat'
 
 describe('parseCatalog', () => {
-  it('reads every model type with its customer prices, voices and video capabilities', () => {
+  it('reads every model type with its customer prices, voices and video capabilities, lengths in order', () => {
     const models = parseCatalog({
       data: [
         { id: 'deepseek/deepseek-v4-flash', name: 'DeepSeek V4 Flash', type: 'chat', pricing: { prompt: '0.0000003' } },
@@ -21,7 +21,7 @@ describe('parseCatalog', () => {
           endpoints: ['/v1/videos'],
           pricing: { video: { duration_seconds_with_audio: '0.216' } },
           video: {
-            supported_durations: [4, 6, 8],
+            supported_durations: [8, 4, -1, 6],
             supported_resolutions: ['720p', '1080p'],
             supported_aspect_ratios: ['16:9', '9:16'],
             supported_frame_images: ['first_frame', 'last_frame'],

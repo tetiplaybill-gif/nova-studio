@@ -40,7 +40,7 @@ function parseVideo(row: Record<string, unknown>, pricing: Record<string, unknow
   const v = video as Record<string, unknown>
   return {
     durations: Array.isArray(v.supported_durations)
-      ? v.supported_durations.filter((d): d is number => typeof d === 'number' && d > 0)
+      ? v.supported_durations.filter((d): d is number => typeof d === 'number' && d > 0).sort((a, b) => a - b)
       : [],
     resolutions: asStrings(v.supported_resolutions),
     aspectRatios: asStrings(v.supported_aspect_ratios),
