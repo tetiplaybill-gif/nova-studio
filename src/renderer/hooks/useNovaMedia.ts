@@ -1,7 +1,10 @@
 import type { TFunction } from 'i18next'
 import { useCallback, useEffect, useState } from 'react'
 
+import { useProviderById } from '@renderer/hooks/useProvider'
 import { ipcApi } from '@renderer/ipc'
+import { NOVA_KEY_LABEL, NOVA_PROVIDER_ID } from '@shared/data/presets/nova'
+import type { NovaAccountSummary } from '@shared/ipc/schemas/nova'
 import type { NovaMediaError, NovaMediaModel, NovaMediaModelType } from '@shared/ipc/schemas/novaMedia'
 
 let cached: NovaMediaModel[] | null = null
@@ -40,19 +43,31 @@ export function useNovaCatalog(filter: NovaMediaModelType | ((model: NovaMediaMo
   return { models, loading, error, refresh: () => load(true) }
 }
 
-/** The NOVA balance in USD, refreshed on demand (after each paid job). */
-export function useNovaBalance() {
-  const [balance, setBalance] = useState<number | null>(null)
-  const [loaded, setLoaded] = useState(false)
+/**
+ * The signed-in NOVA account (`null` when signed out, `undefined` while loading). Reloads when this
+ * computer's NOVA key changes, so signing in or out updates screens that are already open.
+ */
+export function useNovaSummary() {
+  const { provider } = useProviderById(NOVA_PROVIDER_ID)
+  const keyIds = (provider?.apiKeys ?? [])
+    .filter((key) => key.label === NOVA_KEY_LABEL)
+    .map((key) => key.id)
+    .join(',')
+  const [summary, setSummary] = useState<NovaAccountSummary | null | undefined>(undefined)
   const refresh = useCallback(async () => {
-    const summary = await ipcApi.request('nova.summary').catch(() => null)
-    setBalance(summary?.keyActive ? summary.balanceUsd : null)
-    setLoaded(true)
+    setSummary(await ipcApi.request('nova.summary').catch(() => null))
   }, [])
   useEffect(() => {
     void refresh()
-  }, [refresh])
-  return { balance, loaded, refresh }
+  }, [refresh, keyIds])
+  return { summary, refresh }
+}
+
+/** The NOVA balance in USD, refreshed on demand (after each paid job). */
+export function useNovaBalance() {
+  const { summary, refresh } = useNovaSummary()
+  const balance = summary?.keyActive ? summary.balanceUsd : null
+  return { balance, loaded: summary !== undefined, refresh }
 }
 
 /** One sentence explaining a failed NOVA media request. */

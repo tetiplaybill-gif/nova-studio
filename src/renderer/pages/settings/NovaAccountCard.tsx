@@ -1,25 +1,16 @@
 import { useNavigate } from '@tanstack/react-router'
 import { ChevronRight } from 'lucide-react'
-import { type FC, useEffect, useState } from 'react'
+import type { FC } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { formatUsd } from '@renderer/hooks/useNovaMedia'
-import { ipcApi } from '@renderer/ipc'
+import { formatUsd, useNovaSummary } from '@renderer/hooks/useNovaMedia'
 import { NOVA_PROVIDER_ID } from '@shared/data/presets/nova'
-import type { NovaAccountSummary } from '@shared/ipc/schemas/nova'
 
 /** The NOVA account at the top of Settings: who is signed in and what is left to spend. */
 const NovaAccountCard: FC = () => {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const [summary, setSummary] = useState<NovaAccountSummary | null | undefined>(undefined)
-
-  useEffect(() => {
-    void ipcApi
-      .request('nova.summary')
-      .then(setSummary)
-      .catch(() => setSummary(null))
-  }, [])
+  const { summary } = useNovaSummary()
 
   if (summary === undefined) return <div className="mx-2.5 mb-2 h-[58px]" />
 
