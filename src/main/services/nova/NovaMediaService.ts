@@ -617,12 +617,22 @@ export class NovaMediaService extends BaseService {
     format: 'mp3' | 'wav'
   }): Promise<Result<NovaSpeechItem>> {
     try {
-      const audio = await this.speechAudio(input)
+      let format = input.format
+      let audio: Uint8Array
+      try {
+        audio = await this.speechAudio(input)
+      } catch (error) {
+        // Some voices (Gemini TTS) only send raw audio, which is saved as WAV instead.
+        if (format !== 'mp3' || !(error instanceof NovaApiError) || error.code !== 'invalid_request') throw error
+        format = 'wav'
+        audio = await this.speechAudio({ ...input, format })
+      }
       const id = randomUUID()
       const item: NovaSpeechItem = {
         id,
         ...input,
-        path: await this.writeFile('speech', `${id}.${input.format}`, audio),
+        format,
+        path: await this.writeFile('speech', `${id}.${format}`, audio),
         createdAt: Date.now()
       }
       this.store.speech.push(item)
