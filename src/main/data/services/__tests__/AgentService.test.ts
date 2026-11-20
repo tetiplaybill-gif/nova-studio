@@ -2039,7 +2039,7 @@ describe('AgentService', () => {
         configuration: { builtin_role: 'assistant' }
       })
 
-      const { agents, total } = agentService.listAgents({ search: 'diagnose issues' })
+      const { agents, total } = agentService.listAgents({ search: 'guides you through the app' })
 
       expect(total).toBe(1)
       expect(agents).toEqual([
@@ -2105,7 +2105,7 @@ describe('AgentService', () => {
         updatedAt: 100
       })
 
-      expect(agentService.search({ q: 'collect FAQs', limit: 5 })).toEqual([
+      expect(agentService.search({ q: 'finds or creates Skills', limit: 5 })).toEqual([
         expect.objectContaining({
           id: 'agent_builtin_global_search'
         })
