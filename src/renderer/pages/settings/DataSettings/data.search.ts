@@ -1,3 +1,5 @@
+import { cherryServices } from '@shared/data/presets/nova'
+
 import type { SettingsSearchEntry } from '../settingsSearch/types'
 
 // Data settings switches its panels via component state, not sub-routes, so
@@ -47,12 +49,16 @@ export const entries: SettingsSearchEntry[] = [
     groupKey: 'settings.data.data.title',
     aliases: ['reset', '恢复出厂', '清空数据']
   },
-  {
-    anchorId: 'data-privacy-mode',
-    titleKey: 'settings.privacy.enable_privacy_mode',
-    panel: 'data',
-    groupKey: 'settings.privacy.title'
-  },
+  ...(cherryServices.enabled
+    ? [
+        {
+          anchorId: 'data-privacy-mode',
+          titleKey: 'settings.privacy.enable_privacy_mode',
+          panel: 'data' as const,
+          groupKey: 'settings.privacy.title'
+        }
+      ]
+    : []),
   {
     anchorId: 'local-backup-directory',
     titleKey: 'settings.data.local.directory.label',

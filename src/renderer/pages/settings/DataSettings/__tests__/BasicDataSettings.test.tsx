@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { popup } from '@renderer/services/popup'
 import { toast } from '@renderer/services/toast'
+import { cherryServices } from '@shared/data/presets/nova'
 
 import type * as ClearCachePopupModule from '../ClearCachePopup'
 
@@ -80,6 +81,16 @@ describe('BasicDataSettings', () => {
       const action = screen.getByRole('button', { name })
       expect(action).toBeEnabled()
       expect(action.closest('[inert]')).toBeNull()
+    }
+  })
+
+  it('NOVA Studio offers no data-collection switch, since it sends no error reports or usage data', async () => {
+    cherryServices.enabled = false
+    try {
+      await renderSettings()
+      expect(screen.queryByText('settings.privacy.enable_privacy_mode')).not.toBeInTheDocument()
+    } finally {
+      cherryServices.enabled = true
     }
   })
 
