@@ -5656,6 +5656,7 @@
   "settings.models.manage.remove_listed": "Rimuovi tutti i modelli",
   "settings.models.manage.remove_model": "Elimina modello",
   "settings.models.manage.remove_skipped_default_in_use": "{{count}} modelli predefiniti saltati",
+  "settings.models.manage.remove_skipped_knowledge_in_use": "Mantenuti {{count}} modelli usati da una knowledge base",
   "settings.models.manage.remove_whole_group": "Elimina gruppo",
   "settings.models.manage.search_models_placeholder": "Cerca modelli…",
   "settings.models.manage.stale_badge": "Obsoleto",

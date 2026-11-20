@@ -2483,7 +2483,9 @@ describe('ModelService.bulkDelete', () => {
     expect(err).toMatchObject({
       code: ErrorCode.INVALID_OPERATION,
       status: 400,
-      message: expect.stringContaining('knowledge base')
+      message: expect.stringContaining('knowledge base'),
+      // Names the blocked model so "Remove all" can keep it and delete the rest.
+      details: { operation: 'delete model openai/text-embedding-3-large' }
     })
 
     const rows = await dbh.db.select().from(userModelTable).where(eq(userModelTable.providerId, 'openai'))
@@ -2702,6 +2704,32 @@ describe('ModelService.reconcileForProvider', () => {
       expect(dbh.db.select().from(userModelTable).all()).toEqual([])
     }
   )
+
+  it('keeps a knowledge base embedding model when a sync removes models', async () => {
+    await dbh.db.insert(userProviderTable).values(providerRow('openai', 'OpenAI'))
+    const embeddingId = createUniqueModelId('openai', 'text-embedding-3-large')
+    const chatId = createUniqueModelId('openai', 'gpt-4o')
+    await dbh.db
+      .insert(userModelTable)
+      .values([
+        modelRow('openai', 'text-embedding-3-large', { id: embeddingId, presetModelId: 'text-embedding-3-large' }),
+        modelRow('openai', 'gpt-4o', { id: chatId, presetModelId: 'gpt-4o' })
+      ])
+    await dbh.db.insert(knowledgeBaseTable).values({
+      orderKey: 'a0',
+      name: 'Docs',
+      dimensions: 1536,
+      embeddingModelId: embeddingId,
+      status: 'completed',
+      error: null,
+      chunkSize: 1024,
+      chunkOverlap: 200
+    })
+
+    const remaining = modelService.reconcileForProvider('openai', { toAdd: [], toRemove: [embeddingId, chatId] })
+
+    expect(remaining.map((model) => model.id)).toEqual([embeddingId])
+  })
 
   it('publishes model membership and affected session effects when reconcile deletes a session override model', async () => {
     await dbh.db.insert(userProviderTable).values(providerRow('openai', 'OpenAI'))

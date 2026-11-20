@@ -5656,6 +5656,7 @@
   "settings.models.manage.remove_listed": "ลบโมเดลทั้งหมด",
   "settings.models.manage.remove_model": "ลบโมเดล",
   "settings.models.manage.remove_skipped_default_in_use": "ข้าม {{count}} โมเดลเริ่มต้น",
+  "settings.models.manage.remove_skipped_knowledge_in_use": "เก็บ {{count}} โมเดลที่ฐานความรู้ใช้อยู่ไว้",
   "settings.models.manage.remove_whole_group": "ลบกลุ่ม",
   "settings.models.manage.search_models_placeholder": "ค้นหาโมเดล…",
   "settings.models.manage.stale_badge": "เก่า",

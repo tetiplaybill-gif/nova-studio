@@ -28,16 +28,23 @@ function getInvalidOperationOperation(details: unknown): string | undefined {
   return typeof operation === 'string' ? operation : undefined
 }
 
-export function getModelInUseAsDefaultUniqueModelId(error: unknown): UniqueModelId | undefined {
+/** The model a delete was refused for, and why: it is a default model or a knowledge base embeds with it. */
+export function getModelInUseBlock(
+  error: unknown
+): { uniqueModelId: UniqueModelId; reason: 'default' | 'knowledge_base' } | undefined {
   if (!isDataApiError(error) && !isSerializedDataApiError(error)) {
     return undefined
   }
 
   const dataError = toDataApiError(error)
-  if (
-    dataError.code !== ErrorCode.INVALID_OPERATION ||
-    getInvalidOperationReason(dataError.details) !== MODEL_IN_USE_AS_DEFAULT_REASON
-  ) {
+  const reasonText = getInvalidOperationReason(dataError.details)
+  const reason =
+    reasonText === MODEL_IN_USE_AS_DEFAULT_REASON
+      ? 'default'
+      : reasonText === MODEL_IN_USE_BY_KNOWLEDGE_BASE_REASON
+        ? 'knowledge_base'
+        : undefined
+  if (dataError.code !== ErrorCode.INVALID_OPERATION || !reason) {
     return undefined
   }
 
@@ -48,7 +55,10 @@ export function getModelInUseAsDefaultUniqueModelId(error: unknown): UniqueModel
     return undefined
   }
 
-  return createUniqueModelId(modelPath.slice(0, separatorIndex), modelPath.slice(separatorIndex + 1))
+  return {
+    uniqueModelId: createUniqueModelId(modelPath.slice(0, separatorIndex), modelPath.slice(separatorIndex + 1)),
+    reason
+  }
 }
 
 export function getModelOperationErrorMessage(error: unknown, messages: ModelOperationErrorMessages): string {

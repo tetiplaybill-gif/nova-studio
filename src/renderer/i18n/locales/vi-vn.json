@@ -5656,6 +5656,7 @@
   "settings.models.manage.remove_listed": "Xóa tất cả mô hình",
   "settings.models.manage.remove_model": "Xóa mô hình",
   "settings.models.manage.remove_skipped_default_in_use": "Đã bỏ qua {{count}} mô hình mặc định",
+  "settings.models.manage.remove_skipped_knowledge_in_use": "Đã giữ lại {{count}} mô hình mà cơ sở tri thức đang dùng",
   "settings.models.manage.remove_whole_group": "Xóa toàn bộ nhóm",
   "settings.models.manage.search_models_placeholder": "Tìm kiếm mô hình…",
   "settings.models.manage.stale_badge": "Không hợp lệ",

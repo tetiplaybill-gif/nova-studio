@@ -5656,6 +5656,7 @@
   "settings.models.manage.remove_listed": "Odebrat všechny modely",
   "settings.models.manage.remove_model": "Smazat model",
   "settings.models.manage.remove_skipped_default_in_use": "Přeskočeno výchozích modelů: {{count}}",
+  "settings.models.manage.remove_skipped_knowledge_in_use": "Ponecháno modelů používaných znalostní bází: {{count}}",
   "settings.models.manage.remove_whole_group": "Smazat skupinu",
   "settings.models.manage.search_models_placeholder": "Hledat modely…",
   "settings.models.manage.stale_badge": "Neplatný",

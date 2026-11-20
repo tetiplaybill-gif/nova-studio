@@ -373,6 +373,23 @@ describe('useProviderModelPullReconcile', () => {
     expect(toast.warning).toHaveBeenCalledWith('settings.models.manage.remove_skipped_default_in_use')
   })
 
+  it('keeps a knowledge base embedding model and removes the rest instead of failing', async () => {
+    const knowledgeError = DataApiErrorFactory.invalidOperation(
+      'delete model openai/text-embedding-3-large',
+      'model is in use by a knowledge base'
+    )
+    deleteModelsMock.mockRejectedValueOnce(knowledgeError).mockResolvedValueOnce(undefined)
+    const { result } = renderHook(() => useProviderModelPullReconcile('openai'))
+
+    await act(async () => {
+      await result.current.removeModels(['openai::local-model', 'openai::text-embedding-3-large'])
+    })
+
+    expect(deleteModelsMock).toHaveBeenNthCalledWith(2, ['openai::local-model'])
+    expect(toast.warning).toHaveBeenCalledWith('settings.models.manage.remove_skipped_knowledge_in_use')
+    expect(toast.error).not.toHaveBeenCalled()
+  })
+
   it.each(['comfyui', 'ollama'])('keeps missing %s models until the user removes them', async (providerId) => {
     const saved = {
       ...localModel,

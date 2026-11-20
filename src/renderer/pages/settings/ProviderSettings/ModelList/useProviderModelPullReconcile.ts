@@ -19,7 +19,7 @@ import { MODELS_BATCH_MAX_ITEMS } from '@shared/data/api/schemas/models'
 import type { Model, UniqueModelId } from '@shared/data/types/model'
 
 import { chunkArray } from '../utils/chunkArray'
-import { getModelInUseAsDefaultUniqueModelId } from './errorMessage'
+import { getModelInUseBlock } from './errorMessage'
 
 const logger = loggerService.withContext('ProviderModelManageDrawer')
 
@@ -38,29 +38,30 @@ interface ProviderModelLoadResult {
   error: unknown | null
 }
 
-async function deleteModelsSkippingDefaults(
+/** Deletes the models, keeping any that are a default model or that a knowledge base embeds with. */
+async function deleteModelsSkippingInUse(
   uniqueIds: UniqueModelId[],
   deleteModels: (ids: UniqueModelId[]) => Promise<void>
 ) {
   let remainingIds = uniqueIds
-  const skippedIds = new Set<UniqueModelId>()
+  const skipped = { default: 0, knowledge_base: 0 }
 
   while (remainingIds.length > 0) {
     try {
       await deleteModels(remainingIds)
-      return skippedIds
+      return skipped
     } catch (error) {
-      const blockedId = getModelInUseAsDefaultUniqueModelId(error)
-      if (!blockedId || !remainingIds.includes(blockedId)) {
+      const blocked = getModelInUseBlock(error)
+      if (!blocked || !remainingIds.includes(blocked.uniqueModelId)) {
         throw error
       }
 
-      skippedIds.add(blockedId)
-      remainingIds = remainingIds.filter((id) => id !== blockedId)
+      skipped[blocked.reason] += 1
+      remainingIds = remainingIds.filter((id) => id !== blocked.uniqueModelId)
     }
   }
 
-  return skippedIds
+  return skipped
 }
 
 /**
@@ -234,9 +235,12 @@ export function useProviderModelPullReconcile(providerId: string) {
       }
 
       try {
-        const skippedIds = await deleteModelsSkippingDefaults(uniqueIds, deleteModels)
-        if (skippedIds.size > 0) {
-          toast.warning(t('settings.models.manage.remove_skipped_default_in_use', { count: skippedIds.size }))
+        const skipped = await deleteModelsSkippingInUse(uniqueIds, deleteModels)
+        if (skipped.default > 0) {
+          toast.warning(t('settings.models.manage.remove_skipped_default_in_use', { count: skipped.default }))
+        }
+        if (skipped.knowledge_base > 0) {
+          toast.warning(t('settings.models.manage.remove_skipped_knowledge_in_use', { count: skipped.knowledge_base }))
         }
       } catch (error) {
         logger.error('Failed to remove provider models from manage drawer', {

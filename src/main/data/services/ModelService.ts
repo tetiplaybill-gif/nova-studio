@@ -13,6 +13,7 @@ import { isEqual } from 'es-toolkit/compat'
 import { application } from '@application'
 import type { ModelLookupResult } from '@cherrystudio/provider-registry'
 import { inferReasoningOwnedBy } from '@cherrystudio/provider-registry'
+import { knowledgeBaseTable } from '@data/db/schemas/knowledge'
 import type { InsertUserModelRow, UserModelRow } from '@data/db/schemas/userModel'
 import { userModelTable } from '@data/db/schemas/userModel'
 import { userProviderTable } from '@data/db/schemas/userProvider'
@@ -73,6 +74,7 @@ function selectWithProviderIdentity(tx: Pick<DbType, 'select'>) {
 
 /** Reason string for DataApiError when deleting a model currently set as a user default */
 const MODEL_IN_USE_AS_DEFAULT_REASON = 'model is in use as the default model'
+const MODEL_IN_USE_BY_KNOWLEDGE_BASE_REASON = 'model is in use by a knowledge base'
 
 const PRESET_DELTA_FIELDS = [
   'name',
@@ -668,6 +670,19 @@ class ModelService {
 
     const removableCustomModelIds = new Set([...customModelIds].filter((id) => !userDefaultIds.has(id)))
 
+    // A knowledge base's embedding model must stay, or the base could no longer search.
+    const knowledgeBaseModelIds = new Set<string>()
+    for (let i = 0; i < toRemove.length; i += SQLITE_INARRAY_CHUNK) {
+      const chunk = toRemove.slice(i, i + SQLITE_INARRAY_CHUNK)
+      for (const row of db
+        .select({ id: knowledgeBaseTable.embeddingModelId })
+        .from(knowledgeBaseTable)
+        .where(inArray(knowledgeBaseTable.embeddingModelId, chunk))
+        .all()) {
+        if (row.id) knowledgeBaseModelIds.add(row.id)
+      }
+    }
+
     if (managedDefaultIds.size > 0) {
       logger.warn('Skipped managed CherryAI default model removal during reconcile', {
         providerId,
@@ -686,7 +701,11 @@ class ModelService {
 
     return {
       toRemove: toRemove.filter(
-        (id) => !managedDefaultIds.has(id) && !userDefaultIds.has(id) && !removableCustomModelIds.has(id)
+        (id) =>
+          !managedDefaultIds.has(id) &&
+          !userDefaultIds.has(id) &&
+          !removableCustomModelIds.has(id) &&
+          !knowledgeBaseModelIds.has(id)
       ),
       presetBackedRemovalIds
     }
@@ -1313,6 +1332,23 @@ class ModelService {
           const missingId = ids.find((id) => !existingIds.has(id))
           if (missingId) {
             throw DataApiErrorFactory.notFound('Model', missingId)
+          }
+
+          // Name the model a knowledge base embeds with, so callers can keep it and remove the rest.
+          for (let i = 0; i < ids.length; i += SQLITE_INARRAY_CHUNK) {
+            const chunk = ids.slice(i, i + SQLITE_INARRAY_CHUNK)
+            const embedding = tx
+              .select({ id: knowledgeBaseTable.embeddingModelId })
+              .from(knowledgeBaseTable)
+              .where(inArray(knowledgeBaseTable.embeddingModelId, chunk))
+              .get()
+            const inUse = embedding?.id ? uniqueItems.get(embedding.id) : undefined
+            if (inUse) {
+              throw DataApiErrorFactory.invalidOperation(
+                `delete model ${inUse.providerId}/${inUse.modelId}`,
+                MODEL_IN_USE_BY_KNOWLEDGE_BASE_REASON
+              )
+            }
           }
 
           affectedSessionIds = selectSessionsUsingModelsTx(tx, ids)
