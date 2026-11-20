@@ -5,6 +5,7 @@ import path from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { application } from '@application'
+import type { NovaVideoJob } from '@shared/ipc/schemas/novaMedia'
 
 import { NovaMediaService } from '../NovaMediaService'
 
@@ -22,8 +23,9 @@ const rejectMp3 = () =>
   new Response(JSON.stringify({ error: { message: 'Gemini TTS only supports pcm' } }), { status: 400 })
 const pcm = () => new Response(new Uint8Array(480), { headers: { 'content-type': 'audio/pcm;rate=24000' } })
 
+const service = new NovaMediaService()
+
 describe('NovaMediaService speech', () => {
-  const service = new NovaMediaService()
   let dir: string
   const fetchMock = vi.fn()
 
@@ -32,6 +34,7 @@ describe('NovaMediaService speech', () => {
     vi.mocked(application.getPath).mockImplementation((_key: string, filename?: string) =>
       path.join(dir, filename ?? '')
     )
+    vi.mocked(application.get).mockImplementation((() => ({ broadcast: vi.fn() })) as never)
     vi.stubGlobal('fetch', fetchMock)
   })
 
@@ -60,5 +63,39 @@ describe('NovaMediaService speech', () => {
 
     expect(result).toMatchObject({ ok: false, error: 'insufficient_balance' })
     expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('NovaMediaService video polling', () => {
+  const fetchMock = vi.fn()
+  const job = (createdAt: number) =>
+    ({ id: 'j1', remoteId: 'nova-01abc', status: 'pending', createdAt, request: {} }) as unknown as NovaVideoJob
+  const poll = (target: NovaVideoJob) =>
+    (service as unknown as { pollJob(job: NovaVideoJob): Promise<void> }).pollJob(target)
+
+  beforeEach(() => {
+    vi.mocked(application.getPath).mockImplementation((_key: string, filename?: string) =>
+      path.join(os.tmpdir(), 'nova-video-test', filename ?? '')
+    )
+    vi.mocked(application.get).mockImplementation((() => ({ broadcast: vi.fn() })) as never)
+    vi.stubGlobal('fetch', fetchMock)
+    fetchMock.mockImplementation(async () => new Response('{}', { status: 404 }))
+  })
+
+  afterEach(() => {
+    fetchMock.mockReset()
+    vi.unstubAllGlobals()
+  })
+
+  it('keeps waiting when NOVA does not know a job it has only just accepted', async () => {
+    const fresh = job(Date.now() - 30_000)
+    await poll(fresh)
+    expect(fresh.status).toBe('pending')
+  })
+
+  it('marks a job expired once NOVA has not known it for a long time', async () => {
+    const old = job(Date.now() - 60 * 60_000)
+    await poll(old)
+    expect(old.status).toBe('expired')
   })
 })

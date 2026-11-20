@@ -41,6 +41,7 @@ const logger = loggerService.withContext('NovaMediaService')
 
 const CATALOG_TTL_MS = 10 * 60 * 1000
 const POLL_TICK_MS = 5_000
+const NOT_FOUND_GRACE_MS = 15 * 60_000
 const REQUEST_TIMEOUT_MS = 120_000
 const ACTIVE: NovaVideoJobStatus[] = ['pending', 'in_progress', 'downloading']
 
@@ -517,7 +518,8 @@ export class NovaMediaService extends BaseService {
       const response = await this.request(`/videos/${encodeURIComponent(job.remoteId!)}`, {}, 30_000)
       state = (await response.json()) as typeof state
     } catch (error) {
-      if (error instanceof NovaApiError && error.code === 'not_found') {
+      // A job NOVA has only just accepted can briefly be unknown, so it only counts as gone after a while.
+      if (error instanceof NovaApiError && error.code === 'not_found' && age > NOT_FOUND_GRACE_MS) {
         this.updateJob(job, { status: 'expired', error: null })
       }
       return
