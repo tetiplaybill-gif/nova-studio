@@ -216,19 +216,43 @@ artifactBuildCompleted: scripts/packaging/artifact-build-completed.js
 releaseInfo:
   releaseNotes: |
     <!--LANG:en-->
-    NOVA Studio 2.2.2 - First release
+    NOVA Studio 2.3.0
 
-    ✨ What's included
-    - [Account] Sign in with your cdkai.cc account on the NOVA provider page. NOVA Studio creates an API key for this computer automatically, shows your balance and opens the top-up page.
-    - [Models] Every model on cdkai.cc in one place, with DeepSeek V4 Flash ready as the default for chat, translation and the quick assistant.
-    - [Privacy] No usage analytics, crash reporting or announcements are sent anywhere. Your sign-in is kept in your system keychain.
-    - [Source] NOVA Studio is based on Cherry Studio and released under the AGPL-3.0 license. See Settings → About for the source code.
+    ✨ What's new
+    - [Design] A new NOVA look: new colours, fonts, icon and a slimmer side rail.
+    - [Home] The app now opens on a Home screen with your balance, recent work and quick starts. Signed-out users get a Sign in button there.
+    - [Create] One Create page for images, video, speech and file analysis.
+    - [Video] New video studio: start from text, an image (first and last frame) or reference images; extend, edit, upscale and talking-avatar modes; live cost estimate; jobs keep running in the background, with a library and a frame-by-frame viewer.
+    - [Speech] Text to speech with every NOVA voice, and transcription of files or microphone recordings.
+    - [Analyze] Pull typed fields and yes/no decisions out of documents, with ready-made templates.
+    - [Settings] Your NOVA account and balance at the top of Settings.
+
+    🔧 Improvements
+    - [Account] Signing out of NOVA now returns to the welcome screen. Signing back in reopens the app with all your settings and models as you left them.
+    - [Account] NOVA switches itself on as soon as you sign in; no extra toggle needed.
+    - [Agents] The built-in NOVA Helper agent now has a model, so it answers right away, including in WeChat and other channels.
+    - [Agents] Agent replies, gateway docs, diagnostics and exports say NOVA Studio throughout.
+    - [Providers] NOVA shows its own name and icon in model pickers and settings.
+    - [Help] Feedback and Contact support open the NOVA website.
+    - [Settings] Device connections are hidden while that feature is being finished.
     <!--LANG:zh-CN-->
-    NOVA Studio 2.2.2 - 首个版本
+    NOVA Studio 2.3.0
 
-    ✨ 包含内容
-    - [账户] 在 NOVA 服务商页面使用 cdkai.cc 账户登录。NOVA Studio 会自动为这台电脑创建 API Key，显示余额并可直接打开充值页面。
-    - [模型] cdkai.cc 上的全部模型集中在一处，默认使用 DeepSeek V4 Flash 进行对话、翻译和快捷助手。
-    - [隐私] 不发送任何使用统计、崩溃报告或公告请求。登录信息保存在系统钥匙串中。
-    - [源代码] NOVA Studio 基于 Cherry Studio，以 AGPL-3.0 许可证发布。源代码见 设置 → 关于。
+    ✨ 更新内容
+    - [设计] 全新 NOVA 外观：新配色、字体、图标和更窄的侧边栏。
+    - [首页] 启动后进入首页，显示余额、最近内容和快捷入口；未登录时首页提供"登录"按钮。
+    - [创作] 图片、视频、语音和文件分析合并到同一个"创作"页面。
+    - [视频] 全新视频工作室：可从文字、图片（首帧/尾帧）或参考图开始；支持续写、编辑、超分和数字人口播；实时显示预计费用；任务在后台运行，附带作品库和逐帧查看器。
+    - [语音] 支持所有 NOVA 音色的文字转语音，以及文件或麦克风录音转文字。
+    - [分析] 从文档中提取结构化字段和是/否判断，附带现成模板。
+    - [设置] 设置页顶部显示 NOVA 账户与余额。
+
+    🔧 改进
+    - [账户] 退出 NOVA 登录后回到欢迎页；重新登录即恢复原来的全部设置和模型，无需重新配置。
+    - [账户] 登录后 NOVA 自动启用，无需再手动打开。
+    - [智能体] 内置的 NOVA 小助手已预设模型，开箱即可回复，微信等渠道同样可用。
+    - [智能体] 智能体回复、网关文档、诊断与导出内容统一显示 NOVA Studio。
+    - [服务商] 模型选择和设置中显示 NOVA 自己的名称和图标。
+    - [帮助] "反馈"和"联系支持"改为打开 NOVA 官网。
+    - [设置] 设备互联功能完善前暂时隐藏。
     <!--LANG:END-->
