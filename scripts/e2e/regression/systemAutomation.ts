@@ -27,18 +27,13 @@ public static class NativeNotificationCenter {
   [DllImport("user32.dll")] static extern IntPtr GetForegroundWindow();
   [DllImport("user32.dll")] static extern bool IsWindowVisible(IntPtr window);
   [DllImport("user32.dll")] static extern uint GetWindowThreadProcessId(IntPtr window, out uint processId);
-  [DllImport("user32.dll", CharSet = CharSet.Unicode)] static extern int GetWindowText(IntPtr window, StringBuilder value, int size);
   [DllImport("user32.dll", CharSet = CharSet.Unicode)] static extern int GetClassName(IntPtr window, StringBuilder value, int size);
   public static IntPtr Find() {
     var window = GetForegroundWindow();
     if (window == IntPtr.Zero || !IsWindowVisible(window)) return IntPtr.Zero;
-    var name = new StringBuilder(512);
     var kind = new StringBuilder(256);
-    GetWindowText(window, name, name.Capacity);
     GetClassName(window, kind, kind.Capacity);
-    if (kind.ToString() != "Windows.UI.Core.CoreWindow" ||
-        !(name.ToString().Equals("Action center", StringComparison.OrdinalIgnoreCase) ||
-          name.ToString().Equals("Notification center", StringComparison.OrdinalIgnoreCase))) return IntPtr.Zero;
+    if (kind.ToString() != "Windows.UI.Core.CoreWindow") return IntPtr.Zero;
     uint owner;
     GetWindowThreadProcessId(window, out owner);
     try {
@@ -53,7 +48,12 @@ public static class NativeNotificationCenter {
 function Find-NotificationCenter {
   $handle = [NativeNotificationCenter]::Find()
   if ($handle -eq [IntPtr]::Zero) { return $null }
-  return [Windows.Automation.AutomationElement]::FromHandle($handle)
+  $root = [Windows.Automation.AutomationElement]::FromHandle($handle)
+  if ($root.Current.Name -in @('Action center','Notification center','操作中心','通知中心')) { return $root }
+  # Newer Windows shells expose a generic root name. Match the notification panel itself.
+  $grid = [Windows.Automation.PropertyCondition]::new([Windows.Automation.AutomationElement]::AutomationIdProperty, 'NotificationCenterGrid')
+  if ($root.FindFirst([Windows.Automation.TreeScope]::Descendants, $grid)) { return $root }
+  return $null
 }
 `
 let activeTextResource: { paths: RunPaths; id: string; platform: Platform } | undefined
@@ -328,36 +328,55 @@ function runMacNotificationCenter(paths: RunPaths, states: boolean[], restore: b
       }
       return false
     }
-    const setOpen = (open) => {
-      const previous = isOpen()
-      if (previous !== open) {
-        const findClock = (element, depth) => {
-          if (read(() => element.attributes.byName('AXIdentifier').value()) === 'com.apple.menuextra.clock') return element
-          if (depth >= 4 || !['AXMenuBar', 'AXGroup'].includes(read(() => element.role()))) return
-          for (const child of read(() => element.uiElements()) ?? []) {
-            const clock = findClock(child, depth + 1)
-            if (clock) return clock
-          }
+    let verifiedClock
+    const clockControl = () => {
+      if (verifiedClock) return verifiedClock
+      const findClock = (element, depth) => {
+        if (read(() => element.attributes.byName('AXIdentifier').value()) === 'com.apple.menuextra.clock') return element
+        if (depth >= 4 || !['AXMenuBar', 'AXGroup'].includes(read(() => element.role()))) return
+        for (const child of read(() => element.uiElements()) ?? []) {
+          const clock = findClock(child, depth + 1)
+          if (clock) return clock
         }
-        let clock
-        const menuOwners = []
-        for (const name of ['MenuBarAgent', 'ControlCenter', 'SystemUIServer']) {
-          for (const process of events.processes.whose({ name })()) {
-            const bars = process.menuBars()
-            menuOwners.push({ name, bars: bars.length })
-            for (const bar of bars) {
-              clock = findClock(bar, 0)
-              if (clock) break
-            }
+      }
+      let clock
+      const menuOwners = []
+      for (const name of ['MenuBarAgent', 'ControlCenter', 'SystemUIServer']) {
+        for (const process of events.processes.whose({ name })()) {
+          const bars = process.menuBars()
+          menuOwners.push({ name, bars: bars.length })
+          for (const bar of bars) {
+            clock = findClock(bar, 0)
             if (clock) break
           }
           if (clock) break
         }
-        if (!clock) throw new Error('Notification Center clock menu item is unavailable: ' + JSON.stringify(menuOwners))
-        clock.click()
-        const deadline = Date.now() + 3000
-        while (isOpen() !== open && Date.now() < deadline) delay(0.1)
-        if (isOpen() !== open) throw new Error('Notification Center did not reach the requested state ' + (open ? 'open' : 'closed') + '; windows=' + (read(() => center.windows()) ?? []).length)
+        if (clock) break
+      }
+      if (!clock) throw new Error('Notification Center clock menu item is unavailable: ' + JSON.stringify(menuOwners))
+      verifiedClock = clock
+      return clock
+    }
+    const setOpen = (open) => {
+      const previous = isOpen()
+      if (previous !== open) {
+        const clock = clockControl()
+        // The clock can ignore a second press during its native animation.
+        for (let attempt = 0; attempt < 2; attempt++) {
+          if (isOpen() !== open) clock.click()
+          const deadline = Date.now() + 3500
+          let stableSince = 0
+          while (Date.now() < deadline) {
+            if (isOpen() === open) {
+              stableSince ||= Date.now()
+              if (Date.now() - stableSince >= 40) return previous
+            } else {
+              stableSince = 0
+            }
+            delay(0.04)
+          }
+        }
+        throw new Error('Notification Center did not settle ' + (open ? 'open' : 'closed') + '; windows=' + (read(() => center.windows()) ?? []).length)
       }
       return previous
     }
@@ -1555,7 +1574,6 @@ public static class NativeSaveDialog {
   [DllImport("user32.dll")] private static extern bool GetGUIThreadInfo(uint thread, ref GuiThreadInfo info);
   [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr window);
   [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
-  [DllImport("user32.dll")] public static extern void keybd_event(byte key, byte scan, uint flags, UIntPtr extra);
   [DllImport("user32.dll")] private static extern uint GetWindowThreadProcessId(IntPtr window, out uint processId);
   [DllImport("user32.dll", CharSet = CharSet.Unicode)] private static extern int GetClassName(IntPtr window, StringBuilder value, int size);
   [DllImport("user32.dll", EntryPoint = "SendMessageW", CharSet = CharSet.Unicode)] public static extern IntPtr SetText(IntPtr window, uint message, IntPtr wParam, string text);
@@ -1605,13 +1623,11 @@ public static class NativeSaveDialog {
     '$target = if ($keepName) { Join-Path $directory ($initial.ToString()) } else { $filePath }',
     // Rewriting the visible name can remove an extension hidden by the Windows dialog.
     'if ($keepName) {',
-    '  if ([NativeSaveDialog]::GetForegroundWindow() -ne [IntPtr]$dialog.Current.NativeWindowHandle) {',
-    '    [NativeSaveDialog]::keybd_event(0x12, 0, 0, [UIntPtr]::Zero)',
-    '    [NativeSaveDialog]::keybd_event(0x12, 0, 2, [UIntPtr]::Zero)',
-    '    $null = [NativeSaveDialog]::SetForegroundWindow([IntPtr]$dialog.Current.NativeWindowHandle)',
-    '  }',
     '  $focusDeadline = [DateTime]::UtcNow.AddSeconds(5)',
-    '  while ([NativeSaveDialog]::GetForegroundWindow() -ne [IntPtr]$dialog.Current.NativeWindowHandle -and [DateTime]::UtcNow -lt $focusDeadline) { Start-Sleep -Milliseconds 100 }',
+    '  while ([NativeSaveDialog]::GetForegroundWindow() -ne [IntPtr]$dialog.Current.NativeWindowHandle -and [DateTime]::UtcNow -lt $focusDeadline) {',
+    '    $null = [NativeSaveDialog]::SetForegroundWindow([IntPtr]$dialog.Current.NativeWindowHandle)',
+    '    Start-Sleep -Milliseconds 200',
+    '  }',
     '  if ([NativeSaveDialog]::GetForegroundWindow() -ne [IntPtr]$dialog.Current.NativeWindowHandle) { throw ("Owned save dialog is not in the foreground: expected=" + $dialog.Current.NativeWindowHandle + ", " + [NativeSaveDialog]::DescribeForeground() + ", focused=" + [NativeSaveDialog]::GetFocusedWindow()) }',
     '  $shell = New-Object -ComObject WScript.Shell',
     '  $shell.SendKeys("%d", $true)',

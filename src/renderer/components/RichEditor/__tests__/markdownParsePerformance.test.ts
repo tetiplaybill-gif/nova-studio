@@ -1,11 +1,14 @@
 import type { JSONContent } from '@tiptap/core'
 import { Editor } from '@tiptap/core'
 import { Mathematics } from '@tiptap/extension-mathematics'
-import { afterEach, describe, expect, it } from 'vitest'
-
-import { codeHighlightService } from '@renderer/services/CodeHighlightService'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { createRichEditorExtensions } from '../createExtensions'
+
+// Measure the editor's real synchronous parse. Painting tokens runs on a separate worker.
+vi.mock('@renderer/services/CodeHighlightService', () => ({
+  codeHighlightService: { highlightRange: async () => ({ lines: [] }), cleanupTokenizers: () => {} }
+}))
 
 /**
  * Regression tests for issue #20358: opening a ~33KB markdown note froze the app.
@@ -52,11 +55,9 @@ const parseMedian = (content: string): { ms: number; editor: Editor } => {
 }
 
 let editor: Editor | undefined
-afterEach(async () => {
+afterEach(() => {
   editor?.destroy()
   editor = undefined
-  await codeHighlightService.highlightCodeToHtml('', 'text', 'one-light')
-  codeHighlightService.dispose()
 })
 
 describe('markdown parse performance (#20358)', () => {

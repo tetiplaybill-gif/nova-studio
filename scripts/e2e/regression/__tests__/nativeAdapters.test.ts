@@ -273,7 +273,16 @@ const nativePlatform = process.platform === 'darwin' ? 'macos' : 'windows'
 const dialogModes =
   process.platform === 'darwin'
     ? (['file', 'multiple', 'directory', 'save', 'save-suggested', 'save-hidden', 'notification-center'] as const)
-    : (['file', 'multiple', 'directory', 'save', 'save-suggested', 'print', 'message-box'] as const)
+    : ([
+        'file',
+        'multiple',
+        'directory',
+        'save',
+        'save-suggested',
+        'print',
+        'message-box',
+        'notification-center'
+      ] as const)
 
 // Verify Electron's returned paths after actual native selection and filename commit.
 it.skipIf(!['darwin', 'win32'].includes(process.platform)).each(dialogModes)(
@@ -384,7 +393,16 @@ it.skipIf(!['darwin', 'win32'].includes(process.platform)).each(dialogModes)(
         })
       )
       if (mode === 'notification-center') {
-        expect(exerciseMacNotificationCenter(paths).slice(1)).toEqual([true, true, false])
+        if (nativePlatform === 'macos') {
+          expect(exerciseMacNotificationCenter(paths).slice(1)).toEqual([true, true, false])
+        } else {
+          const previous = setWindowsNotificationCenterOpen(paths, true)
+          try {
+            expect(setWindowsNotificationCenterOpen(paths, true)).toBe(true)
+          } finally {
+            setWindowsNotificationCenterOpen(paths, previous)
+          }
+        }
       } else if (mode === 'multiple') chooseNativeFiles(nativePlatform, paths, inputs)
       else if (mode === 'save' || mode === 'save-hidden')
         expect(realpathSync.native(await saveNativeFile(nativePlatform, paths, saved))).toBe(realpathSync.native(saved))
@@ -425,14 +443,6 @@ it.skipIf(!['darwin', 'win32'].includes(process.platform)).each(dialogModes)(
             .map((file) => realpathSync.native(file))
             .sort()
         )
-      }
-      if (nativePlatform === 'windows' && mode === 'file') {
-        const previous = setWindowsNotificationCenterOpen(paths, true)
-        try {
-          expect(setWindowsNotificationCenterOpen(paths, true)).toBe(true)
-        } finally {
-          setWindowsNotificationCenterOpen(paths, previous)
-        }
       }
     } catch (error) {
       let controls = 'Fixture exited before native controls could be inspected'
