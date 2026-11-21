@@ -1088,10 +1088,10 @@ function chooseNativeSelection(
           action: [
             'if not frontmost then error "Owned native file panel is not frontmost"',
             ...(selectAll ? ['keystroke "a" using command down'] : []),
-            'key code 36'
+            `perform action "AXPress" of ${acceptButton}`
           ],
-          condition: '(count of windows) < previousWindowCount',
-          detail: 'panel window count did not decrease'
+          condition: `(count of windows) < previousWindowCount or not (exists ${acceptButton})`,
+          detail: 'owned Open panel remained after pressing its enabled button'
         }
       ].flatMap(({ stage, cap, action, condition, extra, poll, detail }) => [
         `set stage to "${stage}"`,

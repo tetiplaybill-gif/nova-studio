@@ -1,5 +1,5 @@
 import { MockUsePreferenceUtils } from '@test-mocks/renderer/usePreference'
-import { act, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { EditorView } from '@uiw/react-codemirror'
 import { useState } from 'react'
@@ -33,7 +33,10 @@ beforeEach(async () => {
   MockUsePreferenceUtils.setPreferenceValue('chat.message.font_size', 14)
 })
 
-afterEach(() => {
+afterEach(async () => {
+  cleanup()
+  // Radix restores focus on the next timer turn. Keep its originating document alive until then.
+  await new Promise<void>((resolve) => setTimeout(resolve, 0))
   for (const key of ['getClientRects', 'getBoundingClientRect']) {
     if (rangeDescriptors[key]) Object.defineProperty(Range.prototype, key, rangeDescriptors[key])
     else Reflect.deleteProperty(Range.prototype, key)
