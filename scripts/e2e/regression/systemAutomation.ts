@@ -1,5 +1,5 @@
 import { execFile, execFileSync } from 'node:child_process'
-import { existsSync, mkdirSync, readdirSync, statSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, rmdirSync, statSync, writeFileSync } from 'node:fs'
 import { basename, dirname, extname, join } from 'node:path'
 import { promisify } from 'node:util'
 
@@ -1185,8 +1185,18 @@ function chooseNativeSelection(
           stage: 'completion',
           cap: 5,
           action: [
-            'if not frontmost then error "Owned native file panel is not frontmost"',
-            ...(selectedFileCount ? ['keystroke "a" using command down', 'return previousWindowCount'] : []),
+            ...(selectedFileCount
+              ? [
+                  'set frontmost to true',
+                  'repeat until frontmost',
+                  'if (current date) ≥ stageDeadline then error "Owned native file panel is not frontmost"',
+                  'delay 0.1',
+                  'end repeat',
+                  'keystroke "a" using command down',
+                  'return previousWindowCount'
+                ]
+              : []),
+            // AXPress addresses the owned control directly, including when AppKit hosts the panel remotely.
             `perform action "AXPress" of ${acceptButton}`
           ],
           condition: `(count of windows) < previousWindowCount or not (exists ${acceptButton})`,
@@ -1533,8 +1543,9 @@ export async function saveNativeFileKeepingName(
     guard let save = elements(owner).first(where: { attribute($0, "AXRole") as? String == "AXButton" &&
       ["Save", "保存"].contains(attribute($0, "AXTitle") as? String ?? "") }) else { fail("Native save button disappeared") }
     wait("Save enabled") { attribute(save, "AXEnabled") as? Bool == true }
-    AXUIElementSetAttributeValue(filename, "AXFocused" as CFString, kCFBooleanTrue)
-    key(36)
+    guard AXUIElementPerformAction(save, kAXPressAction as CFString) == .success else {
+      fail("Owned Save button did not accept the selected filename")
+    }
     print(suggested)
   `
   await runAsync(
@@ -1589,6 +1600,8 @@ async function saveNativeFileWindows(
   electronPid: number,
   keepSuggestedName: boolean
 ): Promise<NativeSaveOutcome> {
+  // A visible, unique folder proves the shell view finished navigating before Save is pressed.
+  const locationMarker = keepSuggestedName ? mkdtempSync(join(dirname(filePath), 'NOVA-save-location-')) : undefined
   const script = [
     '$ErrorActionPreference = "Stop"',
     'try {',
@@ -1679,6 +1692,14 @@ public static class NativeSaveDialog {
     '  if ($addressText.ToString() -cne $directory) { throw "Owned save directory does not match the requested path" }',
     '  if ([NativeSaveDialog]::GetForegroundWindow() -ne [IntPtr]$dialog.Current.NativeWindowHandle -or [NativeSaveDialog]::GetFocusedWindow() -ne [IntPtr]$address.Current.NativeWindowHandle) { throw "Owned save dialog lost foreground ownership" }',
     '  $shell.SendKeys("{ENTER}", $true)',
+    `  $marker = '${escapePowerShell(locationMarker ? basename(locationMarker) : '')}'`,
+    '  $markerCondition = [System.Windows.Automation.PropertyCondition]::new([System.Windows.Automation.AutomationElement]::NameProperty, $marker)',
+    '  $navigationDeadline = [DateTime]::UtcNow.AddSeconds(15)',
+    '  do {',
+    '    $arrived = $dialog.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $markerCondition)',
+    '    if (-not $arrived) { Start-Sleep -Milliseconds 100 }',
+    '  } while (-not $arrived -and [DateTime]::UtcNow -lt $navigationDeadline)',
+    '  if (-not $arrived) { throw "The owned save dialog did not display the requested directory" }',
     '} else {',
     'if ($filenameControl.Current.IsKeyboardFocusable) {',
     '  $filenameControl.SetFocus()',
@@ -1742,7 +1763,9 @@ public static class NativeSaveDialog {
     '  Write-Output ("ERROR: " + $_.Exception.Message)',
     '}'
   ].join('\n')
-  const output = await runPowerShellCapture(script, 125_000)
+  const output = await runPowerShellCapture(script, 125_000).finally(() => {
+    if (locationMarker) rmdirSync(locationMarker)
+  })
   // PowerShell writes thrown messages to the CLIXML error stream, which is unreadable in CI logs.
   // The script reports them on stdout instead so a failing run names the step that failed.
   const reported = output
