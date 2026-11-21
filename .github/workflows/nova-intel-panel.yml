@@ -72,10 +72,11 @@ jobs:
           app.setActivationPolicy(.regular)
           let owner = NSWindow(contentRect: NSRect(x: 80,y: 80,width: 500,height: 300),styleMask:[.titled,.closable],backing:.buffered,defer:false)
           owner.title = "Owned Cocoa panel diagnostic"; owner.makeKeyAndOrderFront(nil); app.activate()
-          let panel = NSOpenPanel();panel.directoryURL=URL(fileURLWithPath:ProcessInfo.processInfo.environment["NOVA_FIXTURE_DIR"]!)
+          var panel: NSOpenPanel?
           DispatchQueue.main.asyncAfter(deadline:.now()+0.5) {
             FileManager.default.createFile(atPath:ProcessInfo.processInfo.environment["NOVA_FIXTURE_DIR"]!+"/ready",contents:Data([1]))
-            panel.begin { _ in app.terminate(nil) }
+            panel=NSOpenPanel();panel!.directoryURL=URL(fileURLWithPath:ProcessInfo.processInfo.environment["NOVA_FIXTURE_DIR"]!)
+            panel!.begin { _ in app.terminate(nil) }
           }
           app.run()
           SWIFT
@@ -97,9 +98,12 @@ jobs:
               /usr/bin/sample "$owned" 1 5 -file "$dir/thread-$owned.txt" >/dev/null 2>&1 || true
               if [[ -s "$dir/thread-$owned.txt" ]]; then
                 echo "STACK $mode $owned"
-                awk '/Call graph:/ {p=1;next} p && /Thread_.*DispatchQueue/ {if(++threads>1)exit} p&&threads==1{print substr($0,1,380)}' "$dir/thread-$owned.txt" | head -n 60 || true
+                awk '/Call graph:/ {p=1;next} p && /Thread_.*DispatchQueue/ {if(++threads>1)exit} p&&threads==1{print substr($0,1,530)}' "$dir/thread-$owned.txt" | tail -n 39
               fi
             done
+            sleep 38
+            echo "LATE $mode"
+            ./inspect "$fixture"
             sed -E '/DevTools listening/d' "$dir/fixture.log" | tail -n 7
             if kill -0 "$fixture" 2>/dev/null; then
               case "$(ps -p "$fixture" -o command=)" in *"$PWD/panel.cjs"*|*"$PWD/owned-cocoa"*) kill -KILL "$fixture";; esac
