@@ -1,121 +1,115 @@
 const { spawn } = require('node:child_process')
-const { mkdtemp, readFile } = require('node:fs/promises')
+const { randomUUID } = require('node:crypto')
+const { mkdtemp, readFile, readdir } = require('node:fs/promises')
 const { tmpdir } = require('node:os')
 const path = require('node:path')
 const { setTimeout: delay } = require('node:timers/promises')
-const { chromium } = require('@playwright/test')
+const { evaluateCdpExpression } = require('../e2e/regression/cdpClient.ts')
+
+async function until(label, probe, timeout = 60_000) {
+  const deadline = Date.now() + timeout
+  do {
+    const result = await probe()
+    if (result) return result
+    await delay(200)
+  } while (Date.now() < deadline)
+  throw new Error('Timed out waiting for ' + label)
+}
+
+async function withMainWindow(executable, profile, verify) {
+  const child = spawn(executable, [
+    '--user-data-dir=' + profile,
+    '--remote-debugging-port=0', '--remote-debugging-address=127.0.0.1',
+    '--disable-background-networking', '--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE localhost',
+    ...(process.platform === 'darwin' ? ['--use-mock-keychain'] : []), '--no-first-run'
+  ], { stdio: 'ignore' })
+  let failure
+  child.once('error', (e) => { failure = e })
+  try {
+    const target = await until('the packaged main window', async () => {
+      if (failure) throw failure
+      if (child.exitCode !== null || child.signalCode) throw new Error('The packaged application exited during startup')
+      try {
+        const [port] = (await readFile(path.join(profile, 'DevToolsActivePort'), 'utf8')).trim().split(/\r?\n/)
+        if (!/^\d+$/.test(port)) return
+        const origin = '127.0.0.1:' + port
+        const response = await fetch('http://' + origin + '/json/list', { signal: AbortSignal.timeout(2000) })
+        const pages = await response.json()
+        const page = pages.find(p => p.type === 'page' && /\/windows\/main\/index\.html(?:[?#]|$)/.test(p.url))
+        if (page && new URL(page.webSocketDebuggerUrl).origin === 'ws://' + origin) return page.webSocketDebuggerUrl
+      } catch (e) {
+        if (e.code !== 'ENOENT' && !(e instanceof TypeError) && e.name !== 'TimeoutError') throw e
+      }
+    }, 120_000)
+    const run = (fn, arg) => evaluateCdpExpression(target, '(' + fn.toString() + ')(' + JSON.stringify(arg) + ')')
+    await until('onboarding or the main shell', () => run(() => {
+      const button = [...document.querySelectorAll('button')].find(b => b.offsetWidth && /稍后设置|set up later/i.test(b.innerText))
+      if (button) button.click()
+      return Boolean(document.querySelector('[data-ui="app.shell"]')) && !button
+    }), 120_000)
+    await verify(run)
+  } finally {
+    if (child.pid && child.exitCode === null && child.signalCode === null) {
+      const exited = new Promise(resolve => child.once('exit', resolve))
+      child.kill()
+      const timer = setTimeout(() => child.kill('SIGKILL'), 5000)
+      try { await exited } finally { clearTimeout(timer) }
+    }
+  }
+}
+
+async function openNotes(run, filename) {
+  const target = '/app/notes' + (filename ? '?' + new URLSearchParams({ notePath: filename }) : '')
+  await until('the notes navigation handler', () => run(route => !window.dispatchEvent(new CustomEvent('cherry:open-main-route', {
+    cancelable: true, detail: { path: route }
+  })), target))
+  await until('the notes editor', () => run(() => Boolean(document.querySelector('[data-ui="notes.editor"]'))))
+}
 
 async function verifyNoteRenderer(executable) {
-  if (!executable || !path.isAbsolute(executable))
-    throw new Error('An absolute NOVA Studio executable path is required')
-  const profile = await mkdtemp(path.join(tmpdir(), 'nova-note-release-test-'))
-  const app = spawn(
-    executable,
-    [
-      '--user-data-dir=' + profile,
-      '--remote-debugging-port=0',
-      '--remote-debugging-address=127.0.0.1',
-      '--disable-background-networking',
-      '--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE localhost',
-      // This disposable signed-out note benchmark has no credentials to read or store.
-      ...(process.platform === 'darwin' ? ['--use-mock-keychain'] : []),
-      '--no-first-run'
-    ],
-    { stdio: ['ignore', 'ignore', 'pipe'] }
-  )
-  app.stderr.on('data', (chunk) => {
-    for (const line of chunk.toString().split('\n')) {
-      if (/uncaught exception|MODULE_NOT_FOUND|not a valid Win32|^Error:|FATAL:|NODE_MODULE_VERSION/i.test(line))
-        console.error('Packaged main:', line.slice(0, 400))
-    }
-  })
-  let startupError
-  app.on('error', (error) => {
-    startupError = error
-  })
-  let browser
-  try {
-    // Intel builds may need Rosetta translation before Electron creates its debugging port.
-    const deadline = Date.now() + 120_000
-    let port
-    while (!port && Date.now() < deadline) {
-      if (startupError) throw startupError
-      if (app.exitCode !== null) throw new Error('NOVA Studio exited before its window opened')
-      try {
-        port = (await readFile(path.join(profile, 'DevToolsActivePort'), 'utf8')).split('\n')[0].trim()
-      } catch (error) {
-        if (error.code !== 'ENOENT') throw error
+  if (!executable || !path.isAbsolute(executable)) throw new Error('An absolute NOVA Studio executable path is required')
+  const profile = await mkdtemp(path.join(tmpdir(), 'nova-studio-note-'))
+  const marker = 'NOVA desktop note ' + randomUUID()
+  const notesDir = path.join(profile, 'Data', 'Notes')
+  let filename
+  await withMainWindow(executable, profile, async run => {
+    await openNotes(run)
+    await until('the new note action', () => run(() => {
+      const button = [...document.querySelectorAll('[data-ui="notes.editor"] button')].find(b => /create a new note|新建笔记/i.test(b.innerText))
+      if (!button || button.disabled) return false
+      button.click()
+      return true
+    }))
+    await until('an editable note', () => run(() => Boolean(document.querySelector('[data-ui="notes.editor"] .tiptap[contenteditable=true]'))))
+    const edited = await run(text => {
+      const editor = document.querySelector('[data-ui="notes.editor"] .tiptap')
+      editor.focus()
+      return document.execCommand('insertText', false, text) && editor.textContent.includes(text)
+    }, marker)
+    if (!edited) throw new Error('Editing through the packaged contenteditable failed')
+    filename = await until('the saved Markdown on disk', async () => {
+      for (const name of await readdir(notesDir)) {
+        if (!name.endsWith('.md')) continue
+        const file = path.join(notesDir, name)
+        if ((await readFile(file, 'utf8')).trim() === marker) return file
       }
-      if (!port) await delay(200)
-    }
-    if (!/^\d+$/.test(port || '')) throw new Error('NOVA Studio did not expose its test renderer')
-    const endpoint = 'http://127.0.0.1:' + port
-    const observed = new Set()
-    const sample = async () => {
-      try {
-        const list = await (await fetch(endpoint + '/json/list', {signal: AbortSignal.timeout(3000)})).json()
-        const pages = list.map(x => x.type + ':' + (x.url?.match(/\/windows\/([a-zA-Z]+)\//)?.[1] ?? 'other')).sort().join(', ')
-        if (!observed.has(pages)) {
-          observed.add(pages)
-          console.log('Observed targets:', pages)
-        }
-      } catch {}
-    }
-    const watch = setInterval(() => void sample(), 3000)
-    try {
-      console.log('Connecting to the packaged app')
-      await sample()
-      browser = await chromium.connectOverCDP(endpoint, {timeout: 120000, noDefaults: true})
-      console.log('Connected to the packaged app')
-    } finally {
-      clearInterval(watch)
-    }
-    let main
-    const windowDeadline = Date.now() + 90_000
-    while (!main && Date.now() < windowDeadline) {
-      if (app.exitCode !== null) throw new Error('NOVA Studio exited while creating the main window: ' + app.exitCode)
-      main = browser
-        .contexts()
-        .flatMap((context) => context.pages())
-        .find((page) => /\/windows\/main\/index\.html/.test(page.url()))
-      if (!main) await delay(200)
-    }
-    if (!main) {
-      const kinds = browser
-        .contexts()
-        .flatMap((context) => context.pages())
-        .map((page) => page.url().match(/\/windows\/([a-zA-Z]+)\//)?.[1] ?? 'other')
-      throw new Error('NOVA Studio main window did not open; observed window types: ' + kinds.join(', '))
-    }
-    const skip = main.getByRole('button', { name: /稍后设置|set up later/i })
-    const shell = main.locator('[data-ui="app.shell"]').first()
-    await skip.or(shell).first().waitFor({ timeout: 180_000 })
-    if (await skip.isVisible()) await skip.click()
-    await shell.waitFor({ timeout: 60_000 })
-    const notes = main.locator('[data-ui="notes.editor"]')
-    await main.waitForFunction(
-      () => {
-        if (document.querySelector('[data-ui="notes.editor"]')) return true
-        window.dispatchEvent(
-          new CustomEvent('cherry:open-main-route', { cancelable: true, detail: { path: '/app/notes' } })
-        )
-        return false
-      },
-      undefined,
-      { timeout: 30_000, polling: 500 }
-    )
-    await notes.getByRole('button', { name: /create a new note|新建笔记/i }).click()
-    const view = notes.locator('.tiptap').first()
-    await view.waitFor()
-    const result = await view.evaluate((element) => {
+    })
+    console.log('Created and edited the note; its Markdown was saved to disk')
+  })
+  await withMainWindow(executable, profile, async run => {
+    await openNotes(run, filename)
+    await until('the saved text after restarting Studio', () => run(text =>
+      document.querySelector('[data-ui="notes.editor"] .tiptap')?.textContent.trim() === text, marker))
+    console.log('Reopened the same saved note after restarting the packaged application')
+    const result = await run(() => {
+      const element = document.querySelector('[data-ui="notes.editor"] .tiptap')
       const editor = element.editor
-      const source = '---\n'.repeat(8448)
       const samples = []
       let count
       for (let i = 0; i < 4; i++) {
         editor.commands.setContent('start', { contentType: 'markdown', emitUpdate: false })
         const start = performance.now()
-        editor.commands.setContent(source, { contentType: 'markdown', emitUpdate: false })
+        editor.commands.setContent('---\n'.repeat(8448), { contentType: 'markdown', emitUpdate: false })
         count = element.querySelectorAll('hr').length
         if (count <= 8000) throw new Error('NOVA Studio rendered an incomplete note')
         if (i > 0) samples.push(performance.now() - start)
@@ -124,25 +118,10 @@ async function verifyNoteRenderer(executable) {
     })
     console.log(JSON.stringify(result))
     if (result.medianMs >= 3000) throw new Error('NOVA Studio exceeded the 3000 ms native rendering budget')
-  } finally {
-    try {
-      if (browser) await browser.close()
-    } finally {
-      if (app.pid && app.exitCode === null && app.signalCode === null) {
-        const exited = new Promise((resolve) => app.once('exit', resolve))
-        app.kill()
-        const timeout = setTimeout(() => app.kill('SIGKILL'), 5000)
-        try {
-          await exited
-        } finally {
-          clearTimeout(timeout)
-        }
-      }
-    }
-  }
+  })
 }
 
-verifyNoteRenderer(process.argv[2]).catch((error) => {
+verifyNoteRenderer(process.argv[2]).catch(error => {
   console.error(error.message)
   process.exitCode = 1
 })

@@ -21,7 +21,16 @@ jobs:
         env:
           NODE_OPTIONS: --max-old-space-size=8192
       - run: node scripts/release/prepare-tools.js prepare windows x64
-      - run: pnpm exec electron-builder --dir --win --x64 --publish never
-      - name: Verify the real Windows renderer
+      - run: pnpm exec electron-builder --win nsis --x64 --publish never
+      - name: Install the generated package and verify note persistence
         shell: pwsh
-        run: node scripts/release/verify-note-renderer.cjs (Resolve-Path 'dist/win-unpacked/NOVA Studio.exe').Path
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $setup = @(Get-ChildItem dist -Filter '*-setup.exe')
+          if ($setup.Count -ne 1) { throw 'Expected exactly one Windows installer' }
+          $destination = Join-Path $env:RUNNER_TEMP 'nova-installed-note-test'
+          $installer = Start-Process -FilePath $setup[0].FullName -ArgumentList @('/S', "/D=$destination") -PassThru
+          if (-not $installer.WaitForExit(180000) -or $installer.ExitCode -ne 0) { throw 'Studio installation failed' }
+          $app = Join-Path $destination 'NOVA Studio.exe'
+          if (-not (Test-Path -LiteralPath $app -PathType Leaf)) { throw 'Installed application missing' }
+          node scripts/release/verify-note-renderer.cjs $app
