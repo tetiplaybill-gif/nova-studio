@@ -24,11 +24,13 @@ const mocks = vi.hoisted(() => ({
   lastColOptions: null as any,
   rowScrollToIndex: vi.fn(),
   colScrollToIndex: vi.fn(),
-  useVirtualizer: vi.fn()
+  useVirtualizer: vi.fn(),
+  observeElementOffset: vi.fn()
 }))
 
 vi.mock('@tanstack/react-virtual', () => ({
-  useVirtualizer: mocks.useVirtualizer
+  useVirtualizer: mocks.useVirtualizer,
+  observeElementOffset: mocks.observeElementOffset
 }))
 
 const toVirtualItems = (
@@ -135,6 +137,22 @@ const setScrollViewport = (
 describe('XlsxGrid — mock model rendering', () => {
   beforeEach(() => {
     showHeaderRange()
+  })
+
+  it('ignores delayed scroll events from a detached workbook on both axes', () => {
+    render(<XlsxGrid sheet={salesSheet} styles={model.styles} imageUrls={{}} zoom={1} />)
+    for (const axis of [mocks.lastRowOptions, mocks.lastColOptions]) {
+      const notify = vi.fn()
+      const unsubscribe = vi.fn()
+      mocks.observeElementOffset.mockReturnValueOnce(unsubscribe)
+      const stop = axis.observeElementOffset({}, notify)
+      const emit = mocks.observeElementOffset.mock.lastCall![1]
+      emit(25, true)
+      stop()
+      emit(25, false)
+      expect(unsubscribe).toHaveBeenCalledOnce()
+      expect(notify.mock.calls).toEqual([[25, true]])
+    }
   })
 
   it('renders the expected text within the visible range', () => {

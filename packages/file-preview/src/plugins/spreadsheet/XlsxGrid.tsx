@@ -1,4 +1,4 @@
-import { useVirtualizer } from '@tanstack/react-virtual'
+import { observeElementOffset, useVirtualizer } from '@tanstack/react-virtual'
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -25,6 +25,18 @@ import {
   wrapClampLines
 } from './gridLayout'
 import type { BorderEdge, CellRenderModel, CellStyle, ChartModel, SheetRenderModel } from './renderModel'
+
+// A pending scroll-end timer can outlive its subscription when the workbook is hidden or closed.
+const observeGridOffset: typeof observeElementOffset = (instance, notify) => {
+  let active = true
+  const unsubscribe = observeElementOffset(instance, (offset, scrolling) => {
+    if (active) notify(offset, scrolling)
+  })
+  return () => {
+    active = false
+    unsubscribe?.()
+  }
+}
 
 export interface SelectedCellInfo {
   /** Normalized A1 selection range ('B2' or 'B2:D8'), already grown to cover every merged range it touches. */
@@ -384,6 +396,7 @@ const XlsxGrid = ({ sheet, styles, imageUrls, zoom, onSelectCell, pickerActive, 
 
   const rowVirtualizer = useVirtualizer({
     count: renderedRowCount,
+    observeElementOffset: observeGridOffset,
     getScrollElement: () => scrollElRef.current,
     // Virtualization works in scroll coordinates, with sizes multiplied by zoom. Render coordinates come from layouts.
     estimateSize: (index) => rowLayout.sizes[index] * zoom,
@@ -391,6 +404,7 @@ const XlsxGrid = ({ sheet, styles, imageUrls, zoom, onSelectCell, pickerActive, 
   })
   const colVirtualizer = useVirtualizer({
     horizontal: true,
+    observeElementOffset: observeGridOffset,
     count: renderedColCount,
     getScrollElement: () => scrollElRef.current,
     estimateSize: (index) => colLayout.sizes[index] * zoom,
