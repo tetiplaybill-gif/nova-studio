@@ -18,7 +18,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm rebuild:node
       - name: Verify engine history without a paid provider
-        run: pnpm exec vitest run --maxWorkers=1 --silent=true packages/agent-runtime-claude-code/tests/runtime.test.ts -t 'archive|native'
+        run: pnpm exec vitest run --maxWorkers=1 --silent=true packages/agent-runtime-claude-code/tests/runtime.test.ts
       - name: Verify Windows tool lifecycle and process ownership
         if: success() || failure()
         run: pnpm exec vitest run --maxWorkers=1 --silent=true src/main/utils/__tests__/commandResolver.cancel.test.ts packages/agent-runtime-acp/tests/lifecycle.test.ts src/main/ai/runtime/claudeCode/__tests__/ClaudeCodeProcessManager.test.ts src/main/services/binaryManager/__tests__/pipDependencies.test.ts src/main/services/binaryManager/__tests__/BinaryManager.installedSizes.test.ts
