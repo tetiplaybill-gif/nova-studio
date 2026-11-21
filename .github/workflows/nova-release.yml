@@ -74,19 +74,15 @@ jobs:
           fi
           launchctl kickstart "$domain/$label"
 
-      - name: Test the release checkout
-        shell: bash
-        run: |
-          # Test native GUI and time-bounded rendering on an idle desktop, with their original assertions.
-          isolated=(
-            scripts/e2e/regression/__tests__/nativeAdapters.test.ts
-            src/renderer/components/RichEditor/__tests__/markdownParsePerformance.test.ts
-            src/renderer/components/FilePreview/plugins/markdown/__tests__/MarkdownFilePreview.test.tsx
-          )
-          pnpm exec vitest run --silent=true --no-file-parallelism "${isolated[@]}"
-          exclude=()
-          for suite in "${isolated[@]}"; do exclude+=(--exclude "$suite"); done
-          pnpm exec vitest run --silent=true "${exclude[@]}"
+      - name: Test native dialogs and rendering on an idle desktop
+        env:
+          NOVA_RELEASE_TEST_GROUP: isolated
+        run: pnpm exec vitest run --silent=true --no-file-parallelism --project scripts --project renderer
+
+      - name: Test the remaining release checkout
+        env:
+          NOVA_RELEASE_TEST_GROUP: remaining
+        run: pnpm test
 
       - name: Type-check and build
         run: pnpm run build
@@ -115,6 +111,18 @@ jobs:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+
+      - name: Verify large notes in the packaged native renderer
+        shell: bash
+        run: |
+          if [[ "${{ matrix.platform }}" == windows ]]; then
+            binary="$(cygpath -aw 'dist/win-unpacked/NOVA Studio.exe')"
+          elif [[ "${{ matrix.arch }}" == arm64 ]]; then
+            binary="$PWD/dist/mac-arm64/NOVA Studio.app/Contents/MacOS/NOVA Studio"
+          else
+            binary="$PWD/dist/mac/NOVA Studio.app/Contents/MacOS/NOVA Studio"
+          fi
+          node scripts/release/verify-note-renderer.cjs "$binary"
 
       - uses: actions/upload-artifact@v6
         with:

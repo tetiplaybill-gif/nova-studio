@@ -1,6 +1,6 @@
 import { resolve } from 'path'
 
-import { defineConfig } from 'vitest/config'
+import { configDefaults, defineConfig } from 'vitest/config'
 
 import electronViteConfig from './electron.vite.config'
 
@@ -22,6 +22,13 @@ process.stderr.setMaxListeners(64)
 
 const mainConfig = (electronViteConfig as any).main
 const rendererConfig = (electronViteConfig as any).renderer
+
+function releaseTestFiles(all: string[], isolated: string[]) {
+  if (process.env.NOVA_RELEASE_TEST_GROUP === 'isolated') return { include: isolated }
+  if (process.env.NOVA_RELEASE_TEST_GROUP === 'remaining')
+    return { include: all, exclude: [...configDefaults.exclude, ...isolated] }
+  return { include: all }
+}
 
 export default defineConfig({
   test: {
@@ -72,7 +79,13 @@ export default defineConfig({
           name: 'renderer',
           environment: 'jsdom',
           setupFiles: ['@vitest/web-worker', 'tests/renderer.setup.ts', 'tests/domTeardown.setup.ts'],
-          include: ['src/renderer/**/*.{test,spec}.{ts,tsx}', 'src/renderer/**/__tests__/**/*.{test,spec}.{ts,tsx}'],
+          ...releaseTestFiles(
+            ['src/renderer/**/*.{test,spec}.{ts,tsx}', 'src/renderer/**/__tests__/**/*.{test,spec}.{ts,tsx}'],
+            [
+              'src/renderer/components/RichEditor/__tests__/markdownParsePerformance.test.ts',
+              'src/renderer/components/FilePreview/plugins/markdown/__tests__/MarkdownFilePreview.test.tsx'
+            ]
+          ),
           benchmark: {
             include: ['src/renderer/**/*.bench.{ts,tsx}', 'src/renderer/**/__tests__/**/*.bench.{ts,tsx}']
           }
@@ -102,7 +115,10 @@ export default defineConfig({
         test: {
           name: 'scripts',
           environment: 'node',
-          include: ['scripts/**/*.{test,spec}.{ts,tsx}', 'scripts/**/__tests__/**/*.{test,spec}.{ts,tsx}'],
+          ...releaseTestFiles(
+            ['scripts/**/*.{test,spec}.{ts,tsx}', 'scripts/**/__tests__/**/*.{test,spec}.{ts,tsx}'],
+            ['scripts/e2e/regression/__tests__/nativeAdapters.test.ts']
+          ),
           benchmark: {
             include: ['scripts/**/*.bench.{ts,tsx}', 'scripts/**/__tests__/**/*.bench.{ts,tsx}']
           }

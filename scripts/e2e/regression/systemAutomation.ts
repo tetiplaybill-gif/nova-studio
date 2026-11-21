@@ -376,7 +376,7 @@ function runMacNotificationCenter(paths: RunPaths, states: boolean[], restore: b
             delay(0.04)
           }
         }
-        throw new Error('Notification Center did not settle ' + (open ? 'open' : 'closed') + '; windows=' + (read(() => center.windows()) ?? []).length)
+        throw new Error('Notification Center did not reach the requested state ' + (open ? 'open' : 'closed') + '; windows=' + (read(() => center.windows()) ?? []).length)
       }
       return previous
     }

@@ -35,9 +35,23 @@ const parseMarkdown = (content: string): { ms: number; editor: Editor } => {
     element: document.createElement('div'),
     extensions: createRichEditorExtensions()
   })
-  const t0 = performance.now()
-  editor.commands.setContent(content, { contentType: 'markdown' })
-  return { ms: performance.now() - t0, editor }
+  // Time the real parser inside setContent. jsdom's sibling insertion cost is not Chromium's DOM cost.
+  const markdown = editor.markdown!
+  const parse = markdown.parse.bind(markdown)
+  let ms: number | undefined
+  const timer = vi.spyOn(markdown, 'parse').mockImplementation((source) => {
+    const start = performance.now()
+    const document = parse(source)
+    ms = performance.now() - start
+    return document
+  })
+  try {
+    editor.commands.setContent(content, { contentType: 'markdown' })
+  } finally {
+    timer.mockRestore()
+  }
+  if (ms === undefined) throw new Error('The real Markdown parser was not invoked')
+  return { ms, editor }
 }
 
 /** Warm up JIT, then report the median of 3 timed runs to damp GC noise. */
@@ -66,7 +80,9 @@ describe('markdown parse performance (#20358)', () => {
     const { ms, editor: e } = parseMedian(content)
     editor = e
     process.stdout.write(`hr-storm 33KB: ${ms.toFixed(0)}ms\n`)
-    expect(countNodes(e.getJSON(), 'horizontalRule')).toBeGreaterThan(8000)
+    const count = countNodes(e.getJSON(), 'horizontalRule')
+    expect(count).toBeGreaterThan(8000)
+    expect(e.view.dom.querySelectorAll('hr')).toHaveLength(count)
     expect(ms).toBeLessThan(3000)
   })
 
