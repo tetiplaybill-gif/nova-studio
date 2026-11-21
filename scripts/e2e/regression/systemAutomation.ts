@@ -1137,7 +1137,7 @@ function chooseNativeSelection(
           stage: 'commit',
           cap: 8,
           action: ['set nextCommit to current date'],
-          condition: 'not (exists sheet 1 of window 1)',
+          condition: '(exists window 1) and not (exists sheet 1 of window 1)',
           poll: [
             'if (current date) ≥ nextCommit and (exists text field 1 of sheet 1 of window 1) then',
             'set frontmost to true',
@@ -1184,7 +1184,17 @@ function chooseNativeSelection(
         'set observed to observationError',
         'end try',
         'if reached then exit repeat',
-        ...(poll ?? []),
+        ...(poll
+          ? [
+              'try',
+              ...poll,
+              // macOS replaces the owned window hierarchy while resolving a selected path.
+              'on error pollError number pollNumber',
+              'if pollNumber is not -1719 and pollNumber is not -1728 then error pollError number pollNumber',
+              'set observed to pollError',
+              'end try'
+            ]
+          : []),
         'delay 0.1',
         'end repeat'
       ]),
