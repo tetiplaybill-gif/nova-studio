@@ -1061,9 +1061,18 @@ function chooseNativeSelection(
         },
         {
           stage: 'commit',
-          cap: 5,
-          action: ['key code 36'],
+          cap: 8,
+          action: ['set nextCommit to current date'],
           condition: 'not (exists sheet 1 of window 1)',
+          poll: [
+            'if (current date) ≥ nextCommit and (exists text field 1 of sheet 1 of window 1) then',
+            'set frontmost to true',
+            'if frontmost and (value of text field 1 of sheet 1 of window 1 as text) equals (item 1 of argv) then',
+            'key code 36',
+            'set nextCommit to (current date) + 1',
+            'end if',
+            'end if'
+          ],
           detail: 'Go to Folder sheet still present'
         },
         {

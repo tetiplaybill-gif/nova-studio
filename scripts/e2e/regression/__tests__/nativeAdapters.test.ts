@@ -340,6 +340,23 @@ it.skipIf(!['darwin', 'win32'].includes(process.platform)).each(dialogModes)(
       delete environment.ELECTRON_RUN_AS_NODE
       logHandle = openSync(join(paths.logs, 'fixture.log'), 'w')
       const downloadedElectron = createRequire(import.meta.url)('electron') as string
+      if (process.platform === 'darwin' && isSave) {
+        // A cold Swift module cache can take longer than the interaction with the panel itself.
+        // Prepare it before showing a modal window that accepts the system's default Return action.
+        execFileSync(
+          'swift',
+          [
+            '-module-cache-path',
+            join(paths.private, 'swift-module-cache'),
+            '-e',
+            'import AppKit; import ApplicationServices'
+          ],
+          {
+            timeout: 120_000,
+            env: { ...environment, TMPDIR: paths.private }
+          }
+        )
+      }
       const executable =
         process.platform === 'darwin'
           ? macNativeFixtureExecutable(process.env.CHERRY_TEST_RUN_DIR, downloadedElectron)
