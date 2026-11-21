@@ -1109,9 +1109,19 @@ function chooseNativeSelection(
         {
           stage: 'go-to-folder',
           cap: 5,
-          action: ['keystroke "g" using {command down, shift down}'],
+          action: ['set nextShortcut to current date'],
           condition: 'exists text field 1 of sheet 1 of window 1',
-          detail: 'path text field missing'
+          // AppKit can expose the Open buttons before the new panel accepts shortcuts.
+          poll: [
+            `if (current date) ≥ nextShortcut and (exists ${acceptButton}) and not (exists sheet 1 of window 1) then`,
+            'set frontmost to true',
+            'if frontmost then',
+            'keystroke "g" using {command down, shift down}',
+            'set nextShortcut to (current date) + 1',
+            'end if',
+            'end if'
+          ],
+          detail: 'owned Open panel did not expose the path text field'
         },
         {
           stage: 'path-entry',
@@ -1125,7 +1135,7 @@ function chooseNativeSelection(
           ],
           condition: '(value of text field 1 of sheet 1 of window 1 as text) equals (item 1 of argv)',
           poll: [
-            'if not typedFallback and (current date) ≥ fallbackAt then',
+            'if not typedFallback and frontmost and (current date) ≥ fallbackAt and (exists text field 1 of sheet 1 of window 1) then',
             'keystroke "a" using command down',
             'keystroke (item 1 of argv)',
             'set typedFallback to true',
