@@ -34,6 +34,14 @@ import { createDeviceIdentity, deviceIdentityId } from '@cherrystudio/remote-tra
 
 import { loadDesktopIdentity } from '../deviceIdentity'
 
+const posixFileModes = process.platform !== 'win32'
+
+async function expectIdentityFile(file: string) {
+  const info = await stat(file)
+  expect(info.isFile()).toBe(true)
+  if (posixFileModes) expect(info.mode & 0o777).toBe(0o600)
+}
+
 let dir: string
 let expectedSyncProbeCalls: number
 beforeEach(async () => {
@@ -112,7 +120,7 @@ describe('loadDesktopIdentity', () => {
 
     expect(deviceIdentityId(await loadDesktopIdentity())).toBe(created)
     const file = path.join(dir, 'remote-identity.key')
-    expect((await stat(file)).mode & 0o777).toBe(0o600)
+    await expectIdentityFile(file)
   })
 
   it('keeps the identity sealed when the OS key store is available', async () => {
@@ -120,7 +128,7 @@ describe('loadDesktopIdentity', () => {
 
     expect(deviceIdentityId(await loadDesktopIdentity())).toBe(created)
     expect((await readFile(path.join(dir, 'remote-identity.enc'), 'utf8')).startsWith('sealed:')).toBe(true)
-    expect((await stat(path.join(dir, 'remote-identity.enc'))).mode & 0o777).toBe(0o600)
+    await expectIdentityFile(path.join(dir, 'remote-identity.enc'))
     await expect(stat(path.join(dir, 'remote-identity.key'))).rejects.toMatchObject({ code: 'ENOENT' })
   })
 
@@ -186,7 +194,7 @@ describe('loadDesktopIdentity', () => {
 
     expect(deviceIdentityId(await loadDesktopIdentity())).toBe(created)
     expect(await files()).toEqual({ 'remote-identity.key': expect.any(String) })
-    expect((await stat(path.join(dir, 'remote-identity.key'))).mode & 0o777).toBe(0o600)
+    await expectIdentityFile(path.join(dir, 'remote-identity.key'))
     expect(storage.encryptStringAsync).toHaveBeenCalledTimes(0)
   })
 
@@ -261,7 +269,7 @@ describe('loadDesktopIdentity', () => {
 
     expect(deviceIdentityId(await pending)).toBe(deviceIdentityId(Buffer.from(base64, 'base64')))
     expect(await files()).toEqual({ 'remote-identity.enc': `sealed:${base64}` })
-    expect((await stat(path.join(dir, 'remote-identity.enc'))).mode & 0o777).toBe(0o600)
+    await expectIdentityFile(path.join(dir, 'remote-identity.enc'))
   })
 
   it('waits for async decryption and returns the existing identity unchanged', async () => {
