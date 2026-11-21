@@ -256,8 +256,8 @@ export function findListeningPid(platform: Platform, port: number): number | und
   }
 }
 
-export function findCdpPid(platform: Platform): number | undefined {
-  return findListeningPid(platform, CDP_PORT)
+export function findCdpPid(platform: Platform, port = CDP_PORT): number | undefined {
+  return findListeningPid(platform, port)
 }
 
 /** Process group of a live process; the group is what macOS cleanup signals. */

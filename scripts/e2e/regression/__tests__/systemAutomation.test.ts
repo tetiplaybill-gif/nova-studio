@@ -332,18 +332,23 @@ it.each([
       platform,
       targetRoot: directory,
       runnerPid: 42000,
-      cdpPort: 9222,
+      cdpPort: 42019,
       logPath: join(paths.logs, 'electron.log')
     })
   )
   execFileSync.mockImplementation((file, args) => {
-    if (file === 'lsof') return beforeReady && args.includes('-iTCP:9222') ? '' : '42001'
+    if (file === 'lsof') {
+      if (args.includes('-iTCP:9222')) throw new Error('Must use the recorded fixture port')
+      return beforeReady && args.includes('-iTCP:42019') ? '' : '42001'
+    }
     if (file === 'ps' && args.includes('command=')) return `electron ${directory}`
     if (file === 'ps' && args.includes('ppid=')) return '42000'
     if (file === 'powershell.exe') {
       const script = args.at(-1)!
-      if (script.includes('Get-NetTCPConnection'))
-        return beforeReady && script.includes('-LocalPort 9222 ') ? '' : '42001'
+      if (script.includes('Get-NetTCPConnection')) {
+        if (script.includes('-LocalPort 9222 ')) throw new Error('Must use the recorded fixture port')
+        return beforeReady && script.includes('-LocalPort 42019 ') ? '' : '42001'
+      }
       if (script.includes('CommandLine')) return `electron ${directory}`
       if (script.includes('ParentProcessId')) return '42000'
     }
@@ -356,6 +361,9 @@ it.each([
   )
   await vi.advanceTimersByTimeAsync(60_000)
   expect(await completion).toBeUndefined()
+  const portQueries = execFileSync.mock.calls.map(([, parameters]) => parameters.join(' ')).join('\n')
+  expect(portQueries).toContain(platform === 'macos' ? '-iTCP:42019' : '-LocalPort 42019 ')
+  expect(portQueries).not.toContain(platform === 'macos' ? '-iTCP:9222' : '-LocalPort 9222 ')
   const [command, args] = execFile.mock.calls.at(-1)!
   expect(command).toBe(platform === 'macos' ? 'osascript' : 'powershell.exe')
   if (platform === 'macos') expect(args.slice(-3)).toEqual(['Manual Restart Required', '42001', 'OK'])
@@ -399,13 +407,18 @@ it.each([
   }
   execFile.mockClear()
   execFileSync.mockImplementation((file, args) => {
-    if (file === 'lsof') return beforeReady && args.includes('-iTCP:9222') ? '' : '42001'
+    if (file === 'lsof') {
+      if (args.includes('-iTCP:9222')) throw new Error('Must use the recorded fixture port')
+      return beforeReady && args.includes('-iTCP:42019') ? '' : '42001'
+    }
     if (file === 'ps' && args.includes('command=')) return `electron ${directory}`
     if (file === 'ps' && args.includes('ppid=')) return '0'
     if (file === 'powershell.exe') {
       const script = args.at(-1)!
-      if (script.includes('Get-NetTCPConnection'))
-        return beforeReady && script.includes('-LocalPort 9222 ') ? '' : '42001'
+      if (script.includes('Get-NetTCPConnection')) {
+        if (script.includes('-LocalPort 9222 ')) throw new Error('Must use the recorded fixture port')
+        return beforeReady && script.includes('-LocalPort 42019 ') ? '' : '42001'
+      }
       if (script.includes('CommandLine')) return `electron ${directory}`
       if (script.includes('ParentProcessId')) return '0'
     }

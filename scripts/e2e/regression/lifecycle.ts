@@ -77,8 +77,9 @@ function writeJson(filePath: string, value: unknown): void {
   writeFileSync(filePath, `${JSON.stringify(value, null, 2)}\n`, { mode: 0o600 })
 }
 
-export async function readCdpTargets(): Promise<Array<{ title: string; type: string; url: string }>> {
-  const response = await fetch(`http://127.0.0.1:${CDP_PORT}/json/list`, { signal: AbortSignal.timeout(2_000) })
+export async function readCdpTargets(port = CDP_PORT): Promise<Array<{ title: string; type: string; url: string }>> {
+  if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error('Invalid debugging port')
+  const response = await fetch(`http://127.0.0.1:${port}/json/list`, { signal: AbortSignal.timeout(2_000) })
   if (!response.ok) throw new Error(`CDP target list returned HTTP ${response.status}`)
   return (await response.json()) as Array<{ title: string; type: string; url: string }>
 }
@@ -99,11 +100,11 @@ async function waitForCdp(
       throw new Error(`Application runner ${runnerPid} exited before CDP became ready; ${snapshot}`)
     }
     try {
-      const targets = await readCdpTargets()
+      const targets = await readCdpTargets(port)
       const mainTarget = targets.find(
         (target) => target.type === 'page' && URL.parse(target.url)?.pathname.endsWith('/windows/main/index.html')
       )
-      const electronPid = findCdpPid(platform)
+      const electronPid = findCdpPid(platform, port)
       if (mainTarget && electronPid && isDescendant(electronPid, runnerPid, platform)) {
         return { electronPid, targetUrl: mainTarget.url }
       }
@@ -509,7 +510,7 @@ async function stopOwnedRecord(record: LaunchRecord): Promise<void> {
     logLifecycleStage(record, 'stopped')
     return
   }
-  const currentCdpPid = findCdpPid(record.platform)
+  const currentCdpPid = findCdpPid(record.platform, record.cdpPort)
   if (
     currentCdpPid &&
     currentCdpPid !== record.electronPid &&
@@ -594,11 +595,11 @@ export async function adoptRelaunchedApp(paths: RunPaths, timeout = 120_000): Pr
   let lastError = 'no replacement process took over the CDP port'
   while (Date.now() < deadline) {
     try {
-      const targets = await readCdpTargets()
-      const electronPid = findCdpPid(record.platform)
+      const targets = await readCdpTargets(record.cdpPort)
+      const electronPid = findCdpPid(record.platform, record.cdpPort)
       if (electronPid && electronPid !== record.electronPid && isAlive(electronPid)) {
         const readyWindow = targets.some((target) => target.type === 'page' && isExpectedWindowUrl(target.url))
-        if (readyWindow && findCdpPid(record.platform) === electronPid) {
+        if (readyWindow && findCdpPid(record.platform, record.cdpPort) === electronPid) {
           const runnerPid = findProcessGroupId(electronPid, record.platform) ?? electronPid
           const adopted: AppRecord = {
             ...record,

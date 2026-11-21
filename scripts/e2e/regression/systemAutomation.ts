@@ -650,7 +650,7 @@ export async function dismissNativeMessageBox(
   const deadline = Date.now() + 60_000
   while (!electronPid && Date.now() < deadline) {
     endpoint = 'electron'
-    electronPid = findCdpPid(platform)
+    electronPid = findCdpPid(platform, record.cdpPort)
     if (!electronPid) {
       electronPid = findListeningPid(platform, MAIN_INSPECTOR_PORT)
       endpoint = 'inspector'

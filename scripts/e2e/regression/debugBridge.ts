@@ -261,7 +261,7 @@ export async function prepareWindowsCdpConnection(record: AppRecord): Promise<vo
   }
   const deadline = Date.now() + 5_000
   while (Date.now() < deadline) {
-    const targets = await readCdpTargets()
+    const targets = await readCdpTargets(record.cdpPort)
     const hasNonMainTarget = targets.some((target) => {
       try {
         return target.type === 'page' && !new URL(target.url).pathname.toLowerCase().endsWith(MAIN_WINDOW_PATH)
