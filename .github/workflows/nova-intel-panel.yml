@@ -17,8 +17,9 @@ jobs:
           mkdir nova-native-intel
           cd nova-native-intel
           npm install --no-audit --no-fund --registry=https://registry.npmjs.org electron@45.2.2 >/dev/null
-          electron="$(node -p "require('electron')")"
-          [[ -x "$electron" ]]
+          node -e "require('electron')" >/dev/null
+          electron="$PWD/node_modules/electron/dist/Electron.app/Contents/MacOS/Electron"
+          [[ -x "$electron" ]] || { echo 'Electron installation missing'; exit 1; }
           cat > inspect.swift <<'SWIFT'
           import AppKit
           import ApplicationServices
@@ -71,6 +72,7 @@ jobs:
             NOVA_FIXTURE_DIR="$dir" NOVA_PANEL_MODE="$mode" "$electron" "$PWD/panel.cjs" >"$dir/fixture.log" 2>&1 &
             fixture=$!
             for attempt in {1..80}; do [[ -f "$dir/ready" ]] && break; kill -0 "$fixture" 2>/dev/null || break; sleep 0.5; done
+            [[ -s "$dir/ready" ]] || { sed -E '/DevTools listening/d' "$dir/fixture.log" | tail -n 10; exit 1; }
             echo "MODE $mode pid $fixture"
             for sample in 1 2; do sleep 4; ./inspect "$fixture"; done
             sed -E '/DevTools listening/d' "$dir/fixture.log" | tail -n 7
