@@ -64,7 +64,7 @@ describe('FileEditService persistence contract', () => {
     }
   }
 
-  it('reads and saves through symlink-parent traversal without touching the lexical sibling', async () => {
+  it('reads and saves the same file as the operating system for a junction followed by a parent segment', async () => {
     await mkdir(path.join(root, 'a'))
     await mkdir(path.join(root, 'other', 'dir'), { recursive: true })
     await symlink(path.join(root, 'other', 'dir'), path.join(root, 'a', 'link'), 'junction')
@@ -73,8 +73,14 @@ describe('FileEditService persistence contract', () => {
     await writeFile(intended, 'intended')
     await writeFile(sibling, 'sibling')
     const target = AbsoluteFilePathSchema.parse(`${root}/a/link/../note.md`)
+    // Win32 normalizes the parent segment before it follows the junction. POSIX follows it first.
+    const linkedParent = process.platform !== 'win32'
+    const selected = linkedParent ? intended : sibling
+    const untouched = linkedParent ? sibling : intended
+    const original = await readFile(untouched, 'utf8')
+    expect(await readFile(target, 'utf8')).toBe(await readFile(selected, 'utf8'))
     const { resource, snapshot } = await open({ kind: 'path', path: target })
-    expect(new TextDecoder().decode(snapshot.data)).toBe('intended')
+    expect(new TextDecoder().decode(snapshot.data)).toBe(await readFile(selected, 'utf8'))
     expect(
       await service.write(owner, {
         editId: resource.editId,
@@ -82,8 +88,8 @@ describe('FileEditService persistence contract', () => {
         data: bytes('saved')
       })
     ).toMatchObject({ metadataRecoveryPending: false })
-    expect(await readFile(intended, 'utf8')).toBe('saved')
-    expect(await readFile(sibling, 'utf8')).toBe('sibling')
+    expect(await readFile(selected, 'utf8')).toBe('saved')
+    expect(await readFile(untouched, 'utf8')).toBe(original)
   })
 
   it.each(['path', 'entry'] as const)(
@@ -134,13 +140,21 @@ describe('FileEditService persistence contract', () => {
     expect(await readFile(second, 'utf8')).toBe('base')
   })
 
-  it('denies managed storage reached through symlink-parent traversal', async () => {
+  it('denies paths that resolve through a junction into managed storage', async () => {
     await mkdir(path.join(root, 'managed', 'child'))
-    await symlink(path.join(root, 'managed', 'child'), path.join(root, 'link'), 'junction')
+    const windows = process.platform === 'win32'
+    await symlink(
+      windows ? path.join(root, 'managed') : path.join(root, 'managed', 'child'),
+      path.join(root, 'link'),
+      'junction'
+    )
     await writeFile(path.join(root, 'managed', 'secret.md'), 'protected')
     await writeFile(path.join(root, 'secret.md'), 'decoy')
     await expect(
-      open({ kind: 'path', path: AbsoluteFilePathSchema.parse(`${root}/link/../secret.md`) })
+      open({
+        kind: 'path',
+        path: AbsoluteFilePathSchema.parse(windows ? path.join(root, 'link', 'secret.md') : `${root}/link/../secret.md`)
+      })
     ).rejects.toThrow()
     expect(await readFile(path.join(root, 'managed', 'secret.md'), 'utf8')).toBe('protected')
   })

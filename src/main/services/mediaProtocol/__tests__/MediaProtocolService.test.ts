@@ -1,3 +1,6 @@
+import path from 'node:path'
+import { pathToFileURL } from 'node:url'
+
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { application } from '@application'
@@ -111,11 +114,12 @@ describe('MediaProtocolService', () => {
   })
 
   it('restricts owned media to the trusted main frame of its issuing window', () => {
-    vi.mocked(application.getPath).mockReturnValue('/app')
+    const root = path.resolve('app')
+    vi.mocked(application.getPath).mockReturnValue(root)
     const id = service.store(MediaKind.Audio, Buffer.from([1]), 'audio/wav', { webContentsId: 7 })
     const url = service.getUrl(MediaKind.Audio, id)
     const check = beforeRequestMock.mock.calls[0][1]
-    const main = { url: 'file:///app/renderer/index.html', top: undefined as unknown }
+    const main = { url: pathToFileURL(path.join(root, 'renderer', 'index.html')).href, top: undefined as unknown }
     main.top = main
     function allowed(webContentsId: number | undefined, frame: unknown) {
       let cancelled: boolean | undefined
