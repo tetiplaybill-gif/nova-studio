@@ -132,11 +132,12 @@ it.each([
 
 it('checks the exact signed development executable and its CDP ownership', () => {
   const executablePath = '/tmp/owned-run/installed/signed-runtime/Electron.app/Contents/MacOS/Electron'
-  const signedOwner = { ...owner, executablePath }
-  let command = `${executablePath} . --remote-debugging-port=9222`
+  const signedOwner = { ...owner, executablePath, cdpPort: 42019 }
+  let command = `${executablePath} . --remote-debugging-port=42019`
   let listener = '42001'
   execFileSync.mockImplementation((file: string) => (file === 'ps' ? command : listener))
   expect(() => assertOwnedProcess(signedOwner, 42001, 'electron')).not.toThrow()
+  expect(execFileSync).toHaveBeenCalledWith('lsof', expect.arrayContaining(['-iTCP:42019']), expect.anything())
   command = '/tmp/foreign-run/Electron.app/Contents/MacOS/Electron .'
   expect(() => assertOwnedProcess(signedOwner, 42001, 'electron')).toThrow('command no longer matches')
   command = `${executablePath} .`

@@ -76,7 +76,7 @@ export function assertOwnedProcess(record: ProcessOwner, pid: number, kind: 'ele
   if (!expected || !command.toLowerCase().includes(expected.toLowerCase())) {
     throw new Error(`Refusing to terminate stale ${kind} PID ${pid}; its command no longer matches the owned run`)
   }
-  if (kind === 'electron' && findCdpPid(record.platform) !== pid) {
+  if (kind === 'electron' && findListeningPid(record.platform, record.cdpPort) !== pid) {
     throw new Error(`Refusing to terminate PID ${pid}; it no longer owns CDP port ${record.cdpPort}`)
   }
   if (kind === 'inspector' && findListeningPid(record.platform, MAIN_INSPECTOR_PORT) !== pid) {
@@ -231,6 +231,7 @@ export function isDescendant(pid: number, ancestorPid: number, platform: Platfor
 }
 
 export function findListeningPid(platform: Platform, port: number): number | undefined {
+  if (!Number.isInteger(port) || port < 1 || port > 65535) return undefined
   try {
     const output =
       platform === 'windows'

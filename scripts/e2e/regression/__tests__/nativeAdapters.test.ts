@@ -16,7 +16,7 @@ import { join } from 'node:path'
 
 import { macNativeFixtureExecutable } from '../macRuntime'
 import { ensureRunDirectories, getRunPaths, type RunPaths } from '../paths'
-import { CDP_PORT, isAlive, processCommand, waitForExit } from '../process'
+import { isAlive, processCommand, waitForExit } from '../process'
 import {
   chooseNativeFile,
   chooseNativeFiles,
@@ -322,10 +322,12 @@ it.skipIf(!['darwin', 'win32'].includes(process.platform)).each(dialogModes)(
       const { app, BrowserWindow, dialog } = require('electron')
       const fs = require('node:fs')
       require('node:readline').createInterface({ input: process.stdin }).on('line', line => {
-        if (line === 'quit') app.quit()
+        if (line === 'quit') app.exit(0)
       })
       app.setPath('userData', ${JSON.stringify(join(paths.profiles, 'native-dialog'))})
-      app.commandLine.appendSwitch('remote-debugging-port', ${JSON.stringify(String(CDP_PORT))})
+      app.commandLine.appendSwitch('remote-debugging-port', '0')
+      // A hosted Intel Mac has no accelerated EGL display. Only the fixture needs a plain native window.
+      if (process.platform === 'darwin' && process.arch === 'x64' && process.env.GITHUB_ACTIONS === 'true') app.disableHardwareAcceleration()
       app.whenReady().then(async () => {
         const window = new BrowserWindow({ width: 500, height: 300 })
         await window.loadURL('data:text/html,<title>Owned native dialog fixture</title>')
@@ -376,6 +378,11 @@ it.skipIf(!['darwin', 'win32'].includes(process.platform)).each(dialogModes)(
         windowsHide: false
       })
       await expect.poll(() => existsSync(readyPath), { timeout: 30_000 }).toBe(true)
+      const portFile = join(paths.profiles, 'native-dialog', 'DevToolsActivePort')
+      await expect.poll(() => existsSync(portFile), { timeout: 10_000 }).toBe(true)
+      const cdpPort = Number(readFileSync(portFile, 'utf8').split('\n')[0])
+      if (!Number.isInteger(cdpPort) || cdpPort < 1 || cdpPort > 65535)
+        throw new Error('Invalid fixture debugging port')
       writeFileSync(
         paths.appRecord,
         JSON.stringify({
@@ -387,7 +394,7 @@ it.skipIf(!['darwin', 'win32'].includes(process.platform)).each(dialogModes)(
           targetRoot: directory,
           runnerPid: child.pid,
           electronPid: child.pid,
-          cdpPort: CDP_PORT,
+          cdpPort,
           targetUrl: 'data:text/html,fixture',
           logPath: join(paths.logs, 'fixture.log')
         })
@@ -550,7 +557,7 @@ it.skipIf(!['darwin', 'win32'].includes(process.platform)).each(dialogModes)(
           )
           if (nativePlatform === 'windows')
             execFileSync('taskkill.exe', ['/PID', String(fixture.pid), '/T', '/F'], { stdio: 'ignore', timeout: 10000 })
-          else fixture.kill('SIGTERM')
+          else fixture.kill('SIGKILL')
           await expect.poll(exited, { timeout: 10000 }).toBe(true)
         }
       }

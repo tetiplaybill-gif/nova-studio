@@ -71,7 +71,20 @@ export default defineConfig({
       // 渲染进程单元测试配置
       {
         extends: true,
-        plugins: rendererConfig.plugins.filter((plugin: any) => plugin.name !== 'tailwindcss'),
+        plugins: [
+          ...rendererConfig.plugins.filter((plugin: any) => plugin.name !== 'tailwindcss'),
+          process.env.NOVA_RELEASE_TEST_GROUP === 'isolated' && {
+            name: 'release-renderer-conditions',
+            // Use the shipped Markdown parser. Its development export traces every token.
+            configEnvironment(name, options) {
+              if (name === 'ssr' && options.resolve?.conditions) {
+                options.resolve.conditions = options.resolve.conditions.map((condition) =>
+                  condition === 'development|production' ? 'production' : condition
+                )
+              }
+            }
+          }
+        ],
         resolve: {
           alias: rendererConfig.resolve.alias
         },
