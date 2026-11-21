@@ -1,3 +1,5 @@
+import path from 'node:path'
+
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const { mockExecFileAsync, mockFs, mockFsp } = vi.hoisted(() => ({
@@ -22,9 +24,10 @@ vi.mock('@main/services/RegionService', () => ({ regionService: { detectIsInChin
 
 const { findToolEnvironment, installToolDependencies } = await import('../pipDependencies')
 
-const INSTALL_PATH = '/mock/mise/installs/pipx-babeldoc-stream/0.6.4.post4'
-const ENVIRONMENT = `${INSTALL_PATH}/babeldoc-stream`
-const UV_BIN = '/mock/cherry.bin/uv'
+const INSTALL_PATH = path.resolve('/mock/mise/installs/pipx-babeldoc-stream/0.6.4.post4')
+const ENVIRONMENT = path.join(INSTALL_PATH, 'babeldoc-stream')
+const VENV_CONFIG = path.join(ENVIRONMENT, 'pyvenv.cfg')
+const UV_BIN = path.resolve('/mock/cherry.bin', process.platform === 'win32' ? 'uv.exe' : 'uv')
 
 describe('managed pipx dependencies', () => {
   beforeEach(() => {
@@ -32,14 +35,14 @@ describe('managed pipx dependencies', () => {
     mockFs.existsSync.mockImplementation((candidate) => candidate === UV_BIN)
     mockFsp.readdir.mockResolvedValue(['bin', 'babeldoc-stream'])
     mockFsp.access.mockImplementation(async (candidate: string) => {
-      if (candidate !== `${ENVIRONMENT}/pyvenv.cfg`) throw new Error('ENOENT')
+      if (candidate !== VENV_CONFIG) throw new Error('ENOENT')
     })
     mockExecFileAsync.mockResolvedValue({ stdout: '', stderr: '' })
   })
 
   it('finds the venv one level below the install directory by pyvenv.cfg', async () => {
     await expect(findToolEnvironment(INSTALL_PATH)).resolves.toBe(ENVIRONMENT)
-    expect(mockFsp.access).toHaveBeenCalledWith(`${ENVIRONMENT}/pyvenv.cfg`, mockFs.constants.F_OK)
+    expect(mockFsp.access).toHaveBeenCalledWith(VENV_CONFIG, mockFs.constants.F_OK)
   })
 
   it('returns null for an unreadable install or one without a venv, then rejects installation', async () => {
@@ -66,7 +69,7 @@ describe('managed pipx dependencies', () => {
         UV_BIN,
         ['pip', 'install', '--python', ENVIRONMENT, ...dependencies],
         {
-          cwd: '/mock/app.temp',
+          cwd: path.resolve('/mock/app.temp'),
           env: {
             PIP_INDEX_URL: 'https://pypi.example/simple',
             UV_PYTHON_DOWNLOADS: 'never',

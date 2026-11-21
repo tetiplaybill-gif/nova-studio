@@ -35,7 +35,7 @@ describe('voice service public boundary', () => {
       /\.request\(\s*['"](?:file\.voice_recording\.create|ai\.(?:voice|speech|transcription)\.)/
     const callers = productionSources(rendererRoot)
       .filter((file) => directVoiceRequest.test(readFileSync(file, 'utf8')))
-      .map((file) => path.relative(rendererRoot, file))
+      .map((file) => path.relative(rendererRoot, file).split(path.sep).join('/'))
 
     expect(callers).toEqual(['services/voice/VoiceService.ts'])
   })

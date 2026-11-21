@@ -62,7 +62,9 @@ describe('macOS signing policy', () => {
   it('uses dedicated empty entitlements only for the packaged system-speech helper', () => {
     const frameworkOptions = { entitlements: 'build/entitlements.mac.plist', hardenedRuntime: true }
     const originalOptionsForFile = (filePath: string) =>
-      filePath.includes('/Frameworks/') ? frameworkOptions : { entitlements: 'build/entitlements.mac.plist' }
+      filePath.split(path.sep).includes('Frameworks')
+        ? frameworkOptions
+        : { entitlements: 'build/entitlements.mac.plist' }
     const optionsForFile = createOptionsForFile(appPath, originalOptionsForFile)
 
     expect(optionsForFile(helperPath)).toEqual({

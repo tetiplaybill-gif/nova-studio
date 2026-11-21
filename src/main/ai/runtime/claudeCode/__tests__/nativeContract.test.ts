@@ -1,6 +1,6 @@
 import { execFile } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
-import { copyFile, mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises'
+import { copyFile, mkdir, mkdtemp, realpath, readFile, readdir, rm, writeFile } from 'node:fs/promises'
 import type { ServerResponse } from 'node:http'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
@@ -98,7 +98,7 @@ async function bounded<T>(promise: Promise<T>): Promise<T> {
 }
 
 async function nativeProbe(options: Pick<Options, 'agents'> = {}) {
-  const directory = await mkdtemp(path.join(tmpdir(), 'cherry-claude-contract-'))
+  const directory = await realpath(await mkdtemp(path.join(tmpdir(), 'cherry-claude-contract-')))
   const cwd = path.join(directory, 'work')
   const config = path.join(directory, 'config')
   await mkdir(cwd)

@@ -45,7 +45,7 @@ jobs:
       - name: Test the remaining release checkout
         env:
           NOVA_RELEASE_TEST_GROUP: remaining
-        run: pnpm test --shard=${{ matrix.shard }}/4
+        run: pnpm test --maxWorkers=1 --shard=${{ matrix.shard }}/4
 
   build:
     strategy:
@@ -151,12 +151,40 @@ jobs:
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
 
+      - name: Install the generated package and verify note persistence
+        if: matrix.platform == 'windows'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $setup = @(Get-ChildItem dist -Filter '*-setup.exe')
+          if ($setup.Count -ne 1) { throw 'Expected exactly one Windows installer' }
+          $destination = Join-Path $env:RUNNER_TEMP 'nova-installed-note-test'
+          $installer = Start-Process -FilePath $setup[0].FullName -ArgumentList @('/S', "/D=$destination") -PassThru
+          if (-not $installer.WaitForExit(180000) -or $installer.ExitCode -ne 0) { throw 'Studio installation failed' }
+          $app = Join-Path $destination 'NOVA Studio.exe'
+          if (-not (Test-Path -LiteralPath $app -PathType Leaf)) { throw 'Installed application missing' }
+          $tools = Join-Path $destination 'resources/app.asar.unpacked/resources/binaries/win32-x64'
+          $mise = Join-Path $tools 'mise.exe'
+          $uv = Join-Path $tools 'uv.exe'
+          & $mise --version
+          if ($LASTEXITCODE -ne 0) { throw 'Installed mise could not start' }
+          $venv = Join-Path $env:RUNNER_TEMP 'NOVA tool installation check'
+          $python = (Get-Command python -CommandType Application | Select-Object -First 1).Source
+          $wheel = & $python -c "import ensurepip,pathlib;print(next((pathlib.Path(ensurepip.__file__).parent/'_bundled').glob('pip-*.whl')))"
+          if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $wheel)) { throw 'Offline fixture wheel unavailable' }
+          & $uv venv --offline --python $python $venv
+          if ($LASTEXITCODE -ne 0) { throw 'Installed uv could not create an environment' }
+          & $uv pip install --offline --no-index --no-deps --python $venv $wheel
+          if ($LASTEXITCODE -ne 0) { throw 'Installing a managed Python dependency failed' }
+          & (Join-Path $venv 'Scripts/python.exe') -I -m pip --version
+          if ($LASTEXITCODE -ne 0) { throw 'Installed dependency could not run' }
+          node scripts/release/verify-note-renderer.cjs $app
+
       - name: Verify large notes in the packaged native renderer
+        if: matrix.platform == 'mac'
         shell: bash
         run: |
-          if [[ "${{ matrix.platform }}" == windows ]]; then
-            binary="$(cygpath -aw 'dist/win-unpacked/NOVA Studio.exe')"
-          elif [[ "${{ matrix.arch }}" == arm64 ]]; then
+          if [[ "${{ matrix.arch }}" == arm64 ]]; then
             binary="$PWD/dist/mac-arm64/NOVA Studio.app/Contents/MacOS/NOVA Studio"
           else
             binary="$PWD/dist/mac/NOVA Studio.app/Contents/MacOS/NOVA Studio"

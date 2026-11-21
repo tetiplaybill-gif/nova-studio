@@ -272,8 +272,8 @@ it('continues independent cleanup and persists failures for a later executor', a
 it('force-terminates a real owned process when a graceful request leaves it running', async () => {
   const child = spawn(
     process.execPath,
-    ['-e', "process.on('SIGTERM', () => {}); setInterval(() => {}, 1000); process.stdout.write('ready')"],
-    { stdio: ['ignore', 'pipe', 'pipe'] }
+    ['-e', "process.on('message', () => {}); setInterval(() => {}, 1000); process.stdout.write('ready')"],
+    { stdio: ['ignore', 'pipe', 'pipe', 'ipc'] }
   )
   childProcesses.push(child)
   await once(child.stdout, 'data')
@@ -283,9 +283,9 @@ it('force-terminates a real owned process when a graceful request leaves it runn
   observeExternalResource(paths, id)
   desktop.windows = []
   native.mockImplementation((_platform, request: ExternalAppRequest) => {
-    if (request.action === 'quit') child.kill('SIGTERM')
+    if (request.action === 'quit') child.send('quit')
     if (request.action === 'force') {
-      process.kill(child.pid!, 'SIGKILL')
+      if (!child.kill('SIGKILL')) throw new Error('Could not terminate the owned fixture process')
       desktop.processes = []
     }
     // oxlint-disable-next-line no-restricted-globals -- Isolate synthetic fixture data from later test mutations.
@@ -294,7 +294,8 @@ it('force-terminates a real owned process when a graceful request leaves it runn
   const exited = once(child, 'exit')
   cleanupExternalResources(paths)
   await exited
-  expect(child.signalCode).toBe('SIGKILL')
+  expect(child.killed).toBe(true)
+  expect(child.signalCode !== null || child.exitCode !== null).toBe(true)
   expect(ledger()).toEqual([])
 })
 

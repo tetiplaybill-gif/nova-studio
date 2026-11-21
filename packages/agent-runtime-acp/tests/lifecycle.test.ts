@@ -38,7 +38,7 @@ it('joins the owned process, retries a failed join, drains published callbacks a
       stream: ndJsonStream(Writable.toWeb(child.stdin), Readable.toWeb(child.stdout) as ReadableStream<Uint8Array>),
       closeAndJoin: async () => {
         if (++joinAttempts === 1) throw new Error('Join unavailable')
-        child.kill('SIGTERM')
+        child.stdin.end()
         await exited
       }
     })

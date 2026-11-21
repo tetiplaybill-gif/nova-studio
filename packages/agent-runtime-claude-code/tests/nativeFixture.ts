@@ -1,6 +1,6 @@
 import { spawn, type ChildProcess } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
-import { mkdir, mkdtemp, rm } from 'node:fs/promises'
+import { mkdir, mkdtemp, realpath, rm } from 'node:fs/promises'
 import { createServer, type ServerResponse } from 'node:http'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
@@ -74,7 +74,7 @@ function modelReply(res: ServerResponse, id: string, model: string) {
 }
 
 export async function fixture(overrides: Partial<ClaudeSessionOptions> = {}) {
-  const directory = await mkdtemp(path.join(tmpdir(), 'cherry-claude-runtime-'))
+  const directory = await realpath(await mkdtemp(path.join(tmpdir(), 'cherry-claude-runtime-')))
   const cwd = path.join(directory, 'work')
   const configDir = path.join(directory, 'config')
   await mkdir(cwd)

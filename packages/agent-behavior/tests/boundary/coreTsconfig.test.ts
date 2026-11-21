@@ -1,4 +1,4 @@
-import { dirname, join } from 'node:path'
+import { dirname, join, normalize } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import ts from 'typescript'
@@ -14,8 +14,8 @@ function diagnose(code: string): string[] {
   const host = ts.createCompilerHost(options)
   const readFile = host.readFile.bind(host)
   const fileExists = host.fileExists.bind(host)
-  host.readFile = (file) => (file === PROBE ? code : readFile(file))
-  host.fileExists = (file) => file === PROBE || fileExists(file)
+  host.readFile = (file) => (normalize(file) === PROBE ? code : readFile(file))
+  host.fileExists = (file) => normalize(file) === PROBE || fileExists(file)
   const program = ts.createProgram({ rootNames: [PROBE], options, host })
   return ts.getPreEmitDiagnostics(program).map((d) => ts.flattenDiagnosticMessageText(d.messageText, '\n'))
 }

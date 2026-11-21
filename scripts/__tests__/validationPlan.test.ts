@@ -306,6 +306,10 @@ describe('working tree changes', () => {
 
 // A docs-only plan must never start compilers, native rebuilds, lint fixes, or tests.
 describe('validation execution', () => {
+  const fixtureEnv = Object.fromEntries(
+    Object.entries(process.env).filter(([key]) => key.toLowerCase() !== 'npm_execpath')
+  )
+
   it('does not prepare dependencies or run native tests for an unselected platform group', () => {
     const cwd = mkdtempSync(join(tmpdir(), 'cherry-validation-portable-'))
     directories.push(cwd)
@@ -318,7 +322,7 @@ describe('validation execution', () => {
     )
     const result = spawnSync(process.execPath, ['scripts/validation/run.mjs', '--group', 'platform'], {
       env: {
-        ...process.env,
+        ...fixtureEnv,
         npm_execpath: pnpm,
         COMMAND_LOG: log,
         VALIDATION_PLAN: JSON.stringify(createPlan(['packages/web-search/src/providers/tavily.ts']))
@@ -341,7 +345,7 @@ describe('validation execution', () => {
     )
     const result = spawnSync(process.execPath, ['scripts/validation/run.mjs', '--group', 'repository'], {
       env: {
-        ...process.env,
+        ...fixtureEnv,
         npm_execpath: pnpm,
         COMMAND_LOG: log,
         THEME_EXIT: String(exitCode),
@@ -372,7 +376,7 @@ describe('validation execution', () => {
     )
     const result = spawnSync(process.execPath, ['scripts/validation/run.mjs', '--group', group], {
       env: {
-        ...process.env,
+        ...fixtureEnv,
         npm_execpath: pnpm,
         COMMAND_LOG: log,
         VALIDATION_WORKSPACE_PREPARED: prepared,
@@ -408,7 +412,7 @@ describe('validation execution', () => {
       `require('node:fs').appendFileSync(process.env.COMMAND_LOG, JSON.stringify(process.argv.slice(2)) + '\\n'); process.exit(Number(process.env.COMMAND_EXIT || 0))`
     )
     const env = {
-      ...process.env,
+      ...fixtureEnv,
       npm_execpath: pnpm,
       COMMAND_LOG: log,
       VALIDATION_PLAN: JSON.stringify(createPlan(['docs/dev/contrib/development.md']))

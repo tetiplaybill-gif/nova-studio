@@ -28,6 +28,7 @@ vi.mock('@main/utils/shellEnv', () => ({
   refreshShellEnv: vi.fn(async () => ({}))
 }))
 
+const executableName = (name: string) => (process.platform === 'win32' ? `${name}.exe` : name)
 const CACHE_KEY = 'feature.binary.installed_sizes'
 type Install = { active?: boolean; version?: string; install_path?: string }
 const deferred = () => {
@@ -56,19 +57,19 @@ describe('BinaryManager installed sizes', () => {
     const installation = path.join(root, 'installs', `fixture-${name}`, version)
     await fsp.mkdir(path.join(installation, 'one', 'two'), { recursive: true })
     await fsp.mkdir(path.join(installation, 'bin'), { recursive: true })
-    const binary = path.join(installation, 'bin', name)
+    const binary = path.join(installation, 'bin', executableName(name))
     await fsp.writeFile(binary, Buffer.alloc(size === 0 ? 0 : 3), { mode: 0o755 })
     if (size > 0) {
       await fsp.writeFile(path.join(installation, 'one', 'a'), Buffer.alloc(5))
       await fsp.writeFile(path.join(installation, 'one', 'two', 'b'), Buffer.alloc(size - 8))
     }
-    await fsp.writeFile(path.join(root, 'shims', name), '', { mode: 0o755 })
+    await fsp.writeFile(path.join(root, 'shims', executableName(name)), '', { mode: 0o755 })
     installed[tool] = [{ active: true, version, install_path: installation }]
     targets.set(name, binary)
     return installation
   }
   const bundled = async (name: string, size: number) => {
-    await fsp.writeFile(path.join(root, 'bundled', name), Buffer.alloc(size), { mode: 0o755 })
+    await fsp.writeFile(path.join(root, 'bundled', executableName(name)), Buffer.alloc(size), { mode: 0o755 })
   }
   const gateDirectories = (blocked: Set<string>) => {
     const reached = deferred()
@@ -134,7 +135,7 @@ describe('BinaryManager installed sizes', () => {
         delete installed[tool]
         const name = [...recipes].find(([, recipe]) => recipe === tool)?.[0] ?? tool
         targets.delete(name)
-        await fsp.rm(path.join(root, 'shims', name), { force: true })
+        await fsp.rm(path.join(root, 'shims', executableName(name)), { force: true })
       }
       return { stdout: '' }
     })
@@ -170,7 +171,7 @@ describe('BinaryManager installed sizes', () => {
     )
     expect(actual).toEqual({ uv: 7, syscli: null, absent: null, unknown: null, rust: null })
     expect(binaryRequestSchemas['binary.get_tool_installed_sizes'].output.safeParse(actual).success).toBe(true)
-    expect(lstat.mock.calls.map(([file]) => String(file))).toEqual([path.join(root, 'bundled', 'uv')])
+    expect(lstat.mock.calls.map(([file]) => String(file))).toEqual([path.join(root, 'bundled', executableName('uv'))])
     expect(opendir).not.toHaveBeenCalled()
     expect(await manager.getToolInstalledSizes(['uvx'])).toEqual({ uvx: 13 })
     expect(await manager.getToolInstalledSizes([])).toEqual({})
@@ -189,7 +190,7 @@ describe('BinaryManager installed sizes', () => {
       { active: false, version: '0.1.0', install_path: old },
       { active: true, version: '1.0.0', install_path: alias }
     ]
-    targets.set('lark-cli', path.join(alias, 'bin', 'lark-cli'))
+    targets.set('lark-cli', path.join(alias, 'bin', executableName('lark-cli')))
     const before = runMise.mock.calls.length
     expect(await manager.getToolInstalledSizes(['lark-cli'])).toEqual({ 'lark-cli': 15 })
     expect(runMise.mock.calls.slice(before).filter(([args]) => args.join(' ') === 'ls --json')).toHaveLength(2)

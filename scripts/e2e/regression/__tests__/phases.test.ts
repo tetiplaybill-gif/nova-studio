@@ -43,7 +43,7 @@ it('keeps the shared application available across selected phases', async () => 
         mockVersion: '1.46.0',
         commitSha: 'sha',
         mode: 'branch',
-        platform: 'macos',
+        platform: process.platform === 'win32' ? 'windows' : 'macos',
         ref: 'main',
         runner: 'local',
         task: 'startup-smoke,notes-smoke'
@@ -96,7 +96,7 @@ it('fails the platform gate when the real Playwright subprocess cannot acquire i
         mockVersion: '1.46.0',
         commitSha: 'sha',
         mode: 'branch',
-        platform: 'macos',
+        platform: process.platform === 'win32' ? 'windows' : 'macos',
         ref: 'main',
         runner: 'macos-latest',
         task: 'startup-smoke'

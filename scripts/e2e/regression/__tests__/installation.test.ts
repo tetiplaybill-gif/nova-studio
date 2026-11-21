@@ -12,7 +12,7 @@ it('installs Windows releases without exposing GitHub credentials to the install
   const directory = mkdtempSync(join(tmpdir(), 'cherry-installer-'))
   const paths = getRunPaths(directory)
   ensureRunDirectories(paths)
-  const executable = join(paths.installed, 'Cherry Studio.exe')
+  const executable = join(paths.installed, 'NOVA Studio.exe')
   writeFileSync(executable, '')
   for (const key of ['GH_TOKEN', 'GITHUB_TOKEN', 'GH_ENTERPRISE_TOKEN', 'GITHUB_ENTERPRISE_TOKEN', 'gh_token']) {
     vi.stubEnv(key, 'test-token')
@@ -41,7 +41,7 @@ it('waits for installer exit before publishing the installation record', async (
   const directory = mkdtempSync(join(tmpdir(), 'cherry-installer-wait-'))
   const paths = getRunPaths(directory)
   ensureRunDirectories(paths)
-  const executable = join(paths.installed, 'Cherry Studio.exe')
+  const executable = join(paths.installed, 'NOVA Studio.exe')
   const completed = join(directory, 'completed')
   const actual = await vi.importActual<{ execFileSync: typeof execFileSync }>('node:child_process')
   vi.mocked(execFileSync).mockImplementation(() =>
@@ -72,7 +72,7 @@ it.each(['nonzero installer exit', 'installer timeout'])('rejects a partial exec
   const directory = mkdtempSync(join(tmpdir(), 'cherry-installer-failed-'))
   const paths = getRunPaths(directory)
   ensureRunDirectories(paths)
-  writeFileSync(join(paths.installed, 'Cherry Studio.exe'), 'partial')
+  writeFileSync(join(paths.installed, 'NOVA Studio.exe'), 'partial')
   vi.mocked(execFileSync).mockImplementation(() => {
     throw new Error(reason)
   })

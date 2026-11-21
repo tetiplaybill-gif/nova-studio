@@ -7,7 +7,7 @@
  * in-place repair of migrated rows, pause/resume lifecycle, and timer arming.
  */
 
-import { chmodSync, existsSync, mkdirSync, mkdtempSync, rmSync, symlinkSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, rmSync, symlinkSync } from 'node:fs'
 import { readFile, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
@@ -1022,9 +1022,13 @@ describe('heartbeatSchedule', () => {
 
   it('leaves no schedule or workspace when heartbeat-file provisioning fails', async () => {
     seedAgent(AGENT_ID)
-    chmodSync(path.join(agentsRoot, AGENT_ID), 0o555)
-
-    await expect(syncHeartbeatSchedule(AGENT_ID)).rejects.toThrow()
+    const provision = vi.spyOn(await import('../heartbeat'), 'ensureHeartbeatFile')
+    provision.mockRejectedValueOnce(Object.assign(new Error('Heartbeat file is read-only'), { code: 'EACCES' }))
+    try {
+      await expect(syncHeartbeatSchedule(AGENT_ID)).rejects.toThrow('Heartbeat file is read-only')
+    } finally {
+      provision.mockRestore()
+    }
 
     expect(heartbeatRows(AGENT_ID)).toHaveLength(0)
     expect(dbh.db.select().from(agentWorkspaceTable).all()).toHaveLength(0)

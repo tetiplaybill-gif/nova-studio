@@ -1,3 +1,4 @@
+import type { ChildProcess } from 'node:child_process'
 import { EventEmitter } from 'node:events'
 import { PassThrough } from 'node:stream'
 
@@ -14,6 +15,9 @@ import {
   ServiceContainer,
   ServicePhase
 } from '@main/core/lifecycle'
+import { killProcessTree } from '@main/utils/processRunner'
+
+vi.mock('@main/utils/processRunner', () => ({ killProcessTree: vi.fn() }))
 
 import {
   ClaudeCodeProcessManager,
@@ -26,6 +30,14 @@ class TestProcessManager extends ClaudeCodeProcessManager {
   constructor(spawnProcess: SpawnProcess) {
     super()
     this.spawnProcess = spawnProcess
+  }
+}
+
+function expectTerminated(child: ReturnType<typeof createFakeChild>) {
+  if (process.platform === 'win32') {
+    expect(killProcessTree).toHaveBeenCalledExactlyOnceWith(child.process as unknown as ChildProcess)
+  } else {
+    expect(child.kill).toHaveBeenCalledExactlyOnceWith('SIGTERM')
   }
 }
 
@@ -108,6 +120,7 @@ describe('ClaudeCodeProcessManager', () => {
   })
 
   beforeEach(() => {
+    vi.mocked(killProcessTree).mockReset()
     LifecycleManager.reset()
     ServiceContainer.reset()
     BaseService.resetInstances()
@@ -352,7 +365,7 @@ describe('ClaudeCodeProcessManager', () => {
     alreadyExited.setExited(null, 'SIGTERM')
 
     manager.killAll('SIGTERM')
-    expect(live.kill).toHaveBeenCalledExactlyOnceWith('SIGTERM')
+    expectTerminated(live)
     expect(alreadyExited.kill).not.toHaveBeenCalled()
   })
 
@@ -362,18 +375,20 @@ describe('ClaudeCodeProcessManager', () => {
     manager.spawn(spawnOptions)
 
     await expect(manager._doStop()).resolves.toBeUndefined()
-    expect(child.kill).toHaveBeenCalledExactlyOnceWith('SIGTERM')
+    expectTerminated(child)
   })
 
   it('absorbs child kill failures', () => {
     const child = createFakeChild()
-    child.kill.mockImplementation(() => {
+    const fail = () => {
       throw new Error('kill failed')
-    })
+    }
+    if (process.platform === 'win32') vi.mocked(killProcessTree).mockImplementationOnce(fail)
+    else child.kill.mockImplementation(fail)
     const manager = new TestProcessManager(vi.fn(() => child.process))
     manager.spawn(spawnOptions)
 
     expect(() => manager.killAll('SIGTERM')).not.toThrow()
-    expect(child.kill).toHaveBeenCalledExactlyOnceWith('SIGTERM')
+    expectTerminated(child)
   })
 })

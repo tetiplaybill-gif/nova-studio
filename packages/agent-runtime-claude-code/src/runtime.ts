@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto'
+import { realpathSync } from 'node:fs'
 import path from 'node:path'
 
 import type { Observation, OperationResult, Subagent, Thread } from '@cherrystudio/agent-runtime'
@@ -31,9 +32,11 @@ export function createClaudeCodeRuntime(options: ClaudeCodeRuntimeOptions): Clau
   }
   const build = (config: ClaudeSessionOptions, sessionId: string, fresh: boolean) => {
     if (!path.isAbsolute(config.cwd)) throw new TypeError('Claude working directory must be absolute')
+    // The native CLI indexes existing Windows workspaces by their expanded path, including 8.3 aliases.
+    const cwd = process.platform === 'win32' ? realpathSync.native(config.cwd) : config.cwd
     const owner = new ClaudeOwner(
       options,
-      { ...config, env: { ...(config.env ?? process.env) } },
+      { ...config, cwd, env: { ...(config.env ?? process.env) } },
       sessionId,
       fresh,
       report,

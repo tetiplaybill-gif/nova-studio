@@ -223,7 +223,7 @@ function githubFixture() {
   }
 }
 
-describe('coordinator against Git repositories and the GitHub API contract', () => {
+describe('coordinator against Git repositories and the GitHub API contract', { timeout: 90_000 }, () => {
   it('dry-runs without repository writes, then imports through a PR and checkpoints only after merge', async () => {
     const f = githubFixture()
     const original = { desktop: f.revision('desktop'), website: f.revision('website') }

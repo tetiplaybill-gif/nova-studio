@@ -6,7 +6,7 @@ import { agent, methods, ndJsonStream } from '@agentclientprotocol/sdk'
 const archive = process.argv[2]
 const sessionId = 'persisted-session'
 const hold = setInterval(() => {}, 1000)
-process.on('SIGTERM', () => {
+process.stdin.on('end', () => {
   clearInterval(hold)
   process.exit(0)
 })

@@ -15,7 +15,7 @@ vi.mock('child_process', async (importOriginal) => {
     }
   }
 })
-vi.mock('@main/core/platform', () => ({ isWin: false }))
+vi.mock('@main/core/platform', () => ({ isWin: false, isMac: false }))
 
 import { findCommandInShellEnv } from '../commandResolver'
 import { getRawShellEnv } from '../shellEnv'
