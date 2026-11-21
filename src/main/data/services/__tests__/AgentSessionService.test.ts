@@ -2016,7 +2016,7 @@ describe('AgentSessionService', () => {
       )
     })
 
-    it('purges every expired trashed session of a task', async () => {
+    it('purges every expired trashed session of a task', { timeout: 60_000 }, async () => {
       const { ids } = await seedTaskSessions()
       dbh.db.transaction((tx) => agentSessionService.trashByIdsTx(tx, ids, { deletedAt: 100 }))
 

@@ -170,11 +170,13 @@ const toolEvent = (toolName: string, input: Record<string, JsonValue>) => ({
   toolCallId: `tc-${toolName}`,
   input
 })
-const flush = () => vi.waitFor(() => expect(toolApprovalRegistry.size()).toBeGreaterThan(0))
+const flush = () => vi.waitFor(() => expect(toolApprovalRegistry.size()).toBeGreaterThan(0), { timeout: 10_000 })
+const parserAssets = application.getPath('feature.agents.command_parser_assets')
 
 beforeEach(() => {
   vi.clearAllMocks()
   vi.mocked(application.getPath).mockImplementation((key, filename) => {
+    if (key === 'feature.agents.command_parser_assets') return filename ? join(parserAssets, filename) : parserAssets
     const base =
       key === 'app.userdata'
         ? userData

@@ -1363,7 +1363,12 @@ export class AgentSessionService {
 
     const rows = chunk(uniqueIds, SQLITE_INARRAY_CHUNK).flatMap((idChunk) =>
       tx
-        .select({ session: sessionsTable, workspace: agentWorkspaceTable })
+        .select({
+          id: sessionsTable.id,
+          ownerSessionId: sessionsTable.ownerSessionId,
+          workspaceId: agentWorkspaceTable.id,
+          workspaceType: agentWorkspaceTable.type
+        })
         .from(sessionsTable)
         .innerJoin(agentWorkspaceTable, eq(sessionsTable.workspaceId, agentWorkspaceTable.id))
         .where(
@@ -1377,10 +1382,10 @@ export class AgentSessionService {
     )
     if (rows.length === 0) return []
 
-    const purgedIds = rows.map((row) => row.session.id)
+    const purgedIds = rows.map((row) => row.id)
     const systemWorkspaceIds = rows
-      .filter((row) => row.session.ownerSessionId === null && row.workspace.type === AGENT_WORKSPACE_TYPE.SYSTEM)
-      .map((row) => row.workspace.id)
+      .filter((row) => row.ownerSessionId === null && row.workspaceType === AGENT_WORKSPACE_TYPE.SYSTEM)
+      .map((row) => row.workspaceId)
     for (const idChunk of chunk(purgedIds, SQLITE_INARRAY_CHUNK)) {
       tx.delete(sessionsTable).where(inArray(sessionsTable.id, idChunk)).run()
     }
