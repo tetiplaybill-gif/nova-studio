@@ -27,7 +27,8 @@ async function verifyNoteRenderer(executable) {
   })
   let browser
   try {
-    const deadline = Date.now() + 45_000
+    // Intel builds may need Rosetta translation before Electron creates its debugging port.
+    const deadline = Date.now() + 120_000
     let port
     while (!port && Date.now() < deadline) {
       if (startupError) throw startupError
@@ -42,32 +43,39 @@ async function verifyNoteRenderer(executable) {
     if (!/^\d+$/.test(port || '')) throw new Error('NOVA Studio did not expose its test renderer')
     browser = await chromium.connectOverCDP('http://127.0.0.1:' + port)
     let main
-    while (!main && Date.now() < deadline) {
+    const windowDeadline = Date.now() + 90_000
+    while (!main && Date.now() < windowDeadline) {
+      if (app.exitCode !== null) throw new Error('NOVA Studio exited while creating the main window: ' + app.exitCode)
       main = browser
         .contexts()
         .flatMap((context) => context.pages())
         .find((page) => /\/windows\/main\/index\.html/.test(page.url()))
       if (!main) await delay(200)
     }
-    if (!main) throw new Error('NOVA Studio main window did not open')
+    if (!main) {
+      const kinds = browser
+        .contexts()
+        .flatMap((context) => context.pages())
+        .map((page) => page.url().match(/\/windows\/([a-zA-Z]+)\//)?.[1] ?? 'other')
+      throw new Error('NOVA Studio main window did not open; observed window types: ' + kinds.join(', '))
+    }
     const skip = main.getByRole('button', { name: /稍后设置|set up later/i })
-    await skip.waitFor({ timeout: 12_000 }).catch((error) => {
-      if (error.name !== 'TimeoutError') throw error
-    })
+    const shell = main.locator('[data-ui="app.shell"]').first()
+    await skip.or(shell).first().waitFor({ timeout: 180_000 })
     if (await skip.isVisible()) await skip.click()
-    await main.waitForFunction(
-      () =>
-        !window.dispatchEvent(
-          new CustomEvent('cherry:open-main-route', {
-            cancelable: true,
-            detail: { path: '/app/notes' }
-          })
-        ),
-      undefined,
-      { timeout: 20_000, polling: 300 }
-    )
+    await shell.waitFor({ timeout: 60_000 })
     const notes = main.locator('[data-ui="notes.editor"]')
-    await notes.waitFor()
+    await main.waitForFunction(
+      () => {
+        if (document.querySelector('[data-ui="notes.editor"]')) return true
+        window.dispatchEvent(
+          new CustomEvent('cherry:open-main-route', { cancelable: true, detail: { path: '/app/notes' } })
+        )
+        return false
+      },
+      undefined,
+      { timeout: 30_000, polling: 500 }
+    )
     await notes.getByRole('button', { name: /create a new note|新建笔记/i }).click()
     const view = notes.locator('.tiptap').first()
     await view.waitFor()
