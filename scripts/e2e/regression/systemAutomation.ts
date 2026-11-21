@@ -981,7 +981,62 @@ export function chooseNativeFiles(platform: Platform, paths: RunPaths, candidate
   ) {
     throw new Error('macOS multi-file selection requires all files in one isolated directory')
   }
-  chooseNativeSelection(platform, paths, files[0], undefined, true)
+  chooseNativeSelection(platform, paths, files[0], undefined, files.length)
+}
+
+function confirmMacFileSelection(pid: number, expected: number, previousWindows: number, major: number): void {
+  if (!Number.isSafeInteger(previousWindows) || previousWindows < 1)
+    throw new Error('Invalid native panel window count')
+  const script = `
+    ObjC.import('ApplicationServices')
+    const app = $.AXUIElementCreateApplication(${pid})
+    const read = (el, key) => {
+      const value = Ref()
+      if (!$.AXUIElementCopyAttributeValue(el, $(key), value)) return ObjC.castRefToObject(value[0])
+    }
+    const children = (el, key) => {
+      const result = read(el, key)
+      return Array.from({length: result ? Number(result.count) : 0}, (_, i) => result.objectAtIndex(i))
+    }
+    const owner = Application('System Events').processes.whose({unixId: ${pid}}).first()
+    const observed = new Set()
+    const ready = () => {
+      const panel = children(app, 'AXWindows')[0]
+      if (!panel) throw Error('Owned Open panel disappeared during selection')
+      const queue = [panel]
+      for (let i = 0; i < queue.length && i < 600; i++) {
+        const el = queue[i]
+        const role = ObjC.unwrap(read(el, 'AXRole'))
+        if (['AXTable', 'AXOutline', 'AXList', 'AXGrid', 'AXBrowser', 'AXColumn', 'AXScrollArea'].includes(role)) {
+          for (const key of ['AXSelectedRows', 'AXSelectedChildren', 'AXSelectedCells']) {
+            const selected = read(el, key)
+            if (!selected) continue
+            const n = Number(selected.count)
+            observed.add(role + '/' + key + '=' + n)
+            if (n === ${expected}) return true
+          }
+        }
+        queue.push(...children(el, 'AXChildren'))
+      }
+      return false
+    }
+    const deadline = Date.now() + 8000
+    while (!ready()) {
+      if (Date.now() >= deadline) throw Error('Native selection count was not confirmed: ' + [...observed])
+      delay(0.1)
+    }
+    if (!owner.frontmost()) throw Error('Owned Open panel is not frontmost')
+    const buttons = owner.windows[0].splitterGroups[0].buttons
+    const button = ${major >= 27 ? 'buttons.last()' : "buttons.byName('Open')"}
+    if (!button.enabled()) throw Error('Owned Open button is disabled')
+    button.actions.byName('AXPress').perform()
+    const closing = Date.now() + 5000
+    while (owner.windows().length >= ${previousWindows}) {
+      if (Date.now() >= closing) throw Error('Owned Open panel remained after accepting selection')
+      delay(0.1)
+    }
+  `
+  execFileSync('osascript', ['-l', 'JavaScript', '-e', script], { timeout: 18_000, stdio: 'pipe' })
 }
 
 function chooseNativeSelection(
@@ -989,7 +1044,7 @@ function chooseNativeSelection(
   paths: RunPaths,
   candidatePath: string,
   selectionText?: string,
-  selectAll = false
+  selectedFileCount = 0
 ): string {
   const filePath = resolveAllowedPath(candidatePath, [paths.fixtures, paths.workspace, paths.evidence])
   if (!existsSync(filePath)) throw new Error(`Selected file does not exist: ${filePath}`)
@@ -1087,7 +1142,7 @@ function chooseNativeSelection(
           cap: 5,
           action: [
             'if not frontmost then error "Owned native file panel is not frontmost"',
-            ...(selectAll ? ['keystroke "a" using command down'] : []),
+            ...(selectedFileCount ? ['keystroke "a" using command down', 'return previousWindowCount'] : []),
             `perform action "AXPress" of ${acceptButton}`
           ],
           condition: `(count of windows) < previousWindowCount or not (exists ${acceptButton})`,
@@ -1122,10 +1177,12 @@ function chooseNativeSelection(
       'end run'
     ].join('\n')
     try {
-      execFileSync('osascript', ['-e', script, '--', filePath, String(electronPid)], {
-        stdio: ['ignore', 'ignore', 'pipe'],
+      const windowCount = execFileSync('osascript', ['-e', script, '--', filePath, String(electronPid)], {
+        encoding: 'utf8',
         timeout: 45_000
       })
+      if (selectedFileCount)
+        confirmMacFileSelection(electronPid, selectedFileCount, Number(windowCount.trim()), macProductMajor)
     } catch (error) {
       const stderr = (error as { stderr?: Buffer | string }).stderr
       throw new Error(

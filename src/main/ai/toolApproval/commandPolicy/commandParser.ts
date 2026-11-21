@@ -167,13 +167,22 @@ export function parseCommandSyntax(text: string, dialect: CommandDialect, source
   const parser = new Parser()
   parser.setLanguage(languages[dialect])
   const deadline = performance.now() + 200
-  const tree = parser.parse(text.slice(0, MAX_INPUT), undefined, {
+  let tree = parser.parse(text.slice(0, MAX_INPUT), undefined, {
     progressCallback: () => performance.now() > deadline
   })
   if (!tree) {
-    parser.delete()
     diagnostic('parse-limit', { start: 0, end: text.length, source })
-    return result
+    // Keep independently parseable evidence for denial. The unexamined suffix remains incomplete.
+    // Only a short, literal, semicolon-terminated Bash command qualifies; never split quoted text.
+    const end = dialect === 'bash' ? text.slice(0, 1024).indexOf(';') : -1
+    if (end > 0 && /^[a-zA-Z0-9_./ \t-]+$/.test(text.slice(0, end)) && !/[;&|]/.test(text[end + 1] ?? '')) {
+      parser.reset()
+      tree = parser.parse(text.slice(0, end + 1))
+    }
+    if (!tree) {
+      parser.delete()
+      return result
+    }
   }
   let nodes = 0
   try {

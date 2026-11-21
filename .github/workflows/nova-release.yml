@@ -35,7 +35,7 @@ jobs:
             arch: arm64
             builder: --mac --arm64
           - platform: mac
-            os: macos-latest  # Intel package is cross-built; macos-15-intel lacks Swift 6.2
+            os: macos-latest # Intel package is cross-built; macos-15-intel lacks Swift 6.2
             arch: x64
             builder: --mac --x64
     runs-on: ${{ matrix.os }}
@@ -59,8 +59,34 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Start Notification Center in the hosted macOS GUI session
+        if: matrix.platform == 'mac'
+        shell: bash
+        run: |
+          [[ "$GITHUB_ACTIONS" == true && "$RUNNER_ENVIRONMENT" == github-hosted ]]
+          plist=/System/Library/LaunchAgents/com.apple.notificationcenterui.plist
+          label=$(plutil -extract Label raw -o - "$plist")
+          [[ "$label" == com.apple.notificationcenterui || "$label" == com.apple.notificationcenterui.agent ]]
+          domain="gui/$(id -u)"
+          launchctl enable "$domain/$label"
+          if ! launchctl print "$domain/$label" >/dev/null 2>&1; then
+            launchctl bootstrap "$domain" "$plist"
+          fi
+          launchctl kickstart "$domain/$label"
+
       - name: Test the release checkout
-        run: pnpm test
+        shell: bash
+        run: |
+          # Test native GUI and time-bounded rendering on an idle desktop, with their original assertions.
+          isolated=(
+            scripts/e2e/regression/__tests__/nativeAdapters.test.ts
+            src/renderer/components/RichEditor/__tests__/markdownParsePerformance.test.ts
+            src/renderer/components/FilePreview/plugins/markdown/__tests__/MarkdownFilePreview.test.tsx
+          )
+          pnpm exec vitest run --silent=true --no-file-parallelism "${isolated[@]}"
+          exclude=()
+          for suite in "${isolated[@]}"; do exclude+=(--exclude "$suite"); done
+          pnpm exec vitest run --silent=true "${exclude[@]}"
 
       - name: Type-check and build
         run: pnpm run build

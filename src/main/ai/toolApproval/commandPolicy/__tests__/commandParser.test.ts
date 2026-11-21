@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest'
+import { Parser } from '@vscode/tree-sitter-wasm'
+import { describe, expect, it, vi } from 'vitest'
 
 import { parseCommand } from '../commandParser'
 
@@ -45,6 +46,19 @@ describe('structured shell syntax', () => {
     const result = await parseCommand('rm file; git status && (', 'bash')
     expect(result.commands[0].words[0].value).toBe('rm')
     expect(result.diagnostics).toMatchObject([{ reason: 'syntax-error' }])
+  })
+
+  it('keeps an independent literal prefix and its incomplete diagnostic after a parser deadline', async () => {
+    const parse = vi.spyOn(Parser.prototype, 'parse').mockReturnValueOnce(null)
+    try {
+      const result = await parseCommand('echo first; echo second', 'bash')
+      expect(result.commands.map(({ raw }) => raw)).toEqual(['echo first'])
+      expect(result.diagnostics.map(({ reason }) => reason)).toContain('parse-limit')
+      parse.mockReturnValueOnce(null)
+      expect((await parseCommand("echo 'start; end'", 'bash')).commands).toEqual([])
+    } finally {
+      parse.mockRestore()
+    }
   })
 
   it('uses PowerShell syntax for parameters, strings and executable subexpressions', async () => {
