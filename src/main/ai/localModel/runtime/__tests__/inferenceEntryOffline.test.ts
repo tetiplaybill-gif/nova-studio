@@ -5,6 +5,8 @@ import path from 'node:path'
 import { Dispatcher, getGlobalDispatcher, setGlobalDispatcher } from 'undici'
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
+import { getSharedArtifact } from '../../catalog/catalog'
+import { currentPlatformKey } from '../../catalog/types'
 import { CPU_LOCAL_INFERENCE_PROFILE } from '../inferenceAcceleration'
 import type { EmbeddingHandlers } from './inferenceEntryHarness'
 import { loadInferenceEntries } from './inferenceEntryHarness'
@@ -88,25 +90,26 @@ async function startProcess(): Promise<void> {
   logs = loaded.logs
 }
 
-beforeAll(() => {
-  previousDispatcher = getGlobalDispatcher()
-  setGlobalDispatcher(new BlockedDispatcher())
-})
+const hasNativeBinding = Boolean(getSharedArtifact('onnxruntime-node').platforms[currentPlatformKey()])
 
-afterAll(() => {
-  setGlobalDispatcher(previousDispatcher)
-})
+describe.runIf(hasNativeBinding)('inference entry offline embedding', () => {
+  beforeAll(() => {
+    previousDispatcher = getGlobalDispatcher()
+    setGlobalDispatcher(new BlockedDispatcher())
+  })
 
-beforeEach(async () => {
-  cacheDir = await mkdtemp(path.join(tmpdir(), 'cherry-inference-cache-'))
-  await startProcess()
-})
+  afterAll(() => {
+    setGlobalDispatcher(previousDispatcher)
+  })
 
-afterEach(async () => {
-  await rm(cacheDir, { recursive: true, force: true })
-})
+  beforeEach(async () => {
+    cacheDir = await mkdtemp(path.join(tmpdir(), 'cherry-inference-cache-'))
+    await startProcess()
+  })
 
-describe('inference entry offline embedding', () => {
+  afterEach(async () => {
+    await rm(cacheDir, { recursive: true, force: true })
+  })
   it('resolves a ModelScope-revision cache with no network access', async () => {
     const modelDir = await seedModelScopeCache()
 

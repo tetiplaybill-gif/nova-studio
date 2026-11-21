@@ -22,10 +22,6 @@ vi.mock('@application', async () => {
   return result
 })
 
-// Pin to a supported platform so this suite is deterministic regardless of the machine it
-// runs on (see InferenceServiceBase.darwinX64.test.ts for the gate itself).
-vi.mock('@main/core/platform', () => ({ isDarwinX64: false }))
-
 import { BaseService } from '@main/core/lifecycle'
 import { getDependencies } from '@main/core/lifecycle/decorators'
 import {
@@ -49,6 +45,7 @@ import { UtilityProcessManager } from '@main/core/utilityProcess/UtilityProcessM
 import type { LocalModelBundleId } from '@shared/data/presets/localModel'
 
 import { asrInferenceProcess } from '../../capabilities/asr/AsrInferenceService'
+import { localModelStorageService } from '../../installation/LocalModelStorageService'
 import { embeddingInferenceProcess, type InferenceProcessDefinition, ocrInferenceProcess } from '../inferenceProcess'
 import { InferenceServiceBase } from '../InferenceServiceBase'
 
@@ -120,6 +117,8 @@ async function createService(handlers: Partial<UtilityProcessHandlers<EchoContra
 }
 
 beforeEach(() => {
+  // The echo child exercises the queue and process lifecycle without loading native artifacts.
+  vi.spyOn(localModelStorageService, 'isArtifactSupported').mockReturnValue(true)
   BaseService.resetInstances()
   MockMainPreferenceServiceUtils.resetMocks()
   MockMainPreferenceServiceUtils.setPreferenceValue(HARDWARE_KEY, false)
@@ -131,6 +130,7 @@ beforeEach(() => {
 })
 
 afterEach(() => {
+  vi.restoreAllMocks()
   utilityProcessManager.current = null
 })
 

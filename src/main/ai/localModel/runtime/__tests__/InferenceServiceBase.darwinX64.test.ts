@@ -21,14 +21,11 @@ vi.mock('@application', async () => {
   return result
 })
 
-vi.mock('../../installation/LocalModelStorageService', () => ({
-  localModelStorageService: {
-    resolveInstalledDir: () => '/models/local',
-    isArtifactReady: () => true,
-    isArtifactSupported: () => false,
-    artifactPath: () => '/missing'
-  }
-}))
+vi.mock('../../installation/LocalModelStorageService', async (importOriginal) => {
+  // On an Intel Mac, exercise the real catalog and storage capability decision.
+  if (process.platform === 'darwin' && process.arch === 'x64') return importOriginal()
+  return { localModelStorageService: { isArtifactSupported: () => false } }
+})
 
 const { EmbeddingInferenceService } = await import('../../capabilities/embedding/EmbeddingInferenceService')
 const { OcrInferenceService } = await import('../../capabilities/ocr/OcrInferenceService')
