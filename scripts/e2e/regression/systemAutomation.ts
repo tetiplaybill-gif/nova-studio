@@ -1003,7 +1003,7 @@ export function chooseNativeFiles(platform: Platform, paths: RunPaths, candidate
   chooseNativeSelection(platform, paths, files[0], undefined, files.length)
 }
 
-function confirmMacFileSelection(pid: number, expected: number, previousWindows: number, major: number): void {
+function confirmMacFileSelection(pid: number, expected: number, previousWindows: number): void {
   if (!Number.isSafeInteger(previousWindows) || previousWindows < 1)
     throw new Error('Invalid native panel window count')
   const script = `
@@ -1017,7 +1017,6 @@ function confirmMacFileSelection(pid: number, expected: number, previousWindows:
       const result = read(el, key)
       return Array.from({length: result ? Number(result.count) : 0}, (_, i) => result.objectAtIndex(i))
     }
-    const owner = Application('System Events').processes.whose({unixId: ${pid}}).first()
     const observed = new Set()
     const ready = () => {
       const panel = children(app, 'AXWindows')[0]
@@ -1032,7 +1031,7 @@ function confirmMacFileSelection(pid: number, expected: number, previousWindows:
             if (!selected) continue
             const n = Number(selected.count)
             observed.add(role + '/' + key + '=' + n)
-            if (n === ${expected}) return true
+            if (n === ${expected}) return panel
           }
         }
         queue.push(...children(el, 'AXChildren'))
@@ -1040,17 +1039,33 @@ function confirmMacFileSelection(pid: number, expected: number, previousWindows:
       return false
     }
     const deadline = Date.now() + 8000
-    while (!ready()) {
+    let panel
+    while (!(panel = ready())) {
       if (Date.now() >= deadline) throw Error('Native selection count was not confirmed: ' + [...observed])
       delay(0.1)
     }
-    if (!owner.frontmost()) throw Error('Owned Open panel is not frontmost')
-    const buttons = owner.windows[0].splitterGroups[0].buttons
-    const button = ${major >= 27 ? 'buttons.last()' : "buttons.byName('Open')"}
-    if (!button.enabled()) throw Error('Owned Open button is disabled')
-    button.actions.byName('AXPress').perform()
+    // Apply the action to the selected panel itself. macOS can give its remote
+    // panel service foreground ownership while the fixture still owns this window.
+    let button = read(panel, 'AXDefaultButton')
+    if (!button) {
+      const queue = [panel]
+      for (let i = 0; i < queue.length && i < 600; i++) {
+        const el = queue[i]
+        if (ObjC.unwrap(read(el, 'AXRole')) === 'AXButton') {
+          const id = ObjC.unwrap(read(el, 'AXIdentifier'))
+          if (id === 'OKButton' || id === 'NSNavPanelOKButton' || (!id && ObjC.unwrap(read(el, 'AXTitle')) === 'Open')) {
+            button = el
+            break
+          }
+        }
+        queue.push(...children(el, 'AXChildren'))
+      }
+    }
+    if (!button || ObjC.unwrap(read(button, 'AXRole')) !== 'AXButton' || !ObjC.unwrap(read(button, 'AXEnabled')))
+      throw Error('Owned Open panel has no enabled confirmation button')
+    if ($.AXUIElementPerformAction(button, $('AXPress')) !== 0) throw Error('Owned Open button did not accept selection')
     const closing = Date.now() + 5000
-    while (owner.windows().length >= ${previousWindows}) {
+    while (children(app, 'AXWindows').length >= ${previousWindows}) {
       if (Date.now() >= closing) throw Error('Owned Open panel remained after accepting selection')
       delay(0.1)
     }
@@ -1220,8 +1235,7 @@ function chooseNativeSelection(
         encoding: 'utf8',
         timeout: 45_000
       })
-      if (selectedFileCount)
-        confirmMacFileSelection(electronPid, selectedFileCount, Number(windowCount.trim()), macProductMajor)
+      if (selectedFileCount) confirmMacFileSelection(electronPid, selectedFileCount, Number(windowCount.trim()))
     } catch (error) {
       const stderr = (error as { stderr?: Buffer | string }).stderr
       throw new Error(

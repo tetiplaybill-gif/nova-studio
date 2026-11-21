@@ -91,6 +91,8 @@ export default defineConfig({
         test: {
           name: 'renderer',
           environment: 'jsdom',
+          // Write release logs directly so a finishing worker has no outstanding log RPCs.
+          disableConsoleIntercept: process.env.NOVA_RELEASE_TEST_GROUP === 'remaining',
           setupFiles: ['@vitest/web-worker', 'tests/renderer.setup.ts', 'tests/domTeardown.setup.ts'],
           ...releaseTestFiles(
             ['src/renderer/**/*.{test,spec}.{ts,tsx}', 'src/renderer/**/__tests__/**/*.{test,spec}.{ts,tsx}'],
