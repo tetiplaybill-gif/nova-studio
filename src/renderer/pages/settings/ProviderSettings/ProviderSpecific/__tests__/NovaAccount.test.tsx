@@ -188,5 +188,6 @@ describe('NovaAccount', () => {
     await waitFor(() =>
       expect(MockUsePreferenceUtils.getPreferenceValue('app.onboarding.provider_setup.status')).toBe('signed_out')
     )
+    await waitFor(() => expect(screen.getByRole('button', { name: 'settings.provider.nova.sign_in' })).toBeEnabled())
   })
 })
