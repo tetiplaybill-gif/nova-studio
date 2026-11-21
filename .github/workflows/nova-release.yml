@@ -1,179 +1,80 @@
-# Builds NOVA Studio installers on GitHub's own runners. Run it by hand from the Actions tab
-# ("Run workflow"). Installers land in the run's artifacts and, by default, in a DRAFT GitHub
-# release for the package.json version; nothing becomes public until the draft is published.
-#
-# Signing: without certificates the builds are unsigned (Windows SmartScreen and macOS Gatekeeper
-# warn on first launch). To sign the macOS build, add these repository secrets: CSC_LINK (base64
-# Developer ID .p12), CSC_KEY_PASSWORD, and for notarization APPLE_ID, APPLE_APP_SPECIFIC_PASSWORD,
-# APPLE_TEAM_ID. Windows signing goes through scripts/packaging/win-sign.js (WIN_SIGN plus a
-# certificate available to signtool), which needs a runner that holds the certificate.
-name: NOVA Studio release build
-
+name: NOVA desktop acceptance
 on:
   workflow_dispatch:
-    inputs:
-      draft_release:
-        description: Also attach the installers to a draft GitHub release (vVERSION). Publish it by hand.
-        type: boolean
-        default: true
-
 permissions:
   contents: read
-
 jobs:
-  build:
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - platform: windows
-            os: windows-latest
-            arch: x64
-            builder: --win --x64
-          - platform: mac
-            os: macos-latest
-            arch: arm64
-            builder: --mac --arm64
-          - platform: mac
-            os: macos-26-intel
-            arch: x64
-            builder: --mac --x64
-    runs-on: ${{ matrix.os }}
+  guard-windows:
+    runs-on: windows-latest
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v6
-
-      - uses: actions/setup-node@v7
-        with:
-          node-version-file: .node-version
-
-      - uses: actions/setup-python@v6
-        with:
-          python-version: "3.12"
-
-      - name: Python build tools for native modules (macOS)
-        if: matrix.platform == 'mac'
-        run: python -m pip install setuptools
-
-      - uses: pnpm/action-setup@v5
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Start Notification Center in the hosted macOS GUI session
-        if: matrix.platform == 'mac'
-        shell: bash
+      - name: Test the public Network Guard installers in a disposable Windows session
+        shell: pwsh
         run: |
-          [[ "$GITHUB_ACTIONS" == true && "$RUNNER_ENVIRONMENT" == github-hosted ]]
-          plist=/System/Library/LaunchAgents/com.apple.notificationcenterui.plist
-          label=$(plutil -extract Label raw -o - "$plist")
-          [[ "$label" == com.apple.notificationcenterui || "$label" == com.apple.notificationcenterui.agent ]]
-          domain="gui/$(id -u)"
-          launchctl enable "$domain/$label"
-          if ! launchctl print "$domain/$label" >/dev/null 2>&1; then
-            launchctl bootstrap "$domain" "$plist"
-          fi
-          launchctl kickstart "$domain/$label"
-
-      # Virtual Intel GPUs can crash IconServices and hang every native Open/Save panel.
-      # https://github.com/actions/runner-images/issues/14751
-      - name: Use fallback file icons in the hosted Intel macOS GUI session
-        if: matrix.os == 'macos-26-intel'
-        shell: bash
-        run: |
-          [[ "$GITHUB_ACTIONS" == true && "$RUNNER_ENVIRONMENT" == github-hosted ]]
-          [[ "$(uname -m)" == x86_64 && "$(sw_vers -productVersion)" == 26.* ]]
-          service="gui/$(id -u)/com.apple.iconservices.iconservicesagent"
-          launchctl bootout "$service" 2>/dev/null || true
-          launchctl disable "$service"
-
-      - name: Test native dialogs and rendering on an idle desktop
-        env:
-          NOVA_RELEASE_TEST_GROUP: isolated
-        run: pnpm exec vitest run --silent=true --no-file-parallelism --project scripts --project renderer
-
-      - name: Test the remaining release checkout
-        env:
-          NOVA_RELEASE_TEST_GROUP: remaining
-        run: pnpm test
-
-      - name: Type-check and build
-        run: pnpm run build
-        env:
-          NODE_OPTIONS: --max-old-space-size=8192
-
-      - name: Bundle helper tools
-        run: node scripts/release/prepare-tools.js prepare ${{ matrix.platform }} ${{ matrix.arch }}
-
-      - name: Package
-        shell: bash
-        run: |
-          if [ -z "$CSC_LINK" ]; then
-            # No certificate: an empty CSC_LINK would be read as a file path, so remove it entirely.
-            unset CSC_LINK CSC_KEY_PASSWORD
-            export CSC_IDENTITY_AUTO_DISCOVERY=false
-            # macOS without a Developer ID: ad-hoc sign so the app runs on Apple Silicon.
-            if [ "${{ matrix.platform }}" = mac ]; then extra="-c.mac.identity=-"; fi
-          fi
-          pnpm exec electron-builder ${{ matrix.builder }} --publish never $extra
-        env:
-          ELECTRON_BUILDER_7Z_FILTER: BCJ
-          NODE_OPTIONS: --max-old-space-size=8192
-          CSC_LINK: ${{ matrix.platform == 'mac' && secrets.CSC_LINK || '' }}
-          CSC_KEY_PASSWORD: ${{ matrix.platform == 'mac' && secrets.CSC_KEY_PASSWORD || '' }}
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-
-      - name: Verify large notes in the packaged native renderer
-        shell: bash
-        run: |
-          if [[ "${{ matrix.platform }}" == windows ]]; then
-            binary="$(cygpath -aw 'dist/win-unpacked/NOVA Studio.exe')"
-          elif [[ "${{ matrix.arch }}" == arm64 ]]; then
-            binary="$PWD/dist/mac-arm64/NOVA Studio.app/Contents/MacOS/NOVA Studio"
-          else
-            binary="$PWD/dist/mac/NOVA Studio.app/Contents/MacOS/NOVA Studio"
-          fi
-          node scripts/release/verify-note-renderer.cjs "$binary"
-
-      - uses: actions/upload-artifact@v6
-        with:
-          name: NOVA-Studio-${{ matrix.platform }}-${{ matrix.arch }}
-          if-no-files-found: error
-          path: |
-            dist/*.exe
-            dist/*.dmg
-            dist/*.zip
-            dist/*.blockmap
-            dist/latest*.yml
-
-  draft-release:
-    needs: build
-    if: inputs.draft_release
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/checkout@v6
-      - uses: actions/download-artifact@v6
-        with:
-          path: out
-          merge-multiple: true
-      - name: Checksums
-        run: cd out && sha256sum *.exe *.dmg *.zip > SHA256SUMS.txt && cat SHA256SUMS.txt
-      - name: Create or update draft release
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          tag="v$(node -p "require('./package.json').version")"
-          if draft=$(gh release view "$tag" --json isDraft --jq '.isDraft' 2>/dev/null); then
-            if [ "$draft" != true ]; then
-              echo "::error::This version has already been published. Use a new version."
-              exit 1
-            fi
-            gh release upload "$tag" out/* --clobber
-          else
-            gh release create "$tag" out/* --draft --target "$GITHUB_SHA" \
-              --title "NOVA Studio ${tag#v}" \
-              --notes "NOVA Studio ${tag#v}. Unsigned builds: on first launch Windows SmartScreen and macOS Gatekeeper will warn. Checksums are in SHA256SUMS.txt."
-          fi
+          $ErrorActionPreference = 'Stop'
+          $ProgressPreference = 'SilentlyContinue'
+          if ($env:GITHUB_ACTIONS -ne 'true' -or $env:RUNNER_ENVIRONMENT -ne 'github-hosted' -or $env:RUNNER_OS -ne 'Windows') { throw 'Only a disposable hosted Windows runner is supported' }
+          $admin = [Security.Principal.WindowsPrincipal]::new([Security.Principal.WindowsIdentity]::GetCurrent())
+          if (-not $admin.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) { throw 'An elevated ephemeral Windows session is required' }
+          $reg = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\nova-network-guard'
+          $wvreg = 'HKLM:\SOFTWARE\WOW6432Node\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}'
+          $runtime = (Get-ItemProperty -LiteralPath $wvreg -ErrorAction SilentlyContinue).pv
+          if (-not $runtime) { throw 'The hosted OS does not have the registered WebView2 runtime' }
+          $root = Join-Path $env:RUNNER_TEMP ('nova-guard-qa-' + [guid]::NewGuid().ToString('N'))
+          $dest = Join-Path $root 'install'
+          $foreign = Join-Path $root 'unrelated\nova.exe'
+          if ((Test-Path $reg) -or (Test-Path $dest) -or (Test-Path "$env:APPDATA\nova") -or (Test-Path "$env:ProgramData\Microsoft\Windows\Start Menu\Programs\NOVA")) { throw 'An existing live NOVA install was found' }
+          New-Item -ItemType Directory -Path (Split-Path $foreign) | Out-Null
+          function Fetch($version,$expected) {
+            $file = "nova-v$version-windows-x64-setup.exe"
+            $local = Join-Path $root $file
+            Invoke-WebRequest -Uri "https://cdkai.cc/downloads/nova/$version/$file" -OutFile $local
+            if ((Get-FileHash $local -Algorithm SHA256).Hash -ne $expected) { throw "Incorrect public installer $version" }
+            return $local
+          }
+          function Install($setup) {
+            $p = Start-Process -FilePath $setup -ArgumentList "/S /D=$dest" -PassThru
+            if (-not $p.WaitForExit(90000)) { throw 'Installer did not exit' }
+            return $p.ExitCode
+          }
+          function Matches($version) {
+            $r = Get-ItemProperty -LiteralPath $reg
+            if ($r.DisplayVersion -ne $version -or $r.InstallLocation -ne $dest) { throw "Incorrect registry version or install directory for $version" }
+            $out = Join-Path $root ('cli-' + $version + '.txt')
+            $p = Start-Process (Join-Path $dest 'nova.exe') -ArgumentList '--version' -RedirectStandardOutput $out -PassThru
+            if (-not $p.WaitForExit(30000) -or $p.ExitCode -ne 0 -or (Get-Content -Raw $out).Trim() -ne "nova $version") { throw "Incorrect installed executable version $version" }
+            if (-not (Test-Path (Join-Path $dest 'WebView2Loader.dll'))) {throw 'Missing WebView loader'}
+          }
+          $old = Fetch '3.22.0' 'ceb77475a9ce2be7a3d1a1b5ea064470706afb0a87ebcbe156df41c6e45d30a2'
+          $new = Fetch '3.22.1' 'e892e155128ec907a730569f18930db4a7e9c3962f6ca620c49abf976f73b605'
+          Write-Host "OS $([Environment]::OSVersion.Version) WebView2 $runtime; both public installers verified"
+          if ((Install $old) -ne 0) {throw 'Initial installation failed'}
+          Matches '3.22.0'
+          Copy-Item -LiteralPath "$env:SystemRoot\System32\ping.exe" -Destination $foreign
+          $other = Start-Process $foreign -ArgumentList '-t','127.0.0.1' -WindowStyle Hidden -PassThru
+          try {
+            $exe = Join-Path $dest 'nova.exe'
+            $before = (Get-FileHash $exe).Hash
+            $lock = [IO.File]::Open($exe,[IO.FileMode]::Open,[IO.FileAccess]::Read,[IO.FileShare]::Read)
+            try { $refused = Install $new } finally { $lock.Dispose() }
+            if ($refused -eq 0 -or (Get-FileHash $exe).Hash -ne $before -or $other.HasExited) { throw 'Busy upgrade did not fail safely' }
+            Matches '3.22.0'
+            Write-Host 'Busy installed executable refused; old bytes and unrelated process preserved'
+            if ((Install $new) -ne 0 -or $other.HasExited) {throw 'Closed upgrade failed or stopped the unrelated process'}
+            Matches '3.22.1'
+            $out=Join-Path $root 'ipv6.json'
+            $p=Start-Process $exe -ArgumentList '--ipv6-status' -RedirectStandardOutput $out -PassThru
+            if (-not $p.WaitForExit(30000) -or $p.ExitCode -ne 0) {throw 'IPv6 read-only query failed'}
+            $state=Get-Content -Raw $out | ConvertFrom-Json
+            if ($state.status -notin @('enabled','disabled','unknown')) {throw 'Unexpected IPv6 status schema'}
+            Write-Host "Installed 3.22.1 and verified native CLI, registered target, read-only IPv6 query; unrelated process survived"
+            $uninstaller = Join-Path $dest 'uninstall.exe'
+            $p=Start-Process $uninstaller -ArgumentList '/S' -PassThru
+            if (-not $p.WaitForExit(90000)) {throw 'Uninstall launcher timed out'}
+            $deadline=(Get-Date).AddSeconds(60)
+            while (((Test-Path $exe) -or (Test-Path $reg)) -and (Get-Date) -lt $deadline) {Start-Sleep -Milliseconds 500}
+            if ((Test-Path $exe) -or (Test-Path $reg) -or $other.HasExited) {throw 'Uninstall did not remove its own target or interfered with the unrelated process'}
+            Write-Host 'NOVA_GUARD_WINDOWS_HOSTED_PASS: installer, busy-file refusal, upgrade, native CLI, isolated uninstall, unrelated process'
+          } finally {
+            if (-not $other.HasExited) { $other.Kill();$other.WaitForExit(5000) | Out-Null }
+          }
