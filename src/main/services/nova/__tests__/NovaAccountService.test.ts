@@ -88,6 +88,16 @@ const service = (
   })
 
 describe('NovaAccountService', () => {
+  it('reads signed-out status and summary without opening the system keychain', async () => {
+    const isAvailable = vi.fn(() => true)
+    const site = fakeSite({})
+    const nova = service(site.fetch, { ...reversibleBox, isAvailable })
+    expect(await nova.status()).toEqual({ signedIn: false })
+    expect(await nova.summary()).toBeNull()
+    expect(isAvailable).not.toHaveBeenCalled()
+    expect(site.seen).toHaveLength(0)
+  })
+
   it('signs in with the CSRF token, keeps the rotated session cookie and verifies it before trusting it', async () => {
     const site = fakeSite(signInRoutes())
     const result = await service(site.fetch).signIn(' Buyer@Example.com ', 'secret', '')

@@ -17,6 +17,8 @@ async function verifyNoteRenderer(executable) {
       '--remote-debugging-address=127.0.0.1',
       '--disable-background-networking',
       '--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE localhost',
+      // This disposable signed-out note benchmark has no credentials to read or store.
+      ...(process.platform === 'darwin' ? ['--use-mock-keychain'] : []),
       '--no-first-run'
     ],
     { stdio: 'ignore' }
@@ -97,8 +99,20 @@ async function verifyNoteRenderer(executable) {
     console.log(JSON.stringify(result))
     if (result.medianMs >= 3000) throw new Error('NOVA Studio exceeded the 3000 ms native rendering budget')
   } finally {
-    if (browser) await browser.close()
-    if (app.exitCode === null && app.signalCode === null) app.kill()
+    try {
+      if (browser) await browser.close()
+    } finally {
+      if (app.pid && app.exitCode === null && app.signalCode === null) {
+        const exited = new Promise((resolve) => app.once('exit', resolve))
+        app.kill()
+        const timeout = setTimeout(() => app.kill('SIGKILL'), 5000)
+        try {
+          await exited
+        } finally {
+          clearTimeout(timeout)
+        }
+      }
+    }
   }
 }
 

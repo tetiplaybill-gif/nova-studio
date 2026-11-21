@@ -205,7 +205,8 @@ export class NovaAccountService {
     const account = await this.load()
     if (!account) return null
     const key = this.deps.apiKey()
-    if (!key || !headerSafe(key)) return { email: account.email, name: account.name, balanceUsd: 0, group: null, keyActive: false }
+    if (!key || !headerSafe(key))
+      return { email: account.email, name: account.name, balanceUsd: 0, group: null, keyActive: false }
     let response: Response
     try {
       // The same endpoint and number the website console shows: the balance not held by requests in flight.
@@ -343,9 +344,9 @@ export class NovaAccountService {
   private async load(): Promise<StoredAccount | null> {
     if (this.loaded) return this.account
     this.loaded = true
-    if (!this.deps.secretBox.isAvailable()) return this.account
     try {
       const sealed = await fs.readFile(this.deps.storagePath())
+      if (!this.deps.secretBox.isAvailable()) return this.account
       const stored = JSON.parse(this.deps.secretBox.decrypt(sealed)) as StoredAccount
       if (typeof stored?.email === 'string' && stored.cookies && typeof stored.csrf === 'string') {
         this.account = { ...stored, keyId: typeof stored.keyId === 'string' ? stored.keyId : null }
