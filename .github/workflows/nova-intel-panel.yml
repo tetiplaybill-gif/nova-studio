@@ -13,6 +13,15 @@ jobs:
         run: |
           set -euo pipefail
           [[ "$RUNNER_ENVIRONMENT" == github-hosted && "$(uname -m)" == x86_64 ]]
+          label=com.apple.iconservices.iconservicesagent
+          domain="gui/$(id -u)"
+          python3 - <<'PY'
+          from pathlib import Path
+          reports=sorted((Path.home()/'Library/Logs/DiagnosticReports').glob('iconservicesagent*.ips'))
+          print('IconServices reports:',len(reports),'matching Metal assertion:',any('sliceIDForDevice' in p.read_text(errors='ignore') for p in reports[-8:]))
+          PY
+          launchctl bootout "$domain/$label" 2>/dev/null || true
+          launchctl disable "$domain/$label"
           cd "$RUNNER_TEMP"
           mkdir nova-native-intel
           cd nova-native-intel
@@ -101,9 +110,10 @@ jobs:
                 awk '/Call graph:/ {p=1;next} p && /Thread_.*DispatchQueue/ {if(++threads>1)exit} p&&threads==1{print substr($0,1,530)}' "$dir/thread-$owned.txt" | tail -n 39
               fi
             done
-            sleep 38
+            sleep 2
             echo "LATE $mode"
-            ./inspect "$fixture"
+            ./inspect "$fixture" | tee "$dir/after.txt"
+            grep -Eq '^AX:.*Open|^CG:.* Open true' "$dir/after.txt" || { echo 'Expected a visible native panel'; exit 1; }
             sed -E '/DevTools listening/d' "$dir/fixture.log" | tail -n 7
             if kill -0 "$fixture" 2>/dev/null; then
               case "$(ps -p "$fixture" -o command=)" in *"$PWD/panel.cjs"*|*"$PWD/owned-cocoa"*) kill -KILL "$fixture";; esac
