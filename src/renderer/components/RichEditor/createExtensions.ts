@@ -21,6 +21,18 @@ import { MarkdownTable } from './extensions/markdownTable'
 import { Placeholder } from './extensions/placeholder'
 import { YamlFrontMatter } from './extensions/yamlFrontMatter'
 
+const MarkdownMention = Mention.extend({
+  markdownTokenizer: {
+    ...Mention.config.markdownTokenizer!,
+    start(source: string) {
+      // Marked asks every inline extension to search the remaining text after each token.
+      // The self-closing mention syntax can start only at "[@" with a subsequent "]".
+      const opening = source.indexOf('[@')
+      return opening >= 0 && source.indexOf(']', opening + 2) >= 0 ? opening : -1
+    }
+  }
+})
+
 /** Table row/column action handler shape (mirrors `@cherrystudio/extension-table-plus`). */
 type TableActionHandler<T extends 'rowIndex' | 'colIndex'> = (
   args: { [K in T]: number } & { position?: { x: number; y: number } }
@@ -122,7 +134,7 @@ export const createRichEditorExtensions = (options: CreateRichEditorExtensionsOp
       includeChildren: false
     }),
     YamlFrontMatter,
-    Mention.configure({
+    MarkdownMention.configure({
       HTMLAttributes: {
         class: 'mention'
       },

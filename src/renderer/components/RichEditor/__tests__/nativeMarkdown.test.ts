@@ -69,6 +69,15 @@ afterEach(() => {
 })
 
 describe('native markdown round-trip matrix', () => {
+  it('preserves inline mentions, literal code and an unclosed mention', () => {
+    const nodes = parse('Hello [@id="42" label="小林"] `[@id="code"]` [@unfinished')[0].content ?? []
+    expect(nodes.filter((node) => node.type === 'mention')).toMatchObject([{ attrs: { id: '42', label: '小林' } }])
+    expect(nodes.some((node) => node.text === '[@id="code"]' && node.marks?.some((mark) => mark.type === 'code'))).toBe(
+      true
+    )
+    expect(nodes.at(-1)?.text).toContain('[@unfinished')
+  })
+
   it('parses headings 1-6 and round-trips them', () => {
     for (let level = 1; level <= 6; level++) {
       const src = `${'#'.repeat(level)} Heading ${level}`
