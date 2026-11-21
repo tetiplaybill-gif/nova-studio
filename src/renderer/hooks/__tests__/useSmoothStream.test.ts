@@ -34,7 +34,7 @@ beforeEach(() => {
   clock = 0
   rafCallbacks = new Map()
   rafId = 0
-  vi.stubGlobal('performance', { now: () => clock })
+  vi.spyOn(performance, 'now').mockImplementation(() => clock)
   vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => {
     rafId += 1
     rafCallbacks.set(rafId, cb)
@@ -46,6 +46,7 @@ beforeEach(() => {
 })
 
 afterEach(() => {
+  vi.mocked(performance.now).mockRestore()
   vi.unstubAllGlobals()
 })
 
