@@ -32,8 +32,15 @@ export function createClaudeCodeRuntime(options: ClaudeCodeRuntimeOptions): Clau
   }
   const build = (config: ClaudeSessionOptions, sessionId: string, fresh: boolean) => {
     if (!path.isAbsolute(config.cwd)) throw new TypeError('Claude working directory must be absolute')
-    // The native CLI indexes existing Windows workspaces by their expanded path, including 8.3 aliases.
-    const cwd = process.platform === 'win32' ? realpathSync.native(config.cwd) : config.cwd
+    let cwd = config.cwd
+    if (process.platform === 'win32') {
+      try {
+        cwd = realpathSync.native(cwd)
+      } catch (error) {
+        // A removed workspace can still have readable history under its recorded path.
+        if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error
+      }
+    }
     const owner = new ClaudeOwner(
       options,
       { ...config, cwd, env: { ...(config.env ?? process.env) } },

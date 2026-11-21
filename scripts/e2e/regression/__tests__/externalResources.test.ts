@@ -276,6 +276,7 @@ it('force-terminates a real owned process when a graceful request leaves it runn
     { stdio: ['ignore', 'pipe', 'pipe', 'ipc'] }
   )
   childProcesses.push(child)
+  if (!child.stdout) throw new Error('The fixture requires piped stdout')
   await once(child.stdout, 'data')
   const id = registerExternalResource(paths, 'macos', target())
   const owned = { ...application, pid: child.pid! }

@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from 'node:crypto'
 import { once } from 'node:events'
-import { appendFile, mkdir, mkdtemp, realpath, rm, writeFile } from 'node:fs/promises'
+import { appendFile, mkdir, mkdtemp, realpath, rename, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { Worker } from 'node:worker_threads'
@@ -43,6 +43,19 @@ function message(sessionId: string, parentUuid: string | null, text: string) {
     message: { role: 'user', content: [{ type: 'text', text }] }
   }
 }
+
+it('reopens saved history after the original workspace directory moves', async () => {
+  const { cwd, configDir, id, file } = await transcript()
+  const row = message(id, null, 'saved before moving')
+  await appendFile(file, JSON.stringify(row) + '\n')
+  await rename(cwd, cwd + '-moved')
+  const backendId = runtimeId<'backend'>(randomUUID())
+  const runtime = createClaudeCodeRuntime({ backendId, configDir, load: async () => ({ cwd }) })
+  cleanups.push(() => runtime.shutdown())
+  const handle = confirmed(await runtime.open({ backendId, id: runtimeId(id) }))
+  cleanups.push(() => handle.release())
+  expect(confirmed(await handle.claude.archive({ refresh: false })).content).toMatchObject([{ id: row.uuid }])
+})
 
 it('restores ordered history across byte chunks and isolates archive and observation data', async () => {
   const { cwd, configDir, id, file } = await transcript()
