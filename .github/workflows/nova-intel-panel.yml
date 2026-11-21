@@ -1,0 +1,79 @@
+name: Inspect native file panel ownership on disposable Intel macOS
+on:
+  push:
+    branches: [codex/studio-intel-dialog-check]
+permissions: {}
+jobs:
+  inspect:
+    runs-on: macos-26-intel
+    timeout-minutes: 12
+    steps:
+      - name: Inspect a clean Electron native file panel
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$RUNNER_ENVIRONMENT" == github-hosted && "$(uname -m)" == x86_64 ]]
+          cd "$RUNNER_TEMP"
+          mkdir nova-native-intel
+          cd nova-native-intel
+          npm install --no-audit --no-fund --registry=https://registry.npmjs.org electron@45.2.2 >/dev/null
+          electron="$(node -p "require('electron')")"
+          [[ -x "$electron" ]]
+          cat > inspect.swift <<'SWIFT'
+          import AppKit
+          import ApplicationServices
+          let pid = pid_t(CommandLine.arguments[1])!
+          let ax = AXUIElementCreateApplication(pid)
+          func get(_ el: AXUIElement, _ key: String) -> (Int32,CFTypeRef?) {
+            var v: CFTypeRef?
+            let error = AXUIElementCopyAttributeValue(el, key as CFString, &v)
+            return (error.rawValue,v)
+          }
+          let data = get(ax,"AXWindows"), windows = data.1 as? [AXUIElement] ?? []
+          print("trusted=\(AXIsProcessTrusted()) foreground=\(NSWorkspace.shared.frontmostApplication?.bundleIdentifier ?? "none") screens=\(NSScreen.screens.count) windowsCode=\(data.0) windows=\(windows.count)")
+          for w in windows { print("AX:",get(w,"AXTitle").1 ?? "none" as NSString,get(w,"AXRole").1 ?? "none" as NSString) }
+          for app in NSWorkspace.shared.runningApplications where (app.bundleIdentifier ?? "").lowercased().contains("savepanel") {
+            print("panel service",app.bundleIdentifier ?? "-",app.processIdentifier)
+          }
+          let all = CGWindowListCopyWindowInfo([.optionAll,.excludeDesktopElements], kCGNullWindowID) as? [[String:Any]] ?? []
+          for w in all {
+            let owner=w[kCGWindowOwnerName as String] as? String ?? "", id=w[kCGWindowOwnerPID as String] as? Int32 ?? 0
+            if id == pid || owner.lowercased().contains("savepanel") || ["SecurityAgent","CoreServicesUIAgent","UserNotificationCenter","tccd"].contains(owner) {
+              print("CG:",id,owner,w[kCGWindowName as String] as? String ?? "-",w[kCGWindowIsOnscreen as String] as? Bool ?? false)
+            }
+          }
+          SWIFT
+          swiftc inspect.swift -o inspect
+          cat > panel.cjs <<'JS'
+          const {app,BrowserWindow,dialog}=require('electron')
+          const fs=require('node:fs'),path=require('node:path')
+          const dir=process.env.NOVA_FIXTURE_DIR,mode=process.env.NOVA_PANEL_MODE
+          app.setPath('userData',dir)
+          app.disableHardwareAcceleration()
+          app.commandLine.appendSwitch('remote-debugging-port','0')
+          let window
+          app.whenReady().then(async()=>{
+            window=new BrowserWindow({width:500,height:300})
+            await window.loadURL('data:text/html,<title>Owned NOVA panel diagnostic</title>')
+            window.show();app.focus({steal:true})
+            fs.writeFileSync(path.join(dir,'ready'),'ready')
+            const options={properties:[mode==='directory'?'openDirectory':'openFile']}
+            if(mode!=='default')options.defaultPath=mode==='save'?path.join(dir,'suggested.txt'):dir
+            const result=mode==='save'?await dialog.showSaveDialog(options):mode==='parent'?await dialog.showOpenDialog(window,options):await dialog.showOpenDialog(options)
+            console.log('PANEL RETURNED',result.canceled)
+            app.exit(0)
+          }).catch(e=>{console.error('fixture error',e.message);app.exit(1)})
+          JS
+          echo "console user $(stat -f %Su /dev/console); Electron $(node -p "require('electron/package.json').version")"
+          for mode in default explicit save parent directory; do
+            mkdir "$mode"
+            dir="$PWD/$mode"
+            NOVA_FIXTURE_DIR="$dir" NOVA_PANEL_MODE="$mode" "$electron" "$PWD/panel.cjs" >"$dir/fixture.log" 2>&1 &
+            fixture=$!
+            for attempt in {1..80}; do [[ -f "$dir/ready" ]] && break; kill -0 "$fixture" 2>/dev/null || break; sleep 0.5; done
+            echo "MODE $mode pid $fixture"
+            for sample in 1 2; do sleep 4; ./inspect "$fixture"; done
+            sed -E '/DevTools listening/d' "$dir/fixture.log" | tail -n 7
+            if kill -0 "$fixture" 2>/dev/null; then [[ "$(ps -p "$fixture" -o command=)" == *"$PWD/panel.cjs"* ]] && kill -KILL "$fixture"; fi
+            wait "$fixture" 2>/dev/null || true
+          done
