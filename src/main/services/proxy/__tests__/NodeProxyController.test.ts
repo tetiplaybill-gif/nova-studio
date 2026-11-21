@@ -110,11 +110,8 @@ describe('NodeProxyController', () => {
     // the request completes and the tunnel record is the proof of proxying.
     proxyServer.on('connect', (request, clientSocket, head) => {
       tunnels.push(request.url ?? '')
-      if (request.url !== `foo.localhost:${localPort}`) {
-        clientSocket.end('HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\n\r\n')
-        return
-      }
-      const target = net.connect(localPort, '127.0.0.1', () => {
+      const [host, port] = (request.url ?? '').split(':')
+      const target = net.connect(Number(port), host, () => {
         clientSocket.write('HTTP/1.1 200 Connection Established\r\n\r\n')
         if (head?.length) target.write(head)
         target.pipe(clientSocket)
@@ -298,11 +295,8 @@ describe('NodeProxyController', () => {
     // target so the request completes and the tunnel itself is the proof of proxying.
     proxyServer.on('connect', (request, clientSocket, head) => {
       tunnels.push(request.url ?? '')
-      if (request.url !== `foo.localhost:${localPort}`) {
-        clientSocket.end('HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\n\r\n')
-        return
-      }
-      const target = net.connect(localPort, '127.0.0.1', () => {
+      const [host, port] = (request.url ?? '').split(':')
+      const target = net.connect(Number(port), host, () => {
         clientSocket.write('HTTP/1.1 200 Connection Established\r\n\r\n')
         if (head?.length) target.write(head)
         target.pipe(clientSocket)
