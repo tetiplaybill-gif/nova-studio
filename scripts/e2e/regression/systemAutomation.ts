@@ -270,10 +270,18 @@ export async function allowMacNotificationPermission(paths: RunPaths): Promise<v
 }
 
 export function setMacNotificationCenterOpen(paths: RunPaths, open: boolean): boolean {
+  return runMacNotificationCenter(paths, [open], false)[0]
+}
+
+export function exerciseMacNotificationCenter(paths: RunPaths): boolean[] {
+  return runMacNotificationCenter(paths, [true, true, false, false], true)
+}
+
+function runMacNotificationCenter(paths: RunPaths, states: boolean[], restore: boolean): boolean[] {
   const record = readAppRecord(paths)
   if (record.platform !== 'macos') throw new Error('Native notification automation requires macOS')
   assertOwnedProcess(record, record.electronPid, 'electron')
-  const previous = execFileSync(
+  const result = execFileSync(
     'osascript',
     [
       '-l',
@@ -287,50 +295,83 @@ export function setMacNotificationCenterOpen(paths: RunPaths, open: boolean): bo
         if (error.errorNumber !== -1728) throw error
       }
     }
+    let panelState
+    if (typeof $ !== 'undefined' && Number($.NSProcessInfo.processInfo.operatingSystemVersion.majorVersion) >= 27) {
+      ObjC.import('ApplicationServices')
+      const owner = $.AXUIElementCreateApplication(center.unixId())
+      const attribute = (element, name) => {
+        const value = Ref()
+        const status = $.AXUIElementCopyAttributeValue(element, $(name), value)
+        if (!status) return ObjC.castRefToObject(value[0])
+        if (name !== 'AXWindows' && [-25202, -25205, -25212].includes(status)) return undefined
+        throw new Error('Notification Center accessibility query failed: ' + status)
+      }
+      panelState = () => {
+        const windows = attribute(owner, 'AXWindows')
+        let unknownDialog = false
+        for (let i = 0; i < Number(windows.count); i++) {
+          const window = windows.objectAtIndex(i)
+          if (ObjC.unwrap(attribute(window, 'AXSubrole')) !== 'AXSystemDialog') continue
+          if (['Notification Center', 'Notification Centre', '通知中心'].includes(ObjC.unwrap(attribute(window, 'AXTitle')))) return true
+          unknownDialog = true
+        }
+        return unknownDialog ? undefined : false
+      }
+    }
     const isOpen = () => {
+      const state = panelState?.()
+      if (state !== undefined) return state
       let elements = read(() => center.windows()) ?? []
       for (let depth = 0; depth <= 5; depth++) {
-        if (elements.some(element => read(() => element.attributes.byName('AXIdentifier').value()) === 'widget-editor-button')) return true
+        if (elements.some(element => ['widget-editor-button', 'AXNotificationListItems'].includes(read(() => element.attributes.byName('AXIdentifier').value())))) return true
         if (depth < 5) elements = elements.flatMap(element => read(() => element.uiElements()) ?? [])
       }
       return false
     }
-    const previous = isOpen()
-    if (previous !== ${JSON.stringify(open)}) {
-      const findClock = (element, depth) => {
-        if (read(() => element.attributes.byName('AXIdentifier').value()) === 'com.apple.menuextra.clock') return element
-        if (depth >= 4 || !['AXMenuBar', 'AXGroup'].includes(read(() => element.role()))) return
-        for (const child of read(() => element.uiElements()) ?? []) {
-          const clock = findClock(child, depth + 1)
-          if (clock) return clock
+    const setOpen = (open) => {
+      const previous = isOpen()
+      if (previous !== open) {
+        const findClock = (element, depth) => {
+          if (read(() => element.attributes.byName('AXIdentifier').value()) === 'com.apple.menuextra.clock') return element
+          if (depth >= 4 || !['AXMenuBar', 'AXGroup'].includes(read(() => element.role()))) return
+          for (const child of read(() => element.uiElements()) ?? []) {
+            const clock = findClock(child, depth + 1)
+            if (clock) return clock
+          }
         }
-      }
-      let clock
-      const menuOwners = []
-      for (const name of ['MenuBarAgent', 'ControlCenter', 'SystemUIServer']) {
-        for (const process of events.processes.whose({ name })()) {
-          const bars = process.menuBars()
-          menuOwners.push({ name, bars: bars.length })
-          for (const bar of bars) {
-            clock = findClock(bar, 0)
+        let clock
+        const menuOwners = []
+        for (const name of ['MenuBarAgent', 'ControlCenter', 'SystemUIServer']) {
+          for (const process of events.processes.whose({ name })()) {
+            const bars = process.menuBars()
+            menuOwners.push({ name, bars: bars.length })
+            for (const bar of bars) {
+              clock = findClock(bar, 0)
+              if (clock) break
+            }
             if (clock) break
           }
           if (clock) break
         }
-        if (clock) break
+        if (!clock) throw new Error('Notification Center clock menu item is unavailable: ' + JSON.stringify(menuOwners))
+        clock.click()
+        const deadline = Date.now() + 3000
+        while (isOpen() !== open && Date.now() < deadline) delay(0.1)
+        if (isOpen() !== open) throw new Error('Notification Center did not reach the requested state ' + (open ? 'open' : 'closed') + '; windows=' + (read(() => center.windows()) ?? []).length)
       }
-      if (!clock) throw new Error('Notification Center clock menu item is unavailable: ' + JSON.stringify(menuOwners))
-      clock.click()
-      const deadline = Date.now() + 3000
-      while (isOpen() !== ${JSON.stringify(open)} && Date.now() < deadline) delay(0.1)
-      if (isOpen() !== ${JSON.stringify(open)}) throw new Error('Notification Center did not reach the requested state; windows=' + (read(() => center.windows()) ?? []).length)
+      return previous
     }
-    previous ? 'open' : 'closed'
+    const initial = isOpen()
+    try {
+      JSON.stringify(${JSON.stringify(states)}.map(setOpen))
+    } finally {
+      if (${JSON.stringify(restore)}) setOpen(initial)
+    }
   `
     ],
     { timeout: 30_000, encoding: 'utf8' }
   ).trim()
-  return previous === 'open'
+  return JSON.parse(result) as boolean[]
 }
 
 export function findMacNotification(paths: RunPaths, text: string, click = false): boolean {
@@ -940,7 +981,7 @@ export function chooseNativeFiles(platform: Platform, paths: RunPaths, candidate
   ) {
     throw new Error('macOS multi-file selection requires all files in one isolated directory')
   }
-  chooseNativeSelection(platform, paths, directory, undefined, true)
+  chooseNativeSelection(platform, paths, files[0], undefined, true)
 }
 
 function chooseNativeSelection(
@@ -1028,16 +1069,18 @@ function chooseNativeSelection(
         {
           stage: 'accept-disabled',
           cap: 5,
-          action: selectAll
-            ? [...(macProductMajor < 27 ? ['key code 124'] : []), 'keystroke "a" using command down']
-            : [],
+          action: [],
           condition: `enabled of ${acceptButton}`,
           detail: 'accept button is not enabled'
         },
         {
           stage: 'completion',
           cap: 5,
-          action: ['if not frontmost then error "Owned native file panel is not frontmost"', 'key code 36'],
+          action: [
+            'if not frontmost then error "Owned native file panel is not frontmost"',
+            ...(selectAll ? ['keystroke "a" using command down'] : []),
+            'key code 36'
+          ],
           condition: '(count of windows) < previousWindowCount',
           detail: 'panel window count did not decrease'
         }
@@ -1070,7 +1113,7 @@ function chooseNativeSelection(
       'end run'
     ].join('\n')
     try {
-      execFileSync('osascript', ['-e', script, '--', selectAll ? `${filePath}/` : filePath, String(electronPid)], {
+      execFileSync('osascript', ['-e', script, '--', filePath, String(electronPid)], {
         stdio: ['ignore', 'ignore', 'pipe'],
         timeout: 45_000
       })
@@ -1303,11 +1346,17 @@ export async function saveNativeFileKeepingName(
       }
     }
     func key(_ code: CGKeyCode, _ flags: CGEventFlags = []) {
-      RunLoop.current.run(until: Date().addingTimeInterval(0.01))
-      guard NSWorkspace.shared.frontmostApplication?.processIdentifier == pid else { fail("Native save lost foreground ownership") }
+      wait("foreground ownership before input") {
+        if NSWorkspace.shared.frontmostApplication?.processIdentifier == pid { return true }
+        guard let owner = panel, (attribute(application, "AXWindows") as? [AXUIElement] ?? []).contains(where: { elements($0).contains(owner) }) else { return false }
+        _ = NSRunningApplication(processIdentifier: pid)?.activate(options: [])
+        _ = AXUIElementSetAttributeValue(application, "AXFrontmost" as CFString, kCFBooleanTrue)
+        return false
+      }
       for down in [true, false] {
         let event = CGEvent(keyboardEventSource: nil, virtualKey: code, keyDown: down)!
         event.flags = flags
+        guard NSWorkspace.shared.frontmostApplication?.processIdentifier == pid else { fail("Native save lost foreground ownership") }
         event.post(tap: .cghidEventTap)
       }
     }

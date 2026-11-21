@@ -24,7 +24,7 @@ import {
   readWindowsPrintDialog,
   saveNativeFile,
   saveNativeFileKeepingName,
-  setMacNotificationCenterOpen,
+  exerciseMacNotificationCenter,
   setWindowsNotificationCenterOpen
 } from '../systemAutomation'
 import { readWindowsFileOwners } from '../windowsFileOwners'
@@ -272,7 +272,7 @@ it.skipIf(process.platform !== 'win32')(
 const nativePlatform = process.platform === 'darwin' ? 'macos' : 'windows'
 const dialogModes =
   process.platform === 'darwin'
-    ? (['file', 'multiple', 'directory', 'save', 'save-suggested', 'save-hidden'] as const)
+    ? (['file', 'multiple', 'directory', 'save', 'save-suggested', 'save-hidden', 'notification-center'] as const)
     : (['file', 'multiple', 'directory', 'save', 'save-suggested', 'print', 'message-box'] as const)
 
 // Verify Electron's returned paths after actual native selection and filename commit.
@@ -296,13 +296,15 @@ it.skipIf(!['darwin', 'win32'].includes(process.platform)).each(dialogModes)(
       const saved = join(paths.private, 'requested output 输入.txt')
       const isSave = mode === 'save' || mode === 'save-suggested' || mode === 'save-hidden'
       const dialogCall =
-        mode === 'message-box'
-          ? `{ response: dialog.showMessageBoxSync({ type: 'info', title: 'Manual Restart Required', message: 'Owned restart fixture', buttons: ['OK'] }) }`
-          : mode === 'print'
-            ? 'await new Promise(resolve => window.webContents.print({}, (success, failureReason) => resolve({ success, failureReason })))'
-            : isSave
-              ? `await dialog.showSaveDialog(${nativePlatform === 'windows' ? 'window, ' : ''}${JSON.stringify({ defaultPath: join(paths.profiles, 'suggested.txt'), ...(mode === 'save' || mode === 'save-hidden' ? { filters: [{ name: 'Text', extensions: ['txt'] }] } : {}) })})`
-              : `await dialog.showOpenDialog(${nativePlatform === 'windows' ? 'window, ' : ''}{ properties: ${JSON.stringify(mode === 'directory' ? ['openDirectory'] : mode === 'multiple' ? ['openFile', 'multiSelections'] : ['openFile'])} })`
+        mode === 'notification-center'
+          ? '({})'
+          : mode === 'message-box'
+            ? `{ response: dialog.showMessageBoxSync({ type: 'info', title: 'Manual Restart Required', message: 'Owned restart fixture', buttons: ['OK'] }) }`
+            : mode === 'print'
+              ? 'await new Promise(resolve => window.webContents.print({}, (success, failureReason) => resolve({ success, failureReason })))'
+              : isSave
+                ? `await dialog.showSaveDialog(${nativePlatform === 'windows' ? 'window, ' : ''}${JSON.stringify({ defaultPath: join(paths.profiles, 'suggested.txt'), ...(mode === 'save' || mode === 'save-hidden' ? { filters: [{ name: 'Text', extensions: ['txt'] }] } : {}) })})`
+                : `await dialog.showOpenDialog(${nativePlatform === 'windows' ? 'window, ' : ''}{ properties: ${JSON.stringify(mode === 'directory' ? ['openDirectory'] : mode === 'multiple' ? ['openFile', 'multiSelections'] : ['openFile'])} })`
       const resultPath = join(paths.private, 'result.json')
       const readyPath = join(paths.private, 'ready')
       writeFileSync(
@@ -364,7 +366,9 @@ it.skipIf(!['darwin', 'win32'].includes(process.platform)).each(dialogModes)(
           logPath: join(paths.logs, 'fixture.log')
         })
       )
-      if (mode === 'multiple') chooseNativeFiles(nativePlatform, paths, inputs)
+      if (mode === 'notification-center') {
+        expect(exerciseMacNotificationCenter(paths).slice(1)).toEqual([true, true, false])
+      } else if (mode === 'multiple') chooseNativeFiles(nativePlatform, paths, inputs)
       else if (mode === 'save' || mode === 'save-hidden')
         expect(realpathSync.native(await saveNativeFile(nativePlatform, paths, saved))).toBe(realpathSync.native(saved))
       else if (mode === 'save-suggested') {
@@ -378,7 +382,9 @@ it.skipIf(!['darwin', 'win32'].includes(process.platform)).each(dialogModes)(
       } else chooseNativeFile(nativePlatform, paths, mode === 'directory' ? folder : inputs[0])
       await expect.poll(() => existsSync(resultPath), { timeout: 10_000 }).toBe(true)
       const result = JSON.parse(readFileSync(resultPath, 'utf8'))
-      if (mode === 'message-box') {
+      if (mode === 'notification-center') {
+        expect(result).toEqual({})
+      } else if (mode === 'message-box') {
         expect(result.response).toBe(0)
         const diagnostic = JSON.parse(readFileSync(join(paths.logs, 'native-message-box.json'), 'utf8'))
         expect(diagnostic.events).toContainEqual(
@@ -409,15 +415,6 @@ it.skipIf(!['darwin', 'win32'].includes(process.platform)).each(dialogModes)(
           expect(setWindowsNotificationCenterOpen(paths, true)).toBe(true)
         } finally {
           setWindowsNotificationCenterOpen(paths, previous)
-        }
-      } else if (nativePlatform === 'macos' && mode === 'file') {
-        const previous = setMacNotificationCenterOpen(paths, true)
-        try {
-          expect(setMacNotificationCenterOpen(paths, true)).toBe(true)
-          expect(setMacNotificationCenterOpen(paths, false)).toBe(true)
-          expect(setMacNotificationCenterOpen(paths, false)).toBe(false)
-        } finally {
-          setMacNotificationCenterOpen(paths, previous)
         }
       }
     } catch (error) {

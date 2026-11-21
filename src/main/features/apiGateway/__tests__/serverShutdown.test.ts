@@ -294,13 +294,27 @@ describe('ApiGateway listening scope', () => {
     }
   })
 
-  const ipv6Address = Object.entries(networkInterfaces()).flatMap(([name, addresses]) =>
+  const ipv6Addresses = Object.entries(networkInterfaces()).flatMap(([name, addresses]) =>
     (addresses ?? [])
       .filter((address) => address.family === 'IPv6' && !address.internal)
       .map((address) => (/^fe[89ab]/i.test(address.address) ? `${address.address}%${name}` : address.address))
-  )[0]
+  )
 
-  it.skipIf(!ipv6Address)('closes IPv6 network access while keeping IPv6 loopback available', async () => {
+  it.skipIf(!ipv6Addresses.length)('closes IPv6 network access while keeping IPv6 loopback available', async (ctx) => {
+    // VPN interfaces can enumerate local addresses that even a bare wildcard listener cannot reach.
+    const probe = createServer((socket) => socket.destroy())
+    await new Promise<void>((resolve, reject) =>
+      probe.once('error', reject).listen({ host: '::', port: 0, ipv6Only: true }, resolve)
+    )
+    let ipv6Address: string | undefined
+    try {
+      const port = (probe.address() as { port: number }).port
+      const reachable = await Promise.all(ipv6Addresses.map((host) => canConnect(host, port)))
+      ipv6Address = ipv6Addresses.find((_, index) => reachable[index])
+    } finally {
+      await new Promise<void>((resolve) => probe.close(() => resolve()))
+    }
+    if (!ipv6Address) return ctx.skip('No reachable non-loopback IPv6 interface on this host')
     gateway = new ApiGateway({ host: '127.0.0.1', port: 0 })
     await gateway.start()
     const port = gateway.getPort()
