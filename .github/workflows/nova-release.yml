@@ -74,7 +74,7 @@ jobs:
               $rootUI = [Windows.Automation.AutomationElement]::RootElement
               $pc = [Windows.Automation.PropertyCondition]::new([Windows.Automation.AutomationElement]::ProcessIdProperty,[int]$gui.Id)
               function OwnedWindows {
-                return @($rootUI.FindAll([Windows.Automation.TreeScope]::Children,$pc) | Where-Object { -not $_.Current.IsOffscreen -and $_.Current.NativeWindowHandle -ne 0 })
+                return @($rootUI.FindAll([Windows.Automation.TreeScope]::Children,$pc) | Where-Object { $_.Current.Name -eq 'nova' -and -not $_.Current.IsOffscreen -and $_.Current.NativeWindowHandle -ne 0 })
               }
               $deadline = (Get-Date).AddSeconds(55)
               $engine=$null
@@ -88,11 +88,16 @@ jobs:
               if (-not $wins.Count -or -not $engine) {throw 'The authenticated-free GUI did not create a visible native window and WebView2 child'}
               $activeUpgrade=Install $new
               if ($activeUpgrade -eq 0 -or $gui.HasExited -or $other.HasExited) {throw 'A running desktop was replaced or unrelated process stopped'}
-              $gui.Refresh()
-              if (-not $gui.CloseMainWindow()) {throw 'Could not request standard window close'}
+              $actual = @(OwnedWindows)[0]
+              if (-not $actual) {throw 'Main NOVA window was no longer visible after the installer refused to replace it'}
+              $handle = [IntPtr]$actual.Current.NativeWindowHandle
+              Add-Type 'using System; using System.Runtime.InteropServices; public static class NovaWindowState { [DllImport("user32.dll")] public static extern bool IsWindowVisible(IntPtr hwnd); }'
+              Write-Host "Owned main window class=$($actual.Current.ClassName); visible=$([NovaWindowState]::IsWindowVisible($handle))"
+              $actual.GetCurrentPattern([Windows.Automation.WindowPattern]::Pattern).Close()
               $deadline=(Get-Date).AddSeconds(12)
-              while (@(OwnedWindows).Count -gt 0 -and (Get-Date) -lt $deadline) {Start-Sleep -Milliseconds 350}
-              if ($gui.HasExited -or @(OwnedWindows).Count -gt 0) {throw 'Window did not hide while the tray process remained alive'}
+              while ([NovaWindowState]::IsWindowVisible($handle) -and (Get-Date) -lt $deadline) {Start-Sleep -Milliseconds 350}
+              Write-Host "After close: processAlive=$(-not $gui.HasExited); mainWindowVisible=$([NovaWindowState]::IsWindowVisible($handle))"
+              if ($gui.HasExited -or [NovaWindowState]::IsWindowVisible($handle)) {throw 'Window did not hide while the tray process remained alive'}
               $again=Start-Process $exe -PassThru
               if (-not $again.WaitForExit(30000)) {throw 'Second launch did not hand off to the running instance'}
               $deadline=(Get-Date).AddSeconds(15)
