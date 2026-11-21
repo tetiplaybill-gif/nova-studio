@@ -66,16 +66,43 @@ jobs:
           }).catch(e=>{console.error('fixture error',e.message);app.exit(1)})
           JS
           echo "console user $(stat -f %Su /dev/console); Electron $(node -p "require('electron/package.json').version")"
-          for mode in default explicit save parent directory; do
+          cat > cocoa.swift <<'SWIFT'
+          import AppKit
+          let app = NSApplication.shared
+          app.setActivationPolicy(.regular)
+          let owner = NSWindow(contentRect: NSRect(x: 80,y: 80,width: 500,height: 300),styleMask:[.titled,.closable],backing:.buffered,defer:false)
+          owner.title = "Owned Cocoa panel diagnostic"; owner.makeKeyAndOrderFront(nil); app.activate()
+          let panel = NSOpenPanel();panel.directoryURL=URL(fileURLWithPath:ProcessInfo.processInfo.environment["NOVA_FIXTURE_DIR"]!)
+          DispatchQueue.main.asyncAfter(deadline:.now()+0.5) {
+            FileManager.default.createFile(atPath:ProcessInfo.processInfo.environment["NOVA_FIXTURE_DIR"]!+"/ready",contents:Data([1]))
+            panel.begin { _ in app.terminate(nil) }
+          }
+          app.run()
+          SWIFT
+          swiftc cocoa.swift -o owned-cocoa
+          for mode in explicit cocoa; do
             mkdir "$mode"
             dir="$PWD/$mode"
-            NOVA_FIXTURE_DIR="$dir" NOVA_PANEL_MODE="$mode" "$electron" "$PWD/panel.cjs" >"$dir/fixture.log" 2>&1 &
+            if [[ "$mode" == cocoa ]]; then
+              NOVA_FIXTURE_DIR="$dir" "$PWD/owned-cocoa" >"$dir/fixture.log" 2>&1 &
+            else
+              NOVA_FIXTURE_DIR="$dir" NOVA_PANEL_MODE="$mode" "$electron" "$PWD/panel.cjs" >"$dir/fixture.log" 2>&1 &
+            fi
             fixture=$!
             for attempt in {1..80}; do [[ -f "$dir/ready" ]] && break; kill -0 "$fixture" 2>/dev/null || break; sleep 0.5; done
             [[ -s "$dir/ready" ]] || { sed -E '/DevTools listening/d' "$dir/fixture.log" | tail -n 10; exit 1; }
             echo "MODE $mode pid $fixture"
-            for sample in 1 2; do sleep 4; ./inspect "$fixture"; done
+            for sample in 1 2; do sleep 4; ./inspect "$fixture" | tee "$dir/sample.txt"; done
+            for owned in "$fixture" $(awk '$1=="panel" && $2=="service" && $3=="com.apple.appkit.xpc.openAndSavePanelService" {print $4}' "$dir/sample.txt"); do
+              /usr/bin/sample "$owned" 1 5 -file "$dir/thread-$owned.txt" >/dev/null 2>&1 || true
+              if [[ -s "$dir/thread-$owned.txt" ]]; then
+                echo "STACK $mode $owned"
+                awk '/Call graph:/ {p=1;next} p && /Thread_.*DispatchQueue/ {if(++threads>1)exit} p&&threads==1{print substr($0,1,380)}' "$dir/thread-$owned.txt" | head -n 60 || true
+              fi
+            done
             sed -E '/DevTools listening/d' "$dir/fixture.log" | tail -n 7
-            if kill -0 "$fixture" 2>/dev/null; then [[ "$(ps -p "$fixture" -o command=)" == *"$PWD/panel.cjs"* ]] && kill -KILL "$fixture"; fi
+            if kill -0 "$fixture" 2>/dev/null; then
+              case "$(ps -p "$fixture" -o command=)" in *"$PWD/panel.cjs"*|*"$PWD/owned-cocoa"*) kill -KILL "$fixture";; esac
+            fi
             wait "$fixture" 2>/dev/null || true
           done
