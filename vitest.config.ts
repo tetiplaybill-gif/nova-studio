@@ -71,7 +71,7 @@ export default defineConfig({
         test: {
           name: 'renderer',
           environment: 'jsdom',
-          setupFiles: ['@vitest/web-worker', 'tests/renderer.setup.ts'],
+          setupFiles: ['@vitest/web-worker', 'tests/renderer.setup.ts', 'tests/domTeardown.setup.ts'],
           include: ['src/renderer/**/*.{test,spec}.{ts,tsx}', 'src/renderer/**/__tests__/**/*.{test,spec}.{ts,tsx}'],
           benchmark: {
             include: ['src/renderer/**/*.bench.{ts,tsx}', 'src/renderer/**/__tests__/**/*.bench.{ts,tsx}']
@@ -89,7 +89,7 @@ export default defineConfig({
         test: {
           name: 'file-preview',
           environment: 'jsdom',
-          setupFiles: ['@vitest/web-worker', 'tests/file-preview.setup.ts'],
+          setupFiles: ['@vitest/web-worker', 'tests/file-preview.setup.ts', 'tests/domTeardown.setup.ts'],
           include: ['packages/file-preview/src/**/*.test.{ts,tsx}']
         }
       },
@@ -205,6 +205,7 @@ export default defineConfig({
         },
         test: {
           name: 'ui',
+          setupFiles: ['tests/domTeardown.setup.ts'],
           environment: 'node',
           include: [
             'packages/ui/scripts/**/*.{test,spec}.{ts,tsx}',

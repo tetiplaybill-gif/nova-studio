@@ -33,10 +33,8 @@ beforeEach(async () => {
   MockUsePreferenceUtils.setPreferenceValue('chat.message.font_size', 14)
 })
 
-afterEach(async () => {
+afterEach(() => {
   cleanup()
-  // Radix restores focus on the next timer turn. Keep its originating document alive until then.
-  await new Promise<void>((resolve) => setTimeout(resolve, 0))
   for (const key of ['getClientRects', 'getBoundingClientRect']) {
     if (rangeDescriptors[key]) Object.defineProperty(Range.prototype, key, rangeDescriptors[key])
     else Reflect.deleteProperty(Range.prototype, key)
