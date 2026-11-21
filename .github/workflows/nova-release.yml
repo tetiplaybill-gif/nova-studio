@@ -59,6 +59,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Test the release checkout
+        run: pnpm test
+
       - name: Type-check and build
         run: pnpm run build
         env:
@@ -117,7 +120,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           tag="v$(node -p "require('./package.json').version")"
-          if gh release view "$tag" >/dev/null 2>&1; then
+          if draft=$(gh release view "$tag" --json isDraft --jq '.isDraft' 2>/dev/null); then
+            if [ "$draft" != true ]; then
+              echo "::error::This version has already been published. Use a new version."
+              exit 1
+            fi
             gh release upload "$tag" out/* --clobber
           else
             gh release create "$tag" out/* --draft --target "$GITHUB_SHA" \
