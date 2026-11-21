@@ -1,11 +1,11 @@
-name: NOVA Studio Windows file and network acceptance
+name: NOVA Studio Windows packaged startup diagnostics
 on: workflow_dispatch
 permissions:
   contents: read
 jobs:
   windows-file-network:
     runs-on: windows-latest
-    timeout-minutes: 25
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v7
@@ -16,7 +16,12 @@ jobs:
           python-version: "3.12"
       - uses: pnpm/action-setup@v5
       - run: pnpm install --frozen-lockfile
-      - name: Verify Windows file handling and real loopback connections
+      - name: Build the signed-out Windows application
+        run: pnpm run build
+        env:
+          NODE_OPTIONS: --max-old-space-size=8192
+      - run: node scripts/release/prepare-tools.js prepare windows x64
+      - run: pnpm exec electron-builder --dir --win --x64 --publish never
+      - name: Verify the real Windows renderer
         shell: pwsh
-        run: |
-          pnpm exec vitest run --project main --reporter=verbose src/main/services/proxy/__tests__/NodeProxyController.test.ts src/main/services/mediaProtocol/__tests__/MediaProtocolService.test.ts src/main/services/remoteAccess/__tests__/deviceIdentity.test.ts src/main/services/file/utils/__tests__/requestedPath.test.ts src/main/services/file/internal/system/__tests__/clipboard.test.ts src/main/core/preboot/__tests__/userDataLocation.test.ts src/main/services/file/__tests__/FileEditService.test.ts
+        run: node scripts/release/verify-note-renderer.cjs (Resolve-Path 'dist/win-unpacked/NOVA Studio.exe').Path

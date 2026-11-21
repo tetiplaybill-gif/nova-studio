@@ -21,8 +21,14 @@ async function verifyNoteRenderer(executable) {
       ...(process.platform === 'darwin' ? ['--use-mock-keychain'] : []),
       '--no-first-run'
     ],
-    { stdio: 'ignore' }
+    { stdio: ['ignore', 'ignore', 'pipe'] }
   )
+  app.stderr.on('data', (chunk) => {
+    for (const line of chunk.toString().split('\n')) {
+      if (/uncaught exception|MODULE_NOT_FOUND|not a valid Win32|^Error:|FATAL:|NODE_MODULE_VERSION/i.test(line))
+        console.error('Packaged main:', line.slice(0, 400))
+    }
+  })
   let startupError
   app.on('error', (error) => {
     startupError = error
@@ -43,7 +49,27 @@ async function verifyNoteRenderer(executable) {
       if (!port) await delay(200)
     }
     if (!/^\d+$/.test(port || '')) throw new Error('NOVA Studio did not expose its test renderer')
-    browser = await chromium.connectOverCDP('http://127.0.0.1:' + port)
+    const endpoint = 'http://127.0.0.1:' + port
+    const observed = new Set()
+    const sample = async () => {
+      try {
+        const list = await (await fetch(endpoint + '/json/list', {signal: AbortSignal.timeout(3000)})).json()
+        const pages = list.map(x => x.type + ':' + (x.url?.match(/\/windows\/([a-zA-Z]+)\//)?.[1] ?? 'other')).sort().join(', ')
+        if (!observed.has(pages)) {
+          observed.add(pages)
+          console.log('Observed targets:', pages)
+        }
+      } catch {}
+    }
+    const watch = setInterval(() => void sample(), 3000)
+    try {
+      console.log('Connecting to the packaged app')
+      await sample()
+      browser = await chromium.connectOverCDP(endpoint, {timeout: 120000, noDefaults: true})
+      console.log('Connected to the packaged app')
+    } finally {
+      clearInterval(watch)
+    }
     let main
     const windowDeadline = Date.now() + 90_000
     while (!main && Date.now() < windowDeadline) {
