@@ -68,6 +68,41 @@ jobs:
             $state=Get-Content -Raw $out | ConvertFrom-Json
             if ($state.status -notin @('enabled','disabled','unknown')) {throw 'Unexpected IPv6 status schema'}
             Write-Host "Installed 3.22.1 and verified native CLI, registered target, read-only IPv6 query; unrelated process survived"
+            $gui = Start-Process $exe -PassThru
+            try {
+              Add-Type -AssemblyName UIAutomationClient,UIAutomationTypes
+              $rootUI = [Windows.Automation.AutomationElement]::RootElement
+              $pc = [Windows.Automation.PropertyCondition]::new([Windows.Automation.AutomationElement]::ProcessIdProperty,[int]$gui.Id)
+              function OwnedWindows {
+                return @($rootUI.FindAll([Windows.Automation.TreeScope]::Children,$pc) | Where-Object { -not $_.Current.IsOffscreen -and $_.Current.NativeWindowHandle -ne 0 })
+              }
+              $deadline = (Get-Date).AddSeconds(55)
+              $engine=$null
+              do {
+                if ($gui.HasExited) {throw "Guard GUI exited early ($($gui.ExitCode))"}
+                $wins=@(OwnedWindows)
+                $engine=Get-CimInstance Win32_Process -Filter "ParentProcessId = $($gui.Id) AND Name = 'msedgewebview2.exe'" -ErrorAction Stop | Select-Object -First 1
+                if ($wins.Count -gt 0 -and $engine) {break}
+                Start-Sleep -Milliseconds 350
+              } while ((Get-Date) -lt $deadline)
+              if (-not $wins.Count -or -not $engine) {throw 'The authenticated-free GUI did not create a visible native window and WebView2 child'}
+              $activeUpgrade=Install $new
+              if ($activeUpgrade -eq 0 -or $gui.HasExited -or $other.HasExited) {throw 'A running desktop was replaced or unrelated process stopped'}
+              $gui.Refresh()
+              if (-not $gui.CloseMainWindow()) {throw 'Could not request standard window close'}
+              $deadline=(Get-Date).AddSeconds(12)
+              while (@(OwnedWindows).Count -gt 0 -and (Get-Date) -lt $deadline) {Start-Sleep -Milliseconds 350}
+              if ($gui.HasExited -or @(OwnedWindows).Count -gt 0) {throw 'Window did not hide while the tray process remained alive'}
+              $again=Start-Process $exe -PassThru
+              if (-not $again.WaitForExit(30000)) {throw 'Second launch did not hand off to the running instance'}
+              $deadline=(Get-Date).AddSeconds(15)
+              while (@(OwnedWindows).Count -eq 0 -and (Get-Date) -lt $deadline) {Start-Sleep -Milliseconds 350}
+              if ($gui.HasExited -or @(OwnedWindows).Count -lt 1) {throw 'Single-instance launch did not reopen the native window'}
+              Write-Host 'NOVA_GUARD_WINDOWS_GUI_PASS: real WebView2 window, running upgrade refusal, close-to-tray lifecycle, existing-process reopen'
+            } finally {
+              # Only terminate this disposable test's signed-out child; the uninstall test still exercises --restore.
+              if (-not $gui.HasExited) { $gui.Kill();$gui.WaitForExit(10000) | Out-Null }
+            }
             $uninstaller = Join-Path $dest 'uninstall.exe'
             $p=Start-Process $uninstaller -ArgumentList '/S' -PassThru
             if (-not $p.WaitForExit(90000)) {throw 'Uninstall launcher timed out'}
