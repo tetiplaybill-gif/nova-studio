@@ -74,6 +74,18 @@ jobs:
           fi
           launchctl kickstart "$domain/$label"
 
+      # Virtual Intel GPUs can crash IconServices and hang every native Open/Save panel.
+      # https://github.com/actions/runner-images/issues/14751
+      - name: Use fallback file icons in the hosted Intel macOS GUI session
+        if: matrix.os == 'macos-26-intel'
+        shell: bash
+        run: |
+          [[ "$GITHUB_ACTIONS" == true && "$RUNNER_ENVIRONMENT" == github-hosted ]]
+          [[ "$(uname -m)" == x86_64 && "$(sw_vers -productVersion)" == 26.* ]]
+          service="gui/$(id -u)/com.apple.iconservices.iconservicesagent"
+          launchctl bootout "$service" 2>/dev/null || true
+          launchctl disable "$service"
+
       - name: Test native dialogs and rendering on an idle desktop
         env:
           NOVA_RELEASE_TEST_GROUP: isolated
